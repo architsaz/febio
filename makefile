@@ -36,7 +36,7 @@ inputmkr : $(OBJS_pro3)
 
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
-	echo $(addprefix -I,$(dir $^))
+#	echo $(addprefix -I,$(dir $^))
 	mkdir -p $(dir $@)
 	mkdir -p $(BIN_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
