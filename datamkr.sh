@@ -73,7 +73,7 @@ cd febio/script/src
 for eachfile in $FILE
 do
    casename=$(basename $eachfile .wall)
-   ./inputmkr $casename
+#   ./inputmkr $casename
 done
 
 

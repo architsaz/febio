@@ -1,0 +1,12 @@
+# ignore these files: 
+./gitignore
+
+
+# ignore directories :
+/archive
+/build
+/febio
+
+
+
+
