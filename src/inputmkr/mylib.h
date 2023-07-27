@@ -8,19 +8,7 @@
 // decler struct
 	typedef struct {
 	
-		int npoin;		//# of points
-	    int nelem;		//# of elements
-	 	double *ptxyz;	// cordination of points in mesh file, for triangular mesh : p#x p#y
-	 	int    *elems;	// conectivity of each element
 
-	 	int 	*esure;	// neighbor	elements surround each element
-	 	int 	*esurp;	// neighbor points surround each point
-	 	int     *esurp_pointer; // pointer of neighbor points surround each point 
-	 	int 	*open; // element adjacent hole equal 1 in this array
-
-	 	int    num_bound;    // number of inlet/outlet holes
-		int    *boundary;     // boundary element according to the order of holes start from 10 index .... 
-		double   *centers;
 
 	}allinfo;
 
@@ -31,7 +19,7 @@
 	void save_esure(int npoin,int nelem,int *elems,int *esurp,int *esurp_pointer,int **esue2, int **open2);
 	void save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2);
     int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *elems, int ele, int ele_p1, int ele_p2);
-    void write_labels(int nelem, int *open, char *filename);
+    void write_labels(int nelem, int *open, char *path);
     void clustering_hole(int nelem,int *open, int *esure, int *elems, double *ptxyz, int **boundary1,double **centers1, int *num_bound1);
     bool file_exists(const char *filename);
     void write_input(int num_bound, double *centers, char *filename, char const	*casename);

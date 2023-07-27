@@ -625,7 +625,12 @@ void write_input(int num_bound, double *centers, char *filename, char const	*cas
 				fprintf(fptr,"\n");
 		}
 }
-void write_labels(int nelem, int *open, char *filename){
+void write_labels(int nelem, int *open, char *path){
+
+	printf("%s\n",path);
+
+	char filename[500];
+	strcpy(filename,path);
 
 	// define paramteres
 	int ele;

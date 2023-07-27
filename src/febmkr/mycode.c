@@ -5,39 +5,6 @@
 #include<math.h>
 #include <stdbool.h>
 
-//information of FEBio_GeneralPara.txt file:
-	// Color ID for elements
-extern	int labl_red;
-extern	int labl_yel;
-extern	int labl_whi;
-extern	int labl_cya;
-extern	int labl_rup;
-extern	int labl_rem;
-extern	int labl_bou;
-extern	int labl_tra;
-extern	int labl_ane;
-	// Young Modulus for each color ID
-extern	double y_red;
-extern	double y_yel;
-extern	double y_whi;
-extern	double y_rem;
-extern	double y_ane;
-	// Thickness for each color ID
-extern	double t_red;
-extern	double t_yel;
-extern	double t_whi;
-extern	double t_rem;
-extern	double t_ane;
-	//Density
-extern	double dens;
-	// Poisson Nr
-extern	double pois;
-	// pressure
-extern	double pres;
-
-
-// include mylibrary:
-
 #include "mylib.h"
 
 char *edit_endline_character(char *line, int buffer, FILE *fptr) {
@@ -61,7 +28,11 @@ bool file_exists(char const *filename){
     }
     return is_exist;
 }
-void read_zfem(char *filename, int *npoin, int *nelem, double **ptxyz,int **elems) {
+void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
+
+	    //printf("input function: %s\n",filename);
+	    char filename[500];
+	    strcpy(filename,path);
 
 	// defined arrayes and varables
 		int npoin1 ,nelem1,*elems1;
@@ -70,7 +41,6 @@ void read_zfem(char *filename, int *npoin, int *nelem, double **ptxyz,int **elem
 	/* Allocate space to File pointer */
 		FILE *fptr;
 		fptr = calloc(1, sizeof(*fptr));
-
 
 	/* Opening File */
 		fptr = fopen(filename, "r");
@@ -82,6 +52,7 @@ void read_zfem(char *filename, int *npoin, int *nelem, double **ptxyz,int **elem
 	  	else {
 	    	printf("  File opened - %s.\n", filename);
 	  	}
+	  	printf("%s\n",filename);
 	  
 	/* Read all lines of the file */
 		int buffer = 100;
