@@ -36,7 +36,8 @@ double dens;
 // Poisson Nr
 double pois;
 // pressure
-double pres;
+double pre_pres;
+double ulti_pres;
 
 // information of center of inloet and outlets
 int nr_cen;
@@ -432,12 +433,13 @@ int nscan, iline;
 	    if(!strcmp(test,"Pressure")){
 	    	// save Poisson nr:
 	    	str = edit_endline_character(line, buffer, fptr);  
-	    	nscan = sscanf(str, "%lf",&(pres));
-			    if (nscan != 1) {
+	    	str = edit_endline_character(line, buffer, fptr); 
+	    	nscan = sscanf(str, "%lf %lf",&(pre_pres),&ulti_pres);
+			    if (nscan != 2) {
 					printf("ERROR: Incorrect Pressure value @ input.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
-			    printf("Pressure:\n%lf\n",pres);
+			    printf("Pressure:\n%lf\t%lf\n",pre_pres,ulti_pres);
 			endcount += 1; 
 
 	    }    	

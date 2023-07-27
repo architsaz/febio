@@ -139,12 +139,24 @@ int main(int argc, char **argv){
 			if(pt==0||pt==1||pt==2) updated_gstrain[6*ele+pt]+=1;
 		}
 	}
-
+	// prepare options for febio solver 
 	char run[500];
 	char run_option[100]=" -silent ";
 
 	strcpy(run,argv[2]); 	
 	strcat(run,run_option);
+
+	// ITERATIVE METHOD STARTED: 
+	int iter=0;
+	int terminate_iter=1;
+	while (terminate_iter==1){
+		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter+2);
+
+
+
+		if (terminate_iter==0 || iter>20) break;
+		iter+=1;
+	}
 
 
 	
