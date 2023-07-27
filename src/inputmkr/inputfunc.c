@@ -7,33 +7,34 @@
 
 //information of FEBio_GeneralPara.txt file:
 	// Color ID for elements
-extern	int labl_red;
-extern	int labl_yel;
-extern	int labl_whi;
-extern	int labl_cya;
-extern	int labl_rup;
-extern	int labl_rem;
-extern	int labl_bou;
-extern	int labl_tra;
-extern	int labl_ane;
+	int labl_red;
+	int labl_yel;
+	int labl_whi;
+	int labl_cya;
+	int labl_rup;
+	int labl_rem;
+	int labl_bou;
+	int labl_tra;
+	int labl_ane;
 	// Young Modulus for each color ID
-extern	double y_red;
-extern	double y_yel;
-extern	double y_whi;
-extern	double y_rem;
-extern	double y_ane;
+	double y_red;
+	double y_yel;
+	double y_whi;
+	double y_rem;
+	double y_ane;
 	// Thickness for each color ID
-extern	double t_red;
-extern	double t_yel;
-extern	double t_whi;
-extern	double t_rem;
-extern	double t_ane;
+	double t_red;
+	double t_yel;
+	double t_whi;
+	double t_rem;
+	double t_ane;
 	//Density
-extern	double dens;
+	double dens;
 	// Poisson Nr
-extern	double pois;
+	double pois;
 	// pressure
-extern	double pres;
+	double pre_pres;
+	double ulti_pres;
 
 
 // include mylibrary:
@@ -153,7 +154,7 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%d %d %d %d %d %d %d %d %d",&(labl_red),&(labl_yel),&(labl_whi),&(labl_cya),&(labl_rup),&(labl_rem),&(labl_bou),&(labl_tra),&(labl_ane));
 			    if (nscan != 9) {
-					printf("ERROR: Incorrect number of labels @ input.txt file.\n");
+					printf("ERROR: Incorrect number of labels @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Labels:\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",labl_red,labl_yel,labl_whi,labl_cya,labl_rup,labl_rem,labl_bou,labl_tra,labl_ane);
@@ -166,7 +167,7 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(y_red),&(y_yel),&(y_whi),&(y_ane),&(y_rem));
 			    if (nscan != 5) {
-					printf("ERROR: Incorrect number of Young modulus @ input.txt file.\n");
+					printf("ERROR: Incorrect number of Young modulus @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Young Modulus:\n%lf\t%lf\t%lf\t%lf\t%lf\n",y_red,y_yel,y_whi,y_ane,y_rem);
@@ -180,7 +181,7 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(t_red),&(t_yel),&(t_whi),&(t_ane),&(t_rem));
 			    if (nscan != 5) {
-					printf("ERROR: Incorrect number of Thickness @ input.txt file.\n");
+					printf("ERROR: Incorrect number of Thickness @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Thickness:\n%lf\t%lf\t%lf\t%lf\t%lf\n",t_red,t_yel,t_whi,t_ane,t_rem);
@@ -194,7 +195,7 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf",&(dens));
 			    if (nscan != 1) {
-					printf("ERROR: Incorrect number of Density @ input.txt file.\n");
+					printf("ERROR: Incorrect number of Density @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Density:\n%lf\n",dens);
@@ -207,7 +208,7 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf",&(pois));
 			    if (nscan != 1) {
-					printf("ERROR: Incorrect number of Poisson Nr @ input.txt file.\n");
+					printf("ERROR: Incorrect number of Poisson Nr @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Poisson nr:\n%lf\n",pois);
@@ -217,19 +218,20 @@ int nscan, iline;
 	// start reading the poisson number
 	    if(!strcmp(test,"Pressure")){
 	    	// save Poisson nr:
+	    	str = edit_endline_character(line, buffer, fptr); 
 	    	str = edit_endline_character(line, buffer, fptr);  
-	    	nscan = sscanf(str, "%lf",&(pres));
-			    if (nscan != 1) {
-					printf("ERROR: Incorrect Pressure value @ input.txt file.\n");
+	    	nscan = sscanf(str, "%lf %lf",&(pre_pres),&(ulti_pres));
+			    if (nscan != 2) {
+					printf("ERROR: Incorrect Pressure value @ FEBio_GeneralPara.txt file.\n");
 					exit(EXIT_FAILURE);
 			    }
-			    printf("Pressure:\n%lf\n",pres);
+			    printf("Pressure:\n%lf\t%lf\n",pre_pres,ulti_pres);
 			endcount += 1; 
 
 	    }    		
 	  
 	if (endcount == 6) {
-  	printf("  Done Reading input.txt.\n\n\n");
+  	printf("  Done Reading FEBio_GeneralPara.txt.\n\n\n");
 		break;
 	}    
 }
@@ -616,7 +618,7 @@ void write_input(int num_bound, double *centers, char *filename, char const	*cas
 		fprintf(fptr,"%lf\t%lf\t%lf\t%lf\t%lf\n\n",t_red,t_yel,t_whi,t_ane,t_rem);
 		fprintf(fptr,"Density\t[Kg/m^3]\n%lf\n\n",dens);
 		fprintf(fptr,"Poisson Number\n%lf\n\n",pois);
-		fprintf(fptr,"Pressure\t[MPa]\n%lf\n\n",pres);
+		fprintf(fptr,"Pressure\t[MPa]\n#mean pressure (calc pre_stress)\t#ultimate pressure\n%lf\t%lf\n\n",pre_pres,ulti_pres);
 		fprintf(fptr,"Centers\t[cm]\n");
 		fprintf(fptr,"%d\n",num_bound);
 		fprintf(fptr,"#X:\t#Y:\t#Z:\n");

@@ -12,37 +12,6 @@
 #include "mylib.h"
 
 
-
-//information of FEBio_GeneralPara.txt file:
-	// Color ID for elements
-	int labl_red;
-	int labl_yel;
-	int labl_whi;
-	int labl_cya;
-	int labl_rup;
-	int labl_rem;
-	int labl_bou;
-	int labl_tra;
-	int labl_ane;
-	// Young Modulus for each color ID
-	double y_red;
-	double y_yel;
-	double y_whi;
-	double y_rem;
-	double y_ane;
-	// Thickness for each color ID
-	double t_red;
-	double t_yel;
-	double t_whi;
-	double t_rem;
-	double t_ane;
-	//Density
-	double dens;
-	// Poisson Nr
-	double pois;
-	// pressure
-	double pres;
-
 // 	Information of mesh file : 
 	int npoin;		//# of points
     int nelem;		//# of elements
@@ -60,8 +29,10 @@
 
 
 void help(void){
-	printf("-argument:\t 1\n-option:\t--no option--\n-input format:\t hospital_name#.# @ dagon1/jcebral/region/R01/wall/\n");
-	printf("-example:\t ./a.out agh006.1\n\n ");
+	printf(" this script just cread files required for write the feb file in the specific directory and write the input data for each case @input.txt\n");
+	printf("-required argument:\t 1\n-option:\t--no option--\n-input format:\t hospital_name#.# @ dagon1/jcebral/region/R01/wall/\n");
+	printf("-example:\t ./inputmkr agh006.1\n\n ");
+	printf("-developer : chitsaz.sci@gmail.com\n");
 	exit(EXIT_FAILURE);
 }
 
