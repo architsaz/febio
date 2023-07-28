@@ -19,6 +19,9 @@
 	void save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2);
     int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *elems, int ele, int ele_p1, int ele_p2);
     bool file_exists(char const *filename);
+    void write_log(char *str,char *path);
+    void reverse(char str[], int length);
+    char* citoa(int num, char* str, int base);
 
 // headers for febmkr function 
 	void checkdir(char const *casename, char **path,char **path_surf2,char **path_label2,char **path_input2);

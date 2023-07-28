@@ -4,6 +4,7 @@
 #include<string.h>
 #include<math.h>
 #include<stdbool.h>
+#include <time.h>
 #define PI 3.142857
 #define dimension  3 // dimension of domain 
 
@@ -45,6 +46,10 @@
 	double *updated_gstrain;
 	double *strain_point;
 
+// pressure ( define @ input.txt)
+extern double pre_pres;
+extern double ulti_pres;	
+
 
 void help(void){
 	printf("---->this script just developed for the febio3 and febio4 solver<----\n\n\n");
@@ -55,6 +60,12 @@ void help(void){
 }
 
 int main(int argc, char **argv){
+	// config the log file: 
+	char logstr[1000];
+	char path_log[500];
+	char log_name[100]="febmkr_log.txt";
+	char int2str [100];
+
 	system("rm -rf temp/*");
 	char helpsc [10] ="help"; 
 	char *path_casedir,*path_input,*path_label,*path_mesh, *path_feb;
@@ -62,6 +73,7 @@ int main(int argc, char **argv){
 
 	int ele,pt;
 	int point[3]={0,0,0};
+	double pres_gradual; // in [MPa]
 
 
 
@@ -77,10 +89,23 @@ int main(int argc, char **argv){
 	  	//printf("%s\n%s\n%s\n",path_mesh,path_label,path_input);
 	  	// this line just for storage directions and avoid the bug of sending direction string to the functions 
 	  	strcpy(path_mesh2,path_mesh);strcpy(path_label2,path_label);strcpy(path_input2,path_input); 
+	  	//printf("%s\n%s\n%s\n%s\n",path_casedir,path_mesh2,path_label2,path_input2);
+
+	// config log file:
+		strcpy(path_log,path_casedir);
+		strcat(path_log,log_name); 
+		//Initialized the log file:
+			time_t mytime = time(NULL);
+    		char * time_str = ctime(&mytime);
+    		time_str[strlen(time_str)-1] = '\0';
+    		//printf("Current Time : %s\n", time_str);
+			write_log ( "->time and date of this result:",path_log);
+			write_log ( time_str,path_log);
+
 
 	// Reading the surface file and Store Node and Elements information
 	  	
-		read_zfem(path_mesh,&npoin,&nelem,&ptxyz,&elems);
+		read_zfem(path_mesh2,&npoin,&nelem,&ptxyz,&elems);
 		
 
 	// Reading the regional mask (for understanding the parent arteries and neck/domme/...)
@@ -146,22 +171,41 @@ int main(int argc, char **argv){
 	strcpy(run,argv[2]); 	
 	strcat(run,run_option);
 
-	// ITERATIVE METHOD STARTED: 
+
+	// ITERATIVE METHOD STARTED:
+	write_log("##########################################################################",path_log); 
+	printf(" The FEBio solver start to find gradiant tensor for strain\n");
+	write_log(" The FEBio solver start to find gradiant tensor for strain",path_log);
+	printf(" The solver used :\t%s\n",argv[2]);
+	write_log("The solver is :",path_log);
+	write_log(argv[2],path_log);
+	write_log("##########################################################################",path_log);
+
 	int iter=0;
 	int terminate_iter=1;
+
 	while (terminate_iter==1){
-		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter+2);
+		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter+1);
+		write_log("iteration:",path_log);
+		write_log(citoa(iter,int2str,10),path_log);
+		
+		// value of gradual pre pressure applied  
+		if (iter<=18) {
+		 	pres_gradual=(iter+2)*pre_pres/20;
+		}else{
+			pres_gradual=pre_pres;
+		}
+
+
+
+
+
 
 
 
 		if (terminate_iter==0 || iter>20) break;
 		iter+=1;
 	}
-
-
-	
-
-
 
 
 

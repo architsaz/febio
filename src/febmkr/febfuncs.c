@@ -88,10 +88,13 @@ void checkdir(char const *casename, char **path,char **path_surf2,char **path_la
     }
     system("clear");
 //done:
-*path=path_achit;
+char path_temp[200];
+strcpy(path_temp,path_achit);    
+*path=path_temp;
 *path_surf2=path_surf;
 *path_label2=path_label;
 *path_input2=path_input;
+//printf("inside : %s\n",*path);
 }
 void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int **region_id2, int **region_idp2) {
 
