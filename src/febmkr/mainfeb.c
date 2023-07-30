@@ -91,18 +91,6 @@ int main(int argc, char **argv){
 	  	strcpy(path_mesh2,path_mesh);strcpy(path_label2,path_label);strcpy(path_input2,path_input); 
 	  	//printf("%s\n%s\n%s\n%s\n",path_casedir,path_mesh2,path_label2,path_input2);
 
-	// config log file:
-		strcpy(path_log,path_casedir);
-		strcat(path_log,log_name); 
-		//Initialized the log file:
-			time_t mytime = time(NULL);
-    		char * time_str = ctime(&mytime);
-    		time_str[strlen(time_str)-1] = '\0';
-    		//printf("Current Time : %s\n", time_str);
-			write_log ( "->time and date of this result:",path_log);
-			write_log ( time_str,path_log);
-
-
 	// Reading the surface file and Store Node and Elements information
 	  	
 		read_zfem(path_mesh2,&npoin,&nelem,&ptxyz,&elems);
@@ -173,29 +161,26 @@ int main(int argc, char **argv){
 
 
 	// ITERATIVE METHOD STARTED:
-	write_log("##########################################################################",path_log); 
 	printf(" The FEBio solver start to find gradiant tensor for strain\n");
-	write_log(" The FEBio solver start to find gradiant tensor for strain",path_log);
+
 	printf(" The solver used :\t%s\n",argv[2]);
-	write_log("The solver is :",path_log);
-	write_log(argv[2],path_log);
-	write_log("##########################################################################",path_log);
+
 
 	int iter=0;
 	int terminate_iter=1;
 
 	while (terminate_iter==1){
 		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter+1);
-		write_log("iteration:",path_log);
-		write_log(citoa(iter,int2str,10),path_log);
-		
+
 		// value of gradual pre pressure applied  
 		if (iter<=18) {
 		 	pres_gradual=(iter+2)*pre_pres/20;
 		}else{
 			pres_gradual=pre_pres;
 		}
+		printf("gradual pressure is : %lf MPa\n",pres_gradual);
 
+		
 
 
 
