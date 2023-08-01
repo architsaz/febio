@@ -33,7 +33,8 @@
 	void material(int nelem, int *elems,int npoin,int *Melem, int *esurp,int *esurp_pointer,int nloop, double **E_ele2,double **E_fele2,double **E_nod2, double **t_ele2, double **t_fele2, double **t_nod2);
 	void write_zfem_1doubfield(char const *casename,int nelem,int npoin,int *elems,double *ptxyz, double *field);
 	void boundary_labeling(int nelem, int *elems,int npoin, double *ptxyz, int *Melem,int *Mpoint,int *esure, int *region_id);
-	
- 
+	void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter);
+ 	void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter);
+
 
 #endif 

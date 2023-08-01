@@ -112,7 +112,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 		fptr = fopen(filename, "r");
 
 		if (fptr == NULL) {
-	    	printf("ERROR: Cannot open file - %s.\n", filename);
+	    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", filename);
 	    	exit(EXIT_FAILURE);
 	  	}
 	  	else {
@@ -142,7 +142,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 
 		    	printf("    Reading POINTS.\n");
 		    			if (nscan != 1) {
-					    	printf("ERROR: Incorrect number of entries on POINTS line.\n");
+					    	fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
 							exit(EXIT_FAILURE);
 					    }
 					/* Read Number of Points */	    
@@ -150,7 +150,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 					    nscan = sscanf(str, "%d",&(npoin1));
 					    printf("      Number of Points = %d.\n", npoin1);
 						    if (nscan != 1) {
-						    	printf("ERROR: Incorrect number of entries on Number of Points line.\n");
+						    	fprintf(stderr,"ERROR: Incorrect number of entries on Number of Points line.\n");
 								exit(EXIT_FAILURE);
 						    }
 
@@ -161,7 +161,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 							    nscan = sscanf(str, "%lf %lf %lf",
 										  &(ptxyz1[dimension*iline + 0]),&(ptxyz1[dimension*iline + 1]),&(ptxyz1[dimension*iline + 2]));
 										if (nscan != 3) {
-										  printf("ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+										  fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
 										  exit(EXIT_FAILURE);
 										}
 										// printf("nscan = %d, iline = %d. %lf, %lf, %lf.\n",
@@ -186,7 +186,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 				    printf("      Number of ELEMENTS = %d.\n", nelem1);
 				    
 				    if (nscan != 1) {
-				    	printf("ERROR: Incorrect number of entries on Number of ELEMENTS number.\n");
+				    	fprintf(stderr,"ERROR: Incorrect number of entries on Number of ELEMENTS number.\n");
 						exit(EXIT_FAILURE);
 				    }
 
@@ -200,7 +200,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 								      &(elems1[3*iline]), &(elems1[3*iline + 1]),&(elems1[3*iline + 2]));
 						        
 								if (nscan != 3) {
-								  	printf("ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
+								  	fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
 								  	exit(EXIT_FAILURE);
 								}
 									// printf("nscan = %d, iline = %d,\t %d,\t %d,\t %d.\n",

@@ -80,7 +80,7 @@ int main(int argc, char **argv){
 	if (!strcmp(argv[1],helpsc)) help();
 	// check the availbelity in the dataset
 	    if (argc==2) {
-	    	printf("ERROR: there is problem in specifying database and casename correctly\n");
+	    	fprintf(stderr,"ERROR: there is problem in specifying database and casename correctly\n");
 	    	exit(EXIT_FAILURE);
 	  	}else{
 	  		// find the database in the dagon1 and make directory in the dagon for this new case
@@ -153,8 +153,9 @@ int main(int argc, char **argv){
 		}
 	}
 	// prepare options for febio solver 
-	char run[500];
-	char run_option[100]=" -silent ";
+	char run[500],run_st[500];
+	//char run_option[100]=" -silent ";
+	char run_option[100]=" ";
 
 	strcpy(run,argv[2]); 	
 	strcat(run,run_option);
@@ -165,12 +166,12 @@ int main(int argc, char **argv){
 
 	printf(" The solver used :\t%s\n",argv[2]);
 
-
-	int iter=0;
+	char *filename_feb;
+	int iter=1;
 	int terminate_iter=1;
-
+	char febio_gen3[10]="febio3";char febio_gen4[10]="febio4";
 	while (terminate_iter==1){
-		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter+1);
+		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter);
 
 		// value of gradual pre pressure applied  
 		if (iter<=18) {
@@ -180,7 +181,18 @@ int main(int argc, char **argv){
 		}
 		printf("gradual pressure is : %lf MPa\n",pres_gradual);
 
-		
+		if (!strcmp(argv[2],febio_gen3)){
+		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,Melem,updated_gstrain,pres_gradual,iter);
+		} else if (!strcmp(argv[2],febio_gen4)){		
+		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,Melem,updated_gstrain,pres_gradual,iter);
+		}else{
+			fprintf(stderr,"the solver defined in the argument is not valid\n");
+			exit(EXIT_FAILURE);
+		}
+		strcpy(run_st,run);
+		strcat(run_st,filename_feb); 
+
+		system(run_st);
 
 
 
@@ -188,7 +200,7 @@ int main(int argc, char **argv){
 
 
 
-		if (terminate_iter==0 || iter>20) break;
+		if (terminate_iter==0 || iter>=2) break;
 		iter+=1;
 	}
 
