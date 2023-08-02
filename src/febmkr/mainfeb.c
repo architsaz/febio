@@ -99,7 +99,7 @@ int main(int argc, char **argv){
 	// Reading the regional mask (for understanding the parent arteries and neck/domme/...)
 	read_regionmask(argv[1],nelem,npoin,elems,&region_id,&region_idp);
 		// to check the mask:
-		//write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,region_idp);	
+		write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,region_idp);	
 
 	// Reading the input file : read file "input.txt"
 	read_input(argv[1],path_input2);
@@ -134,11 +134,12 @@ int main(int argc, char **argv){
 		//just for checking the thickness and young modulus;
 		//write_zfem_1doubfield(argv[1],nelem,npoin,elems,ptxyz,t_nod);
 		//write_zfem_1doubfield(argv[1],nelem,npoin,elems,ptxyz,E_nod);
+		//write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,Mpoint);
 
 	// find whole boundary element---->two method: 
 	//	1-find inlet/outlet by center of the open surface geometry (It is not accurate method, there is bug in this revision)(this method was comment)
-	//  2- fixed all element of parent arteries by using the regional mask data (region_id)   		
-	boundary_labeling(nelem,elems,npoin,ptxyz,Melem,Mpoint,esure,region_id);
+	// -> 2- fixed all element of parent arteries by using the regional mask data (region_id)   		
+	//boundary_labeling(nelem,elems,npoin,ptxyz,Melem,Mpoint,esure,region_id);
 		// just for check label of boundary
 		//write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,Mpoint);
 
@@ -182,9 +183,9 @@ int main(int argc, char **argv){
 		printf("gradual pressure is : %lf MPa\n",pres_gradual);
 
 		if (!strcmp(argv[2],febio_gen3)){
-		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,Melem,updated_gstrain,pres_gradual,iter);
+		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		} else if (!strcmp(argv[2],febio_gen4)){		
-		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,Melem,updated_gstrain,pres_gradual,iter);
+		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		}else{
 			fprintf(stderr,"the solver defined in the argument is not valid\n");
 			exit(EXIT_FAILURE);
@@ -192,7 +193,7 @@ int main(int argc, char **argv){
 		strcpy(run_st,run);
 		strcat(run_st,filename_feb); 
 
-		system(run_st);
+		//system(run_st);
 
 
 
@@ -200,7 +201,7 @@ int main(int argc, char **argv){
 
 
 
-		if (terminate_iter==0 || iter>=2) break;
+		if (terminate_iter==0 || iter>=1) break;
 		iter+=1;
 	}
 

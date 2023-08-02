@@ -98,6 +98,13 @@ strcpy(path_temp,path_achit);
 }
 void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int **region_id2, int **region_idp2) {
 
+// the id of each portion @ labels_surf.zfem : 
+// dome : 	16
+// body :	8
+// neck : 	4
+// parent arteries : 2 
+// distal arteries : 1	
+
 	int *region_id;
 	region_id = malloc(npoin * sizeof(*(region_id)));
 
@@ -142,7 +149,8 @@ void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int
 		str = edit_endline_character(line, buffer, fptr);
 		nscan = sscanf(str, "%s",test);
 		// start reading regions labels:	
-	    if (!strcmp(test,"regions")){
+	    //if (!strcmp(test,"regions")){
+	    if (!strcmp(test,"regions")){	
 		    printf("    Reading region mask file.\n");
 		  	str = edit_endline_character(line, buffer, fptr);
 		  	nscan = sscanf(str, "%s",test);
@@ -185,7 +193,9 @@ void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int
 		points[0]=elems[3*ele];
 		points[1]=elems[3*ele+1];
 		points[2]=elems[3*ele+2];
-		region_id_ele[ele]=(region_id[points[0]-1]+region_id[points[1]-1]+region_id[points[2]-1])/3;
+		//region_id_ele[ele]=(region_id[points[0]-1]+region_id[points[1]-1]+region_id[points[2]-1])/3;
+		// to avoid the bug in average id color for element :
+		region_id_ele[ele]=region_id[points[0]-1];
 		}
 	  
 	  /* return */
@@ -817,7 +827,7 @@ for (ele = 0; ele < nelem; ele++){
 }
 	
 }
-void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter){
+void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *region_id, double *st,double pres_gradual, int iter){
 	int nod, ele, bound,nodset_id,mat,nid,pid;
 	char path[500];
 
@@ -928,7 +938,7 @@ void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *el
 					// writting boundary condition	
 						fprintf(fptr,"\t\t<Surface name=\"FixedShellDisplacement1\">\n");	
 						for (ele=0;ele<nelem;ele++){ 
-									if (Melem[ele]==id_bou){
+									if (region_id[ele]<=1){
 										fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",ele+1,elems[3*ele + 0],elems[3*ele + 1],
 											elems[3*ele + 2]);
 									}
@@ -937,7 +947,7 @@ void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *el
 						fprintf(fptr,"\t\t</Surface>\n");
 							fprintf(fptr,"\t\t<Surface name=\"PressureLoad1\">\n");
 									for (ele=0;ele<nelem;ele++){ 
-												if (Melem[ele]!=id_bou){
+												if (region_id[ele]>1){
 													fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",ele+1,elems[3*ele + 0],elems[3*ele + 1],
 														elems[3*ele + 2]);
 												}
@@ -1035,7 +1045,7 @@ void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *el
 		*runpath=path;
 		fclose(fptr);
 }
-void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter){
+void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *region_id, double *st,double pres_gradual, int iter){
 	int nod, ele, bound,nodset_id,mat,nid,pid;
 	char path[500];
 
@@ -1132,11 +1142,13 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 						fprintf(fptr,"\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
 							fprintf(fptr,"\t\t\t<density>1101</density>\n");
 							fprintf(fptr,"\t\t\t<elastic type=\"neo-Hookean\">\n");
-							fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
+							//fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
+							fprintf(fptr,"\t\t\t\t<E>10000</E>\n");
 							fprintf(fptr,"\t\t\t\t<v>%.3lf</v>\n",pois);
 							fprintf(fptr,"\t\t\t</elastic>\n");
 							fprintf(fptr,"\t\t\t<prestrain type=\"prestrain gradient\">\n");	
-							fprintf(fptr,"\t\t\t\t<F0 type=\"map\">map_S</F0>\n");
+							fprintf(fptr,"\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+							//fprintf(fptr,"\t\t\t\t<F0 type=\"map\">map_S</F0>\n");
 							fprintf(fptr,"\t\t\t</prestrain>\n");
 						fprintf(fptr,"\t\t</material>\n");		
 
@@ -1168,7 +1180,7 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 						pid=0;	
 						fprintf(fptr,"\t\t<Surface name=\"FixedShellDisplacement1\">\n");	
 							for (ele=0;ele<nelem;ele++){ 
-								if (Melem[ele]==id_bou){
+								if (region_id[ele]==2){
 									pid+=1;
 									fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",pid,elems[3*ele + 0],elems[3*ele + 1],
 										elems[3*ele + 2]);
@@ -1179,7 +1191,7 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 						pid=0;
 						fprintf(fptr,"\t\t<Surface name=\"PressureLoad1\">\n");
 							for (ele=0;ele<nelem;ele++){ 
-								if (Melem[ele]!=id_bou){
+								if (region_id[ele]!=2){
 									pid+=1;
 									fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",pid,elems[3*ele + 0],elems[3*ele + 1],
 										elems[3*ele + 2]);
@@ -1191,61 +1203,66 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 
 					fprintf(fptr,"\t<MeshDomains>\n");
 						fprintf(fptr,"\t\t<ShellDomain name=\"Part1\" mat=\"Material1\">\n");
-							fprintf(fptr,"\t\t\t<shell_normal_nodal>1</shell_normal_nodal>\n");
+							fprintf(fptr,"\t\t\t<shell_thickness>0.0001</shell_thickness>\n");
+							//fprintf(fptr,"\t\t\t<shell_normal_nodal>1</shell_normal_nodal>\n");
 						fprintf(fptr,"\t\t</ShellDomain>\n");	
 					fprintf(fptr,"\t</MeshDomains>\n");
 
-					fprintf(fptr,"\t<MeshData>\n");
+					// fprintf(fptr,"\t<MeshData>\n");
 
 
-						fprintf(fptr,"\t\t<ElementData var=\"shell thickness\" elem_set=\"Part1\">\n");
-							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
-							}
-						fprintf(fptr,"\t\t</ElementData>\n");
+					// 	fprintf(fptr,"\t\t<ElementData var=\"shell thickness\" elem_set=\"Part1\">\n");
+					// 		for (ele=0;ele<nelem;ele++){
+					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
+					// 		}
+					// 	fprintf(fptr,"\t\t</ElementData>\n");
 
-						fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
-							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf</e>\n",ele+1,E_fele[ele]);		
-							}
-						fprintf(fptr,"\t\t</ElementData>\n");	
+					// 	fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
+					// 		for (ele=0;ele<nelem;ele++){
+					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf</e>\n",ele+1,E_fele[ele]);		
+					// 		}
+					// 	fprintf(fptr,"\t\t</ElementData>\n");	
 
-						fprintf(fptr,"\t\t<ElementData name=\"map_S\" elem_set=\"Part1\" datatype=\"mat3\">\n");
-							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf</e>\n",ele+1,st[6*ele],st[6*ele+3],st[6*ele+4],st[6*ele+3],st[6*ele+1],st[6*ele+5],st[6*ele+4],st[6*ele+5],st[6*ele+2]);		
-							}
-						fprintf(fptr,"\t\t</ElementData>\n");						
+					// 	fprintf(fptr,"\t\t<ElementData name=\"map_S\" elem_set=\"Part1\" datatype=\"mat3\">\n");
+					// 		for (ele=0;ele<nelem;ele++){
+					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf</e>\n",ele+1,st[6*ele],st[6*ele+3],st[6*ele+4],st[6*ele+3],st[6*ele+1],st[6*ele+5],st[6*ele+4],st[6*ele+5],st[6*ele+2]);		
+					// 		}
+					// 	fprintf(fptr,"\t\t</ElementData>\n");						
 
 
-					fprintf(fptr,"\t</MeshData>\n");
+					// fprintf(fptr,"\t</MeshData>\n");
+
 					// writting a Boundary porsion for *.feb file	
 					fprintf(fptr,"\t<Boundary>\n");
 
-						fprintf(fptr,"\t\t<bc name=\"FixedShellDisplacement1\" type=\"fix\" node_set=\"@surface:FixedShellDisplacement1\">\n");
-							fprintf(fptr,"\t\t\t<dofs>sx,sy,sz</dofs>\n");
+						fprintf(fptr,"\t\t<bc name=\"FixedShellDisplacement1\" type=\"zero displacement\" node_set=\"@surface:FixedShellDisplacement1\">\n");
+							fprintf(fptr,"<x_dof>1</x_dof>\n");
+							fprintf(fptr,"<y_dof>1</y_dof>\n");
+							fprintf(fptr,"<z_dof>1</z_dof>\n");
 						fprintf(fptr,"\t\t</bc>\n");
 
 					fprintf(fptr,"\t</Boundary>\n");
 					// writting a Loads porsion for *.feb file
 					fprintf(fptr,"\t<Loads>\n");
 						
-							fprintf(fptr,"\t\t<surface_load name=\"PressureLoad1\" type=\"pressure\" surface=\"PressureLoad1\">\n");
+							fprintf(fptr,"\t\t<surface_load name=\"Pressure1\" type=\"pressure\" surface=\"PressureLoad1\">\n");
 
 								fprintf(fptr,"\t\t\t<pressure lc=\"1\">%.5lf</pressure>\n",pres_gradual);
-							
-								fprintf(fptr,"\t\t\t<linear>0</linear>\n");
+								
 								fprintf(fptr,"\t\t\t<symmetric_stiffness>1</symmetric_stiffness>\n");
-								fprintf(fptr,"\t\t\t<shell_bottom>0</shell_bottom>\n");
+								fprintf(fptr,"\t\t\t<linear>0</linear>\n");
+								fprintf(fptr,"\t\t\t<shell_bottom>1</shell_bottom>\n");
 							fprintf(fptr,"\t\t</surface_load>\n");
 						
 					fprintf(fptr,"\t</Loads>\n");
 					fprintf(fptr,"\t<LoadData>\n");
 
-						fprintf(fptr,"\t\t<load_controller id=\"1\" type=\"loadcurve\">\n");
-							fprintf(fptr,"\t\t\t<interpolate>SMOOTH</interpolate>\n");
+						fprintf(fptr,"\t\t<load_controller id=\"1\" name=\"LC1\" type=\"loadcurve\">\n");
+							fprintf(fptr,"\t\t\t<interpolate>LINEAR</interpolate>\n");
+							fprintf(fptr,"\t\t\t<extend>CONSTANT</extend>\n");
 							fprintf(fptr,"\t\t\t<points>\n");
-								fprintf(fptr,"\t\t\t\t<point>0,0</point>\n");
-								fprintf(fptr,"\t\t\t\t<point>1,1</point>\n");
+								fprintf(fptr,"\t\t\t\t<pt>0,0</pt>\n");
+								fprintf(fptr,"\t\t\t\t<pt>1,1</pt>\n");
 							fprintf(fptr,"\t\t\t</points>\n");
 						fprintf(fptr,"\t\t</load_controller>\n");	
 
@@ -1260,14 +1277,14 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 							fprintf(fptr,"\t\t\t<var type=\"stress\"/>\n");
 						fprintf(fptr,"\t\t</plotfile>\n");
 
-						fprintf(fptr,"\t\t<logfile type=\"output\">\n");
-							//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
+						// fprintf(fptr,"\t\t<logfile type=\"output\">\n");
+						// 	//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
 
-							//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
-							fprintf(fptr,"\t\t\t<element_data data=\"Ex;Ey;Ez;Exy;Exz;Eyz\">");
+						// 	//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
+						// 	fprintf(fptr,"\t\t\t<element_data data=\"Ex;Ey;Ez;Exy;Exz;Eyz\">");
 
-							fprintf(fptr,"</element_data>\n");
-						fprintf(fptr,"\t\t</logfile>\n");
+						// 	fprintf(fptr,"</element_data>\n");
+						// fprintf(fptr,"\t\t</logfile>\n");
 					fprintf(fptr,"\t</Output>\n");
 				fprintf(fptr,"</febio_spec>\n");		
 
