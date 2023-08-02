@@ -1203,19 +1203,18 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 
 					fprintf(fptr,"\t<MeshDomains>\n");
 						fprintf(fptr,"\t\t<ShellDomain name=\"Part1\" mat=\"Material1\">\n");
-							fprintf(fptr,"\t\t\t<shell_thickness>0.0001</shell_thickness>\n");
-							//fprintf(fptr,"\t\t\t<shell_normal_nodal>1</shell_normal_nodal>\n");
+							// just for constant shell thickness ; 
+							//fprintf(fptr,"\t\t\t<shell_thickness>0.0001</shell_thickness>\n");
 						fprintf(fptr,"\t\t</ShellDomain>\n");	
 					fprintf(fptr,"\t</MeshDomains>\n");
 
-					// fprintf(fptr,"\t<MeshData>\n");
 
-
-					// 	fprintf(fptr,"\t\t<ElementData var=\"shell thickness\" elem_set=\"Part1\">\n");
-					// 		for (ele=0;ele<nelem;ele++){
-					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
-					// 		}
-					// 	fprintf(fptr,"\t\t</ElementData>\n");
+					fprintf(fptr,"\t<MeshData>\n");
+						fprintf(fptr,"\t\t<ElementData type=\"shell thickness\" elem_set=\"Part1\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");
 
 					// 	fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
 					// 		for (ele=0;ele<nelem;ele++){
@@ -1230,7 +1229,7 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 					// 	fprintf(fptr,"\t\t</ElementData>\n");						
 
 
-					// fprintf(fptr,"\t</MeshData>\n");
+					fprintf(fptr,"\t</MeshData>\n");
 
 					// writting a Boundary porsion for *.feb file	
 					fprintf(fptr,"\t<Boundary>\n");
