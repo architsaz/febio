@@ -1140,15 +1140,17 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 
 
 						fprintf(fptr,"\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
-							fprintf(fptr,"\t\t\t<density>1101</density>\n");
+							fprintf(fptr,"\t\t\t<density>%lf</density>\n",dens);
 							fprintf(fptr,"\t\t\t<elastic type=\"neo-Hookean\">\n");
-							//fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
-							fprintf(fptr,"\t\t\t\t<E>10000</E>\n");
+							fprintf(fptr,"\t\t\t\t<density>%lf</density>\n",dens);
+							fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
+							//fprintf(fptr,"\t\t\t\t<E>10000</E>\n");
 							fprintf(fptr,"\t\t\t\t<v>%.3lf</v>\n",pois);
 							fprintf(fptr,"\t\t\t</elastic>\n");
-							fprintf(fptr,"\t\t\t<prestrain type=\"prestrain gradient\">\n");	
-							fprintf(fptr,"\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
-							//fprintf(fptr,"\t\t\t\t<F0 type=\"map\">map_S</F0>\n");
+							fprintf(fptr,"\t\t\t<prestrain type=\"prestrain gradient\">\n");
+							fprintf(fptr,"\t\t\t\t<ramp>1</ramp>\n");	
+							//fprintf(fptr,"\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+							fprintf(fptr,"\t\t\t\t<F0 type=\"map\">map_S</F0>\n");
 							fprintf(fptr,"\t\t\t</prestrain>\n");
 						fprintf(fptr,"\t\t</material>\n");		
 
@@ -1212,21 +1214,21 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 					fprintf(fptr,"\t<MeshData>\n");
 						fprintf(fptr,"\t\t<ElementData type=\"shell thickness\" elem_set=\"Part1\">\n");
 							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
+								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf,%lf,%lf</elem>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
 							}
 						fprintf(fptr,"\t\t</ElementData>\n");
 
-					// 	fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
-					// 		for (ele=0;ele<nelem;ele++){
-					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf</e>\n",ele+1,E_fele[ele]);		
-					// 		}
-					// 	fprintf(fptr,"\t\t</ElementData>\n");	
+						fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf</elem>\n",ele+1,E_fele[ele]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");	
 
-					// 	fprintf(fptr,"\t\t<ElementData name=\"map_S\" elem_set=\"Part1\" datatype=\"mat3\">\n");
-					// 		for (ele=0;ele<nelem;ele++){
-					// 			fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf</e>\n",ele+1,st[6*ele],st[6*ele+3],st[6*ele+4],st[6*ele+3],st[6*ele+1],st[6*ele+5],st[6*ele+4],st[6*ele+5],st[6*ele+2]);		
-					// 		}
-					// 	fprintf(fptr,"\t\t</ElementData>\n");						
+						fprintf(fptr,"\t\t<ElementData name=\"map_S\" elem_set=\"Part1\" data_type=\"mat3\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf</e>\n",ele+1,st[6*ele],st[6*ele+3],st[6*ele+4],st[6*ele+3],st[6*ele+1],st[6*ele+5],st[6*ele+4],st[6*ele+5],st[6*ele+2]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");						
 
 
 					fprintf(fptr,"\t</MeshData>\n");
