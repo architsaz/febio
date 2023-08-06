@@ -148,6 +148,7 @@ int main(int argc, char **argv){
 	// initialized the updated_strain:
 	updated_gstrain=calloc(6*nelem,sizeof(*(updated_gstrain)));
 	strain=calloc(6*nelem,sizeof(*(strain)));
+	stress=calloc(6*nelem,sizeof(*(stress)));
 	for (ele=0;ele<nelem;ele++){
 		for (pt = 0; pt < 6; pt++) {
 			if(pt==0||pt==1||pt==2) updated_gstrain[6*ele+pt]+=1;
@@ -155,8 +156,8 @@ int main(int argc, char **argv){
 	}
 	// prepare options for febio solver 
 	char run[500],run_st[500];
-	//char run_option[100]=" -silent ";
-	char run_option[100]=" ";
+	char run_option[100]=" -silent ";
+	//char run_option[100]=" ";
 
 	strcpy(run,argv[2]); 	
 	strcat(run,run_option);
@@ -193,7 +194,13 @@ int main(int argc, char **argv){
 		strcpy(run_st,run);
 		strcat(run_st,filename_feb); 
 
-		//system(run_st);
+		system(run_st);
+		check_febio_run(argv[1],iter);
+		//printf("the run is ok\n");
+
+	// read strain for guess the gradiant tensor of strain
+		read_logfile_data(argv[1],nelem,npoin,stress,strain,iter);
+		//read_data_strain(argv[1],nelem,&strain,iter);
 
 
 

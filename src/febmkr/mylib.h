@@ -35,6 +35,7 @@
 	void boundary_labeling(int nelem, int *elems,int npoin, double *ptxyz, int *Melem,int *Mpoint,int *esure, int *region_id);
 	void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter);
  	void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter);
-
+ 	void read_logfile_data(char const *casename,int nelem,int npoin,double *stress, double *strain,int iter);
+ 	void check_febio_run(char const *casename,int iter);
 
 #endif 

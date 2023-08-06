@@ -1278,14 +1278,19 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 							fprintf(fptr,"\t\t\t<var type=\"stress\"/>\n");
 						fprintf(fptr,"\t\t</plotfile>\n");
 
-						// fprintf(fptr,"\t\t<logfile type=\"output\">\n");
-						// 	//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
+						fprintf(fptr,"\t\t<logfile type=\"output\">\n");
 
-						// 	//fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\">");
-						// 	fprintf(fptr,"\t\t\t<element_data data=\"Ex;Ey;Ez;Exy;Exz;Eyz\">");
+							fprintf(fptr,"\t\t\t<node_data data=\"x;y;z\" name=\"coordinates\">");
+							fprintf(fptr,"</node_data>\n");
 
-						// 	fprintf(fptr,"</element_data>\n");
-						// fprintf(fptr,"\t\t</logfile>\n");
+							fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;sxz;syz\" name=\"stress\">");
+							fprintf(fptr,"</element_data>\n");
+
+							fprintf(fptr,"\t\t\t<element_data data=\"Ex;Ey;Ez;Exy;Exz;Eyz\" name=\"strain\">");
+							fprintf(fptr,"</element_data>\n");
+
+						fprintf(fptr,"\t\t</logfile>\n");
+
 					fprintf(fptr,"\t</Output>\n");
 				fprintf(fptr,"</febio_spec>\n");		
 
@@ -1294,4 +1299,169 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 		printf("The feb format was written on path: \n%s\n",path);
 		*runpath=path;
 		fclose(fptr);
+}
+void check_febio_run(char const *casename,int iter){
+char path[500];
+//creat path :
+	char iterID[50]="_";
+	char int2str [100];
+	citoa(iter,int2str,10);
+	strcat(iterID,int2str);
+	char path_achit[200] = "../../output/";
+	char csd[10]="/csd/";
+	strcat(path_achit,casename);
+	strcat(path_achit,csd);	
+	char log_format[100]="_febio.log";	
+
+	strcpy(path,path_achit);
+	strcat(path,casename);
+	strcat(path,iterID);
+	strcat(path,log_format);
+	// show the result of the run in terminal:
+	char run[500]="tail ";
+	strcat(run,path);
+	system(run);
+}
+
+void read_logfile_data(char const *casename,int nelem,int npoin,double *stress, double *strain,int iter){
+char path[500];
+//creat path :
+	char iterID[50]="_";
+	char int2str [100];
+	citoa(iter,int2str,10);
+	strcat(iterID,int2str);
+	char path_achit[200] = "../../output/";
+	char csd[10]="/csd/";
+	strcat(path_achit,casename);
+	strcat(path_achit,csd);	
+	char log_format[100]="_febio.log";	
+
+	strcpy(path,path_achit);
+	strcat(path,casename);
+	strcat(path,iterID);
+	strcat(path,log_format);
+
+	// Allocate memory for the stress
+	//double *strain, *stress;
+	//strain = calloc(6*nelem,sizeof(*(strain)));	
+	//stress = calloc(6*nelem,sizeof(*(stress)));	
+	
+
+/* Allocate space to File pointer */
+	FILE *fptr;
+	fptr = calloc(1, sizeof(*fptr));
+
+
+/* Opening File */
+	fptr = fopen(path, "r");
+
+	if (fptr == NULL) {
+    	printf("ERROR: Cannot open file - %s.\n", path);
+    	exit(EXIT_FAILURE);
+  	}
+  	else {
+    	printf("  File opened - %s.\n", path);
+  	}
+  
+/* Read all lines of the file */
+	int buffer = 200;
+	char *str;
+	char line[buffer];
+
+	int endcount = 0;
+	int nscan;
+	int iline,ele;
+
+	char  test[20];
+	int junk,junk2;
+	char junk_txt[20];
+	char txt_data[20];
+	int number;
+	char type_data[50];
+	
+	while(1){
+		str = edit_endline_character(line, buffer, fptr);
+		nscan = sscanf(str, "%s %s %d",test,junk_txt,&number);
+		if (nscan!=3) continue;
+		if (strcmp(test,"Time")) continue;
+		//start reading points:
+		if(number==1){
+			printf("    Finding the result of time = %d.\n",number);
+		    if (nscan != 3) {
+			printf("ERROR: Problem on Time line.\n");
+			exit(EXIT_FAILURE);
+			}
+			str = edit_endline_character(line, buffer, fptr); // description data line 
+			nscan = sscanf(str, "%s %s %s",txt_data,junk_txt,type_data);
+			printf("type_data: %s\n",type_data);
+			// if (!strcmp(type_data,"coordinates")){
+			// 	/* Read Coordinates of all points */
+							      
+			// 	for (iline = 0; iline < npoin; iline++) {
+		    // 	str = edit_endline_character(line, buffer, fptr);
+			// 	nscan = sscanf(str, "%d %lf %lf %lf",&junk,&(ptxyz_new[dimension*iline + 0]),&(ptxyz_new[dimension*iline + 1]),&(ptxyz_new[dimension*iline + 2]));
+			// 	if (nscan != 4) {
+			// 	printf("ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+			// 	exit(EXIT_FAILURE);
+			// 	}
+			// 	// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
+			// 	// 	       	nscan, iline,
+			// 	// 	       	ptxyz_new[dimension*iline+0], ptxyz_new[dimension*iline+1],ptxyz_new[dimension*iline+2]);  
+			// 	}     
+			// 	printf("    Done Reading cordination of points (iline = %d)(dimension= %d).\n\n\n", iline,dimension);
+			// 	endcount += 1;
+			// }
+			if (!strcmp(type_data,"strain")){
+				/* Read Coordinates of all points */
+				for(ele = 0; ele < nelem; ele++){
+					str = edit_endline_character(line, buffer, fptr);
+					//printf("%s\n",str);
+					nscan = sscanf(str, "%d %lf %lf %lf %lf %lf %lf",&junk, &(strain[6*ele]),&(strain[6*ele+1]),&(strain[6*ele+2]),&(strain[6*ele+3]),&(strain[6*ele+4]),&(strain[6*ele+5]));
+				if (nscan != 7) {
+					printf("%s\n",str);
+				printf("ERROR: Incorrect number of entites on line %d of Strain.\n", ele+1);
+				exit(EXIT_FAILURE);
+				}
+				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
+				// 	       	nscan, iline,
+				// 	       	ptxyz_new[dimension*iline+0], ptxyz_new[dimension*iline+1],ptxyz_new[dimension*iline+2]);  
+				}     
+				printf("    Done Reading STRAIN of element (iline = %d)(dimension= %d).\n\n\n", ele,dimension);
+				endcount += 1;
+			}
+			if (!strcmp(type_data,"stress")){
+				/* Read Coordinates of all points */
+				for(ele = 0; ele < nelem; ele++){
+					str = edit_endline_character(line, buffer, fptr);
+					//printf("%s\n",str);
+					nscan = sscanf(str, "%d %lf %lf %lf %lf %lf %lf",&junk, &(stress[6*ele]),&(stress[6*ele+1]),&(stress[6*ele+2]),&(stress[6*ele+3]),&(stress[6*ele+4]),&(stress[6*ele+5]));
+				if (nscan != 7) {
+					printf("%s\n",str);
+				printf("ERROR: Incorrect number of entites on line %d of Stress.\n", ele+1);
+				exit(EXIT_FAILURE);
+				}
+				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
+				// 	       	nscan, iline,
+				// 	       	ptxyz_new[dimension*iline+0], ptxyz_new[dimension*iline+1],ptxyz_new[dimension*iline+2]);  
+				}     
+				printf("    Done Reading STRESS of element (iline = %d)(dimension= %d).\n\n\n", ele,dimension);
+				endcount += 1;
+			}
+			
+			}
+
+		  
+		if (endcount == 2) {
+		  	printf("  Done Reading data.\n\n\n");
+			break;
+			}    
+	}
+/* free(fptr); */
+  	fclose(fptr);
+
+/* done */
+  	//*strain2=strain;
+  	//*stress2=stress;
+
+ 	printf("  Exiting function for reading log file.\n\n");	
 }
