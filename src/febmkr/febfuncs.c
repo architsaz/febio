@@ -1252,7 +1252,7 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 								
 								fprintf(fptr,"\t\t\t<symmetric_stiffness>1</symmetric_stiffness>\n");
 								fprintf(fptr,"\t\t\t<linear>0</linear>\n");
-								fprintf(fptr,"\t\t\t<shell_bottom>1</shell_bottom>\n");
+								fprintf(fptr,"\t\t\t<shell_bottom>0</shell_bottom>\n");
 							fprintf(fptr,"\t\t</surface_load>\n");
 						
 					fprintf(fptr,"\t</Loads>\n");
@@ -1280,7 +1280,275 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 
 						fprintf(fptr,"\t\t<logfile type=\"output\">\n");
 
-							fprintf(fptr,"\t\t\t<node_data data=\"x;y;z\" name=\"coordinates\">");
+							//fprintf(fptr,"\t\t\t<node_data data=\"x;y;z\" name=\"coordinates\">");
+							fprintf(fptr,"\t\t\t<node_data data=\"ux;uy;uz\" name=\"displacement\">");
+							fprintf(fptr,"</node_data>\n");
+
+							fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;sxz;syz\" name=\"stress\">");
+							fprintf(fptr,"</element_data>\n");
+
+							fprintf(fptr,"\t\t\t<element_data data=\"Ex;Ey;Ez;Exy;Exz;Eyz\" name=\"strain\">");
+							fprintf(fptr,"</element_data>\n");
+
+						fprintf(fptr,"\t\t</logfile>\n");
+
+					fprintf(fptr,"\t</Output>\n");
+				fprintf(fptr,"</febio_spec>\n");		
+
+
+
+		printf("The feb format was written on path: \n%s\n",path);
+		*runpath=path;
+		fclose(fptr);
+}
+void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *region_id, double *st,double pres_gradual, int iter){
+	int nod, ele, bound,nodset_id,mat,nid,pid;
+	char path[500];
+
+	//creat path :
+		char iterID[50]="_";
+		char int2str [100];
+		citoa(iter,int2str,10);
+		strcat(iterID,int2str);
+		char path_achit[200] = "../../output/";
+		char csd[10]="/csd/";
+		strcat(path_achit,casename);
+		strcat(path_achit,csd);	
+		char zfem_format[100]="_febio.feb";	
+
+		strcpy(path,path_achit);
+		strcat(path,casename);
+		strcat(path,iterID);
+		strcat(path,zfem_format);
+	
+	//write the feb file 
+		FILE *fptr;
+			fptr= calloc(1, sizeof(*fptr));
+
+			/* Opening File */
+			fptr= fopen(path, "w");
+
+			if (fptr == NULL) {
+			  fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+			  exit(EXIT_FAILURE);
+			}
+			else {
+			  printf("  File opened - %s.\n", path);
+			}
+			//writting a header porsion for *.feb file
+				fprintf(fptr,"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+				fprintf(fptr,"<febio_spec version=\"4.0\">\n");
+			// writting a module porsion for *.feb file	
+				fprintf(fptr,"\t<Module type=\"solid\"/>\n");
+			// writting a control porsion for *.feb file
+					fprintf(fptr,"\t<Control>\n");
+						fprintf(fptr,"\t\t<analysis>STATIC</analysis>\n");
+						fprintf(fptr,"\t\t<time_steps>10</time_steps>\n");
+						fprintf(fptr,"\t\t<step_size>0.1</step_size>\n");
+						fprintf(fptr,"\t\t<plot_zero_state>0</plot_zero_state>\n");
+						fprintf(fptr,"\t\t<plot_range>0,-1</plot_range>\n");
+						fprintf(fptr,"\t\t<plot_level>PLOT_MAJOR_ITRS</plot_level>\n");
+						fprintf(fptr,"\t\t<output_level>OUTPUT_MAJOR_ITRS</output_level>\n");
+						fprintf(fptr,"\t\t<plot_stride>1</plot_stride>\n");
+						fprintf(fptr,"\t\t<adaptor_re_solve>1</adaptor_re_solve>\n");
+						
+						fprintf(fptr,"\t\t<time_stepper type=\"default\">\n");
+							fprintf(fptr,"\t\t\t<max_retries>5</max_retries>\n");
+							fprintf(fptr,"\t\t\t<opt_iter>11</opt_iter>\n");
+							fprintf(fptr,"\t\t\t<dtmin>0</dtmin>\n");
+							fprintf(fptr,"\t\t\t<dtmax>0.1</dtmax>\n");
+							fprintf(fptr,"\t\t\t<aggressiveness>0</aggressiveness>\n");
+							fprintf(fptr,"\t\t\t<cutback>0.5</cutback>\n");
+							fprintf(fptr,"\t\t\t<dtforce>0</dtforce>\n");
+						fprintf(fptr,"\t\t</time_stepper>\n");
+						
+						fprintf(fptr,"\t\t<solver type=\"solid\">\n");
+							fprintf(fptr,"\t\t\t<symmetric_stiffness>symmetric</symmetric_stiffness>\n");
+							fprintf(fptr,"\t\t\t<equation_scheme>staggered</equation_scheme>\n");
+							fprintf(fptr,"\t\t\t<equation_order>default</equation_order>\n");
+							fprintf(fptr,"\t\t\t<optimize_bw>0</optimize_bw>\n");
+							fprintf(fptr,"\t\t\t<lstol>0.9</lstol>\n");
+							fprintf(fptr,"\t\t\t<lsmin>0.01</lsmin>\n");
+							fprintf(fptr,"\t\t\t<lsiter>5</lsiter>\n");
+							fprintf(fptr,"\t\t\t<max_refs>15</max_refs>\n");
+							fprintf(fptr,"\t\t\t<check_zero_diagonal>0</check_zero_diagonal>\n");
+							fprintf(fptr,"\t\t\t<zero_diagonal_tol>0</zero_diagonal_tol>\n");
+							fprintf(fptr,"\t\t\t<force_partition>0</force_partition>\n");
+							fprintf(fptr,"\t\t\t<reform_each_time_step>1</reform_each_time_step>\n");
+							fprintf(fptr,"\t\t\t<reform_augment>0</reform_augment>\n");
+							fprintf(fptr,"\t\t\t<diverge_reform>1</diverge_reform>\n");
+							fprintf(fptr,"\t\t\t<min_residual>1e-20</min_residual>\n");
+							fprintf(fptr,"\t\t\t<max_residual>0</max_residual>\n");
+							fprintf(fptr,"\t\t\t<dtol>0.001</dtol>\n");
+							fprintf(fptr,"\t\t\t<etol>0.01</etol>\n");
+							fprintf(fptr,"\t\t\t<rtol>0</rtol>\n");
+							fprintf(fptr,"\t\t\t<rhoi>-2</rhoi>\n");
+							fprintf(fptr,"\t\t\t<alpha>1</alpha>\n");
+							fprintf(fptr,"\t\t\t<beta>0.25</beta>\n");
+							fprintf(fptr,"\t\t\t<gamma>0.5</gamma>\n");
+							fprintf(fptr,"\t\t\t<logSolve>0</logSolve>\n");
+							fprintf(fptr,"\t\t\t<arc_length>0</arc_length>\n");
+							fprintf(fptr,"\t\t\t<arc_length_scale>0</arc_length_scale>\n");
+							fprintf(fptr,"\t\t\t<qn_method type=\"BFGS\">\n");
+									fprintf(fptr,"\t\t\t\t<max_ups>10</max_ups>\n");
+									fprintf(fptr,"\t\t\t\t<max_buffer_size>0</max_buffer_size>\n");
+									fprintf(fptr,"\t\t\t\t<cycle_buffer>1</cycle_buffer>\n");
+									fprintf(fptr,"\t\t\t\t<cmax>100000</cmax>\n");
+							fprintf(fptr,"\t\t\t</qn_method>\n");
+						fprintf(fptr,"\t\t</solver>\n");
+					fprintf(fptr,"\t</Control>\n");
+					fprintf(fptr,"\t<Globals>\n");
+						fprintf(fptr,"\t\t<Constants>\n");
+							fprintf(fptr,"\t\t\t<T>0</T>\n\t\t\t<R>8.31446</R>\n\t\t\t<Fc>96485.3</Fc>\n");
+						fprintf(fptr,"\t\t</Constants>\n");
+					fprintf(fptr,"\t</Globals>\n");
+			// writting a Material porsion for *.feb file		
+					fprintf(fptr,"\t<Material>\n");
+
+
+						fprintf(fptr,"\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
+							fprintf(fptr,"\t\t\t<density>%lf</density>\n",dens);
+							fprintf(fptr,"\t\t\t<elastic type=\"neo-Hookean\">\n");
+							fprintf(fptr,"\t\t\t\t<density>%lf</density>\n",dens);
+							fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
+							//fprintf(fptr,"\t\t\t\t<E>10000</E>\n");
+							fprintf(fptr,"\t\t\t\t<v>%.3lf</v>\n",pois);
+							fprintf(fptr,"\t\t\t</elastic>\n");
+							fprintf(fptr,"\t\t\t<prestrain type=\"prestrain gradient\">\n");
+							fprintf(fptr,"\t\t\t\t<ramp>1</ramp>\n");	
+							//fprintf(fptr,"\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+							fprintf(fptr,"\t\t\t\t<F0 type=\"map\">map_S</F0>\n");
+							fprintf(fptr,"\t\t\t</prestrain>\n");
+						fprintf(fptr,"\t\t</material>\n");		
+
+
+					fprintf(fptr,"\t</Material>\n");
+			// writting a Geometry porsion for *.feb file			
+					fprintf(fptr,"\t<Mesh>\n");
+					// writting a nodes porsion for *.feb file	
+						fprintf(fptr,"\t\t<Nodes name=\"Object01\">\n");
+
+							for (nod=0;nod<npoin;nod++){
+								fprintf(fptr,"\t\t\t<node id=\"%d\">%lf,%lf,%lf</node>\n",nod+1,ptxyz[dimension*nod + 0]/100,
+									ptxyz[dimension*nod + 1]/100,ptxyz[dimension*nod + 2]/100);
+							}
+
+
+						fprintf(fptr,"\t\t</Nodes>\n");
+					// writting a elements porsion for *.feb file	
+								
+								fprintf(fptr,"\t\t<Elements type=\"tri3\" name=\"Part1\">\n");
+								for (ele=0;ele<nelem;ele++){
+										fprintf(fptr,"\t\t\t<elem id=\"%d\">%d,%d,%d</elem>\n",ele+1,elems[3*ele + 0],elems[3*ele + 1],
+											elems[3*ele + 2]);
+									}
+								fprintf(fptr,"\t\t</Elements>\n");
+							
+
+					// writting boundary condition
+						pid=0;	
+						fprintf(fptr,"\t\t<Surface name=\"FixedShellDisplacement1\">\n");	
+							for (ele=0;ele<nelem;ele++){ 
+								if (region_id[ele]==2){
+									pid+=1;
+									fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",pid,elems[3*ele + 0],elems[3*ele + 1],
+										elems[3*ele + 2]);
+								}
+							}
+						fprintf(fptr,"\t\t</Surface>\n");	
+					// writting pressure Load	
+						pid=0;
+						fprintf(fptr,"\t\t<Surface name=\"PressureLoad1\">\n");
+							for (ele=0;ele<nelem;ele++){ 
+								if (region_id[ele]!=2){
+									pid+=1;
+									fprintf(fptr,"\t\t\t<tri3 id=\"%d\">%d,%d,%d</tri3>\n",pid,elems[3*ele + 0],elems[3*ele + 1],
+										elems[3*ele + 2]);
+								}
+							}	
+						fprintf(fptr,"\t\t</Surface>\n");	
+
+					fprintf(fptr,"\t</Mesh>\n");
+
+					fprintf(fptr,"\t<MeshDomains>\n");
+						fprintf(fptr,"\t\t<ShellDomain name=\"Part1\" mat=\"Material1\">\n");
+							// just for constant shell thickness ; 
+							//fprintf(fptr,"\t\t\t<shell_thickness>0.0001</shell_thickness>\n");
+						fprintf(fptr,"\t\t</ShellDomain>\n");	
+					fprintf(fptr,"\t</MeshDomains>\n");
+
+
+					fprintf(fptr,"\t<MeshData>\n");
+						fprintf(fptr,"\t\t<ElementData type=\"shell thickness\" elem_set=\"Part1\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf,%lf,%lf</elem>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");
+
+						fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf</elem>\n",ele+1,E_fele[ele]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");	
+
+						fprintf(fptr,"\t\t<ElementData name=\"map_S\" elem_set=\"Part1\" data_type=\"mat3\">\n");
+							for (ele=0;ele<nelem;ele++){
+								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf</e>\n",ele+1,st[6*ele],st[6*ele+3],st[6*ele+4],st[6*ele+3],st[6*ele+1],st[6*ele+5],st[6*ele+4],st[6*ele+5],st[6*ele+2]);		
+							}
+						fprintf(fptr,"\t\t</ElementData>\n");						
+
+
+					fprintf(fptr,"\t</MeshData>\n");
+
+					// writting a Boundary porsion for *.feb file	
+					fprintf(fptr,"\t<Boundary>\n");
+
+						fprintf(fptr,"\t\t<bc name=\"FixedShellDisplacement1\" type=\"zero displacement\" node_set=\"@surface:FixedShellDisplacement1\">\n");
+							fprintf(fptr,"<x_dof>1</x_dof>\n");
+							fprintf(fptr,"<y_dof>1</y_dof>\n");
+							fprintf(fptr,"<z_dof>1</z_dof>\n");
+						fprintf(fptr,"\t\t</bc>\n");
+
+					fprintf(fptr,"\t</Boundary>\n");
+					// writting a Loads porsion for *.feb file
+					fprintf(fptr,"\t<Loads>\n");
+						
+							fprintf(fptr,"\t\t<surface_load name=\"Pressure1\" type=\"pressure\" surface=\"PressureLoad1\">\n");
+
+								fprintf(fptr,"\t\t\t<pressure lc=\"1\">%.5lf</pressure>\n",pres_gradual);
+								
+								fprintf(fptr,"\t\t\t<symmetric_stiffness>1</symmetric_stiffness>\n");
+								fprintf(fptr,"\t\t\t<linear>0</linear>\n");
+								fprintf(fptr,"\t\t\t<shell_bottom>0</shell_bottom>\n");
+							fprintf(fptr,"\t\t</surface_load>\n");
+						
+					fprintf(fptr,"\t</Loads>\n");
+					fprintf(fptr,"\t<LoadData>\n");
+
+						fprintf(fptr,"\t\t<load_controller id=\"1\" name=\"LC1\" type=\"loadcurve\">\n");
+							fprintf(fptr,"\t\t\t<interpolate>LINEAR</interpolate>\n");
+							fprintf(fptr,"\t\t\t<extend>CONSTANT</extend>\n");
+							fprintf(fptr,"\t\t\t<points>\n");
+								fprintf(fptr,"\t\t\t\t<pt>0,0</pt>\n");
+								fprintf(fptr,"\t\t\t\t<pt>1,1</pt>\n");
+							fprintf(fptr,"\t\t\t</points>\n");
+						fprintf(fptr,"\t\t</load_controller>\n");	
+
+					fprintf(fptr,"\t</LoadData>\n");
+
+					fprintf(fptr,"\t<Output>\n");
+						fprintf(fptr,"\t\t<plotfile type=\"febio\">\n");
+							fprintf(fptr,"\t\t\t<var type=\"displacement\"/>\n");
+							fprintf(fptr,"\t\t\t<var type=\"relative volume\"/>\n");
+							fprintf(fptr,"\t\t\t<var type=\"shell strain\"/>\n");
+							fprintf(fptr,"\t\t\t<var type=\"shell thickness\"/>\n");
+							fprintf(fptr,"\t\t\t<var type=\"stress\"/>\n");
+						fprintf(fptr,"\t\t</plotfile>\n");
+
+						fprintf(fptr,"\t\t<logfile type=\"output\">\n");
+
+							//fprintf(fptr,"\t\t\t<node_data data=\"x;y;z\" name=\"coordinates\">");
+							fprintf(fptr,"\t\t\t<node_data data=\"ux;uy;uz\" name=\"displacement\">");
 							fprintf(fptr,"</node_data>\n");
 
 							fprintf(fptr,"\t\t\t<element_data data=\"sx;sy;sz;sxy;sxz;syz\" name=\"stress\">");
@@ -1322,8 +1590,7 @@ char path[500];
 	strcat(run,path);
 	system(run);
 }
-
-void read_logfile_data(char const *casename,int nelem,int npoin,double *stress, double *strain,int iter){
+void read_logfile_data(char const *casename,int nelem,int npoin, double *uxyz, double *stress, double *strain,int iter){
 char path[500];
 //creat path :
 	char iterID[50]="_";
@@ -1394,23 +1661,24 @@ char path[500];
 			str = edit_endline_character(line, buffer, fptr); // description data line 
 			nscan = sscanf(str, "%s %s %s",txt_data,junk_txt,type_data);
 			printf("type_data: %s\n",type_data);
-			// if (!strcmp(type_data,"coordinates")){
-			// 	/* Read Coordinates of all points */
+			//if (!strcmp(type_data,"coordinates")){
+			if (!strcmp(type_data,"displacement")){
+				/* Read Coordinates of all points */
 							      
-			// 	for (iline = 0; iline < npoin; iline++) {
-		    // 	str = edit_endline_character(line, buffer, fptr);
-			// 	nscan = sscanf(str, "%d %lf %lf %lf",&junk,&(ptxyz_new[dimension*iline + 0]),&(ptxyz_new[dimension*iline + 1]),&(ptxyz_new[dimension*iline + 2]));
-			// 	if (nscan != 4) {
-			// 	printf("ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
-			// 	exit(EXIT_FAILURE);
-			// 	}
-			// 	// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
-			// 	// 	       	nscan, iline,
-			// 	// 	       	ptxyz_new[dimension*iline+0], ptxyz_new[dimension*iline+1],ptxyz_new[dimension*iline+2]);  
-			// 	}     
-			// 	printf("    Done Reading cordination of points (iline = %d)(dimension= %d).\n\n\n", iline,dimension);
-			// 	endcount += 1;
-			// }
+				for (iline = 0; iline < npoin; iline++) {
+		    	str = edit_endline_character(line, buffer, fptr);
+				nscan = sscanf(str, "%d %lf %lf %lf",&junk,&(uxyz[dimension*iline + 0]),&(uxyz[dimension*iline + 1]),&(uxyz[dimension*iline + 2]));
+				if (nscan != 4) {
+				printf("ERROR: Incorrect number of displacement on line %d of POINTS.\n", iline+1);
+				exit(EXIT_FAILURE);
+				}
+				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
+				// 	       	nscan, iline,
+				// 	       	ptxyz_new[dimension*iline+0], ptxyz_new[dimension*iline+1],ptxyz_new[dimension*iline+2]);  
+				}     
+				printf("    Done Reading displacement of points (iline = %d)(dimension= %d).\n\n\n", iline,dimension);
+				endcount += 1;
+			}
 			if (!strcmp(type_data,"strain")){
 				/* Read Coordinates of all points */
 				for(ele = 0; ele < nelem; ele++){
@@ -1451,7 +1719,7 @@ char path[500];
 			}
 
 		  
-		if (endcount == 2) {
+		if (endcount == 3) {
 		  	printf("  Done Reading data.\n\n\n");
 			break;
 			}    
@@ -1464,4 +1732,13 @@ char path[500];
   	//*stress2=stress;
 
  	printf("  Exiting function for reading log file.\n\n");	
+}
+double max_value(double *array, int size) {
+  double max_value = array[0];
+  for (int i = 1; i < size; i++) {
+    if (array[i] > max_value) {
+      max_value = array[i];
+    }
+  }
+  return max_value;
 }

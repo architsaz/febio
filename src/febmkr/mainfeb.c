@@ -45,6 +45,8 @@
 	double *strain;
 	double *updated_gstrain;
 	double *strain_point;
+	double *disp;
+
 
 // pressure ( define @ input.txt)
 extern double pre_pres;
@@ -78,7 +80,7 @@ int main(int argc, char **argv){
 
 
 	if (!strcmp(argv[1],helpsc)) help();
-	// check the availbelity in the dataset
+	/* check the availbelity in the dataset */
 	    if (argc==2) {
 	    	fprintf(stderr,"ERROR: there is problem in specifying database and casename correctly\n");
 	    	exit(EXIT_FAILURE);
@@ -91,20 +93,20 @@ int main(int argc, char **argv){
 	  	strcpy(path_mesh2,path_mesh);strcpy(path_label2,path_label);strcpy(path_input2,path_input); 
 	  	//printf("%s\n%s\n%s\n%s\n",path_casedir,path_mesh2,path_label2,path_input2);
 
-	// Reading the surface file and Store Node and Elements information
+	/* Reading the surface file and Store Node and Elements information */
 	  	
 		read_zfem(path_mesh2,&npoin,&nelem,&ptxyz,&elems);
 		
 
-	// Reading the regional mask (for understanding the parent arteries and neck/domme/...)
+	/* Reading the regional mask (for understanding the parent arteries and neck/domme/...) */
 	read_regionmask(argv[1],nelem,npoin,elems,&region_id,&region_idp);
 		// to check the mask:
 		write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,region_idp);	
 
-	// Reading the input file : read file "input.txt"
+	/* Reading the input file : read file "input.txt" */
 	read_input(argv[1],path_input2);
 
-	// Reading the label file [color ID of material] : read file "*.zfem.labels"
+	/* Reading the label file [color ID of material] : read file "*.zfem.labels" */
 	read_Mlable(path_label2,nelem,elems,&Melem);
 
 	// Reading the label of aneurysm "*.aneu.0.0": [0 for parent arteries 1 for aneurysm]
@@ -123,12 +125,13 @@ int main(int argc, char **argv){
 		}
 		//write_zfem_1intfield(argv[1],nelem,npoin,elems,ptxyz,Mpoint);
 
-	// finding neighbor elements surround each point :
+	/* finding neighbor elements surround each point : */
 	save_esurp(npoin,nelem,elems,&esurp,&esurp_pointer);
 	// finding neighbor	elements surround each element :
 	save_esure(npoin,nelem,elems,esurp_pointer,esurp,&esure,&open);
 
-	// Matrial information for each element and grids and applied guassian filter (tip: ele = element data, f=filtered by gussian kernel, E=Young modulus t=thickness)
+	/* Matrial information for each element and grids and applied guassian filter */ 
+	// (tip: ele = element data, f=filtered by gussian kernel, E=Young modulus t=thickness)
 	int fillter_nloop=10;
 	material(nelem,elems,npoin,Melem,esurp,esurp_pointer,fillter_nloop,&E_ele,&E_fele,&E_nod, &t_ele, &t_fele, &t_nod);
 		//just for checking the thickness and young modulus;
@@ -145,10 +148,11 @@ int main(int argc, char **argv){
 
 // ------------> in this step the strain gradiant tensor initialized and derived the strain to update the strain gradiant tensor for the next step
 	
-	// initialized the updated_strain:
+	/* initialized the updated_strain: */
 	updated_gstrain=calloc(6*nelem,sizeof(*(updated_gstrain)));
 	strain=calloc(6*nelem,sizeof(*(strain)));
 	stress=calloc(6*nelem,sizeof(*(stress)));
+	disp=calloc(3*npoin,sizeof(*(disp)));
 	for (ele=0;ele<nelem;ele++){
 		for (pt = 0; pt < 6; pt++) {
 			if(pt==0||pt==1||pt==2) updated_gstrain[6*ele+pt]+=1;
@@ -163,7 +167,7 @@ int main(int argc, char **argv){
 	strcat(run,run_option);
 
 
-	// ITERATIVE METHOD STARTED:
+	/* ITERATIVE METHOD STARTED:*/
 	printf(" The FEBio solver start to find gradiant tensor for strain\n");
 
 	printf(" The solver used :\t%s\n",argv[2]);
@@ -175,9 +179,9 @@ int main(int argc, char **argv){
 	while (terminate_iter==1){
 		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter);
 
-		// value of gradual pre pressure applied  
-		if (iter<=18) {
-		 	pres_gradual=(iter+2)*pre_pres/20;
+		//value of gradual pre pressure applied  
+		if (iter<=19) {
+			pres_gradual=(iter)*pre_pres/20;
 		}else{
 			pres_gradual=pre_pres;
 		}
@@ -185,8 +189,10 @@ int main(int argc, char **argv){
 
 		if (!strcmp(argv[2],febio_gen3)){
 		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
-		} else if (!strcmp(argv[2],febio_gen4)){		
-		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
+		} else if (!strcmp(argv[2],febio_gen4)){
+		// the time_stepper in this model is omitted 		
+		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter); 
+		//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		}else{
 			fprintf(stderr,"the solver defined in the argument is not valid\n");
 			exit(EXIT_FAILURE);
@@ -198,17 +204,26 @@ int main(int argc, char **argv){
 		check_febio_run(argv[1],iter);
 		//printf("the run is ok\n");
 
-	// read strain for guess the gradiant tensor of strain
-		read_logfile_data(argv[1],nelem,npoin,stress,strain,iter);
+	/* read strain for guess the gradiant tensor of strain */
+		read_logfile_data(argv[1],nelem,npoin,disp,stress,strain,iter);
 		//read_data_strain(argv[1],nelem,&strain,iter);
 
+	/* 	checking max of displacment:*/
 
 
+	/*updating the gradiant tensor of strain:*/
+		
+		//updateing just by adding the remain strain to the corresponding strain
+		for (ele=0;ele<nelem;ele++){
+			for (pt = 0; pt < 6; pt++) {
+				updated_gstrain[6*ele+pt]+=strain[6*ele+pt];
+				if (updated_gstrain[6*ele+pt]<0.00000) updated_gstrain[6*ele+pt]=0;
+			}
+		}
 
+	printf("--> iteration %d ,  Max_disp: %lf , Max_strain: %lf \n",iter,max_value(disp,3*npoin),max_value(strain,6*nelem));	
 
-
-
-		if (terminate_iter==0 || iter>=1) break;
+		if (terminate_iter==0 || iter>=30) break;
 		iter+=1;
 	}
 
