@@ -100,10 +100,17 @@ void makedir(char const *casename){
 	    strcat(command7,path_newcase);
 	    strcat(command7,csd);
 	    system(command7);
+	   	char command9 [100] = "mkdir ";
+	   	char runfolder[10]="/run/";
+	    strcat(command9,path_newcase);
+	    strcat(command9,csd);
+	    strcat(command9,runfolder);
+	    system(command9);
 	    char command8 [100] = "mkdir ";
 	 	strcat(command8,path_newcase);
 	 	strcat(command8,post);
 	 	system(command8);
+;
 
 	 	system("clear");
  

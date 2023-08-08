@@ -190,7 +190,7 @@ int main(int argc, char **argv){
 		if (!strcmp(argv[2],febio_gen3)){
 		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		} else if (!strcmp(argv[2],febio_gen4)){
-		// the time_stepper in this model is omitted 		
+		//the time_stepper in this model is omitted 		
 		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter); 
 		//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		}else{
@@ -217,13 +217,13 @@ int main(int argc, char **argv){
 		for (ele=0;ele<nelem;ele++){
 			for (pt = 0; pt < 6; pt++) {
 				updated_gstrain[6*ele+pt]+=strain[6*ele+pt];
-				if (updated_gstrain[6*ele+pt]<0.00000) updated_gstrain[6*ele+pt]=0;
+				if (updated_gstrain[6*ele+pt]<0.00000) updated_gstrain[6*ele+pt]=0; // for correction the value of strain
 			}
 		}
 
 	printf("--> iteration %d ,  Max_disp: %lf , Max_strain: %lf \n",iter,max_value(disp,3*npoin),max_value(strain,6*nelem));	
 
-		if (terminate_iter==0 || iter>=30) break;
+		if (terminate_iter==0 || iter>=60) break;
 		iter+=1;
 	}
 

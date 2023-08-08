@@ -838,8 +838,10 @@ void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *el
 		strcat(iterID,int2str);
 		char path_achit[200] = "../../output/";
 		char csd[10]="/csd/";
+		char runfolder[10]="/run/";
 		strcat(path_achit,casename);
-		strcat(path_achit,csd);	
+		strcat(path_achit,csd);
+		strcat(path_achit,runfolder);	
 		char zfem_format[100]="_febio.feb";	
 
 		strcpy(path,path_achit);
@@ -1056,8 +1058,10 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 		strcat(iterID,int2str);
 		char path_achit[200] = "../../output/";
 		char csd[10]="/csd/";
+		char runfolder[10]="/run/";
 		strcat(path_achit,casename);
-		strcat(path_achit,csd);	
+		strcat(path_achit,csd);
+		strcat(path_achit,runfolder);	
 		char zfem_format[100]="_febio.feb";	
 
 		strcpy(path,path_achit);
@@ -1312,8 +1316,10 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 		strcat(iterID,int2str);
 		char path_achit[200] = "../../output/";
 		char csd[10]="/csd/";
+		char runfolder[10]="/run/";
 		strcat(path_achit,casename);
 		strcat(path_achit,csd);	
+		strcat(path_achit,runfolder);	
 		char zfem_format[100]="_febio.feb";	
 
 		strcpy(path,path_achit);
@@ -1577,8 +1583,10 @@ char path[500];
 	strcat(iterID,int2str);
 	char path_achit[200] = "../../output/";
 	char csd[10]="/csd/";
+	char runfolder[10]="/run/";
 	strcat(path_achit,casename);
 	strcat(path_achit,csd);	
+	strcat(path_achit,runfolder);
 	char log_format[100]="_febio.log";	
 
 	strcpy(path,path_achit);
@@ -1599,8 +1607,10 @@ char path[500];
 	strcat(iterID,int2str);
 	char path_achit[200] = "../../output/";
 	char csd[10]="/csd/";
+	char runfolder[10]="/run/";
 	strcat(path_achit,casename);
 	strcat(path_achit,csd);	
+	strcat(path_achit,runfolder);	
 	char log_format[100]="_febio.log";	
 
 	strcpy(path,path_achit);
