@@ -47,6 +47,8 @@
 	double *strain_point;
 	double *disp;
 
+	
+
 
 // pressure ( define @ input.txt)
 extern double pre_pres;
@@ -62,12 +64,8 @@ void help(void){
 }
 
 int main(int argc, char **argv){
-	// config the log file: 
-	char logstr[1000];
-	char path_log[500];
-	char log_name[100]="febmkr_log.txt";
-	char int2str [100];
 
+	//system("rm -rf ../../febmkr_report.txt");
 	system("rm -rf temp/*");
 	char helpsc [10] ="help"; 
 	char *path_casedir,*path_input,*path_label,*path_mesh, *path_feb;
@@ -83,6 +81,7 @@ int main(int argc, char **argv){
 	/* check the availbelity in the dataset */
 	    if (argc==2) {
 	    	fprintf(stderr,"ERROR: there is problem in specifying database and casename correctly\n");
+	    	report(argv[1],0);
 	    	exit(EXIT_FAILURE);
 	  	}else{
 	  		// find the database in the dagon1 and make directory in the dagon for this new case
@@ -95,7 +94,7 @@ int main(int argc, char **argv){
 
 	/* Reading the surface file and Store Node and Elements information */
 	  	
-		read_zfem(path_mesh2,&npoin,&nelem,&ptxyz,&elems);
+		read_zfem(argv[1],path_mesh2,&npoin,&nelem,&ptxyz,&elems);
 		
 
 	/* Reading the regional mask (for understanding the parent arteries and neck/domme/...) */
@@ -107,7 +106,7 @@ int main(int argc, char **argv){
 	read_input(argv[1],path_input2);
 
 	/* Reading the label file [color ID of material] : read file "*.zfem.labels" */
-	read_Mlable(path_label2,nelem,elems,&Melem);
+	read_Mlable(argv[1],path_label2,nelem,elems,&Melem);
 
 	// Reading the label of aneurysm "*.aneu.0.0": [0 for parent arteries 1 for aneurysm]
 	// update the Melem for the aneurysm area which not collored and give the id_aneu to this element 
@@ -195,6 +194,7 @@ int main(int argc, char **argv){
 		//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
 		}else{
 			fprintf(stderr,"the solver defined in the argument is not valid\n");
+			report(argv[1],0);
 			exit(EXIT_FAILURE);
 		}
 		strcpy(run_st,run);
@@ -202,7 +202,6 @@ int main(int argc, char **argv){
 
 		system(run_st);
 		check_febio_run(argv[1],iter);
-		//printf("the run is ok\n");
 
 	/* read strain for guess the gradiant tensor of strain */
 		read_logfile_data(argv[1],nelem,npoin,disp,stress,strain,iter);
@@ -223,11 +222,13 @@ int main(int argc, char **argv){
 
 	printf("--> iteration %d ,  Max_disp: %lf , Max_strain: %lf \n",iter,max_value(disp,3*npoin),max_value(strain,6*nelem));	
 
-		if (terminate_iter==0 || iter>=60) break;
+		if (terminate_iter==0 || iter>=1) break;
 		iter+=1;
 	}
 
 
+// report the status of run in the txt file:
+report(argv[1],1);
 
 return 0;
 }

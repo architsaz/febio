@@ -94,7 +94,7 @@ bool file_exists(char const *filename){
     }
     return is_exist;
 }
-void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
+void read_zfem(char *casename, char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 
 	    //printf("input function: %s\n",filename);
 	    char filename[500];
@@ -113,6 +113,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 
 		if (fptr == NULL) {
 	    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", filename);
+	    	report(casename,0);
 	    	exit(EXIT_FAILURE);
 	  	}
 	  	else {
@@ -143,6 +144,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 		    	printf("    Reading POINTS.\n");
 		    			if (nscan != 1) {
 					    	fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
+					    	report(casename,0);
 							exit(EXIT_FAILURE);
 					    }
 					/* Read Number of Points */	    
@@ -151,6 +153,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 					    printf("      Number of Points = %d.\n", npoin1);
 						    if (nscan != 1) {
 						    	fprintf(stderr,"ERROR: Incorrect number of entries on Number of Points line.\n");
+						    	report(casename,0);
 								exit(EXIT_FAILURE);
 						    }
 
@@ -162,6 +165,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 										  &(ptxyz1[dimension*iline + 0]),&(ptxyz1[dimension*iline + 1]),&(ptxyz1[dimension*iline + 2]));
 										if (nscan != 3) {
 										  fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+										  report(casename,0);
 										  exit(EXIT_FAILURE);
 										}
 										// printf("nscan = %d, iline = %d. %lf, %lf, %lf.\n",
@@ -187,6 +191,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 				    
 				    if (nscan != 1) {
 				    	fprintf(stderr,"ERROR: Incorrect number of entries on Number of ELEMENTS number.\n");
+				    	report(casename,0);
 						exit(EXIT_FAILURE);
 				    }
 
@@ -201,6 +206,7 @@ void read_zfem(char *path, int *npoin, int *nelem, double **ptxyz,int **elems) {
 						        
 								if (nscan != 3) {
 								  	fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
+								  	report(casename,0);
 								  	exit(EXIT_FAILURE);
 								}
 									// printf("nscan = %d, iline = %d,\t %d,\t %d,\t %d.\n",
@@ -394,4 +400,25 @@ int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *
 
 	free(lesps);
 	return nei;
+}
+void report(char const *filename,int status){
+
+	// config the report file:
+	char output[500];
+	char output_command[50]="echo \"";
+	char output_filepath[100]="\" >> ../../febmkr_report.txt"; 
+
+
+	strcpy(output,output_command);
+	strcat(output,filename);
+	strcat(output," ");
+
+	if (status == 1){
+		strcat(output,"completed");
+	}else{
+		strcat(output,"ERROR");
+	}
+	strcat(output,output_filepath);
+
+	system(output);
 }

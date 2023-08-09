@@ -73,17 +73,20 @@ void checkdir(char const *casename, char **path,char **path_surf2,char **path_la
 	if (file_exists(path_label)) printf("File %s exists\n", path_label);
     else {
     	printf("File %s doesn't exist.\n", path_label);
+    	report(casename,0);
     	exit(EXIT_FAILURE);
     }
 
     if (file_exists(path_surf)) printf("File %s exists\n", path_surf);
     else {
     	printf("File %s doesn't exist.\n", path_surf);
+    	report(casename,0);
     	exit(EXIT_FAILURE);
     }
     if (file_exists(path_input)) printf("File %s exists\n", path_input);
     else {
     	printf("File %s doesn't exist.\n", path_input);
+    	report(casename,0);
     	exit(EXIT_FAILURE);
     }
     system("clear");
@@ -128,6 +131,7 @@ void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int
 	fptr = fopen(path_mask, "r");
 	if (fptr == NULL) {
 	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_mask);
+	report(casename,0);
 	exit(EXIT_FAILURE);
 	}
 	else{
@@ -164,6 +168,7 @@ void read_regionmask(char const *casename, int nelem, int npoin, int *elems, int
 			nscan = sscanf(str, "%d",&region_id[iline]);			        
 			if (nscan != 1) {
 			fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
+			report(casename,0);
 			exit(EXIT_FAILURE);
 			}
 			 // printf("nscan = %d, iline = %d,\t %d\n",
@@ -233,6 +238,7 @@ const char s[2] = ";";
 
 	if(fptr_value == NULL) {
 	    fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+	    report(casename,0);
 	    exit(EXIT_FAILURE);
 	}
 	else {
@@ -288,6 +294,7 @@ const char s[2] = ";";
 
 	if(fptr_value == NULL) {
 	    fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+	    report(casename,0);
 	    exit(EXIT_FAILURE);
 	}
 	else {
@@ -340,6 +347,7 @@ fptr = fopen(path_input, "r");
 
 if (fptr == NULL) {
 	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_input);
+	report(casename,0);
 	exit(EXIT_FAILURE);
 	}
 	else {
@@ -370,6 +378,7 @@ int nscan, iline;
 			    nscan = sscanf(str, "%s",test2);     
 				if(strcmp(test2,casename)){
 				    fprintf(stderr,"ERROR: the casename indicate @ input file: %s is not match with casename in the argument.\n", casename);
+				    report(casename,0);
 					exit(EXIT_FAILURE);
 				}
 			endcount += 1;
@@ -382,6 +391,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%d %d %d %d %d %d %d %d %d",&(id_red),&(id_yel),&(id_whi),&(id_cya),&(id_rup),&(id_rem),&(id_bou),&(id_tra),&(id_ane));
 			    if (nscan != 9) {
 					fprintf(stderr,"ERROR: Incorrect number of labels @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Labels:\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",id_red,id_yel,id_whi,id_cya,id_rup,id_rem,id_bou,id_tra,id_ane);
@@ -395,6 +405,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(y_red),&(y_yel),&(y_whi),&(y_ane),&(y_rem));
 			    if (nscan != 5) {
 					fprintf(stderr,"ERROR: Incorrect number of Young modulus @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Young Modulus:\n%lf\t%lf\t%lf\t%lf\t%lf\n",y_red,y_yel,y_whi,y_ane,y_rem);
@@ -409,6 +420,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(t_red),&(t_yel),&(t_whi),&(t_ane),&(t_rem));
 			    if (nscan != 5) {
 					fprintf(stderr,"ERROR: Incorrect number of Thickness @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Thickness:\n%lf\t%lf\t%lf\t%lf\t%lf\n",t_red,t_yel,t_whi,t_ane,t_rem);
@@ -423,6 +435,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%lf",&(dens));
 			    if (nscan != 1) {
 					fprintf(stderr,"ERROR: Incorrect number of Density @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Density:\n%lf\n",dens);
@@ -436,6 +449,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%lf",&(pois));
 			    if (nscan != 1) {
 					fprintf(stderr,"ERROR: Incorrect number of Poisson Nr @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Poisson nr:\n%lf\n",pois);
@@ -450,6 +464,7 @@ int nscan, iline;
 	    	nscan = sscanf(str, "%lf %lf",&(pre_pres),&ulti_pres);
 			    if (nscan != 2) {
 					fprintf(stderr,"ERROR: Incorrect Pressure value @ input.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Pressure:\n%lf\t%lf\n",pre_pres,ulti_pres);
@@ -464,6 +479,7 @@ int nscan, iline;
 				  printf("      Number of inlet/outlet = %d.\n", nr_cen);
 					    if (nscan != 1) {
 					    	fprintf(stderr,"ERROR: Incorrect number of entries on Number of inlet/outlets line.\n");
+					    	report(casename,0);
 							exit(EXIT_FAILURE);
 					    }
 
@@ -476,6 +492,7 @@ int nscan, iline;
 									  &(center[dimension*iline + 0]),&(center[dimension*iline + 1]),&(center[dimension*iline + 2]));
 									if (nscan != 3) {
 									  fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+									  report(casename,0);
 									  exit(EXIT_FAILURE);
 									}
 									printf("nscan = %d, iline = %d. %lf, %lf, %lf.\n",
@@ -497,7 +514,7 @@ fclose(fptr);
 /* return */
 printf("  Exiting function for reading input file.\n\n");
 }
-void read_Mlable(char *path,int nelem, int *elems,int **Melem2) {
+void read_Mlable(char const *casename,char *path,int nelem, int *elems,int **Melem2) {
 //creat path :
 	// char path_achit[200] = "../../output/";
 	// char csd[10]="/csd/";
@@ -521,6 +538,7 @@ void read_Mlable(char *path,int nelem, int *elems,int **Melem2) {
 
 	if (fptr == NULL) {
    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_label);
+   	report(casename,0);
    	exit(EXIT_FAILURE);
   	}
   	else {
@@ -577,6 +595,7 @@ void read_aneulable(char const *casename,int nelem,int **anelem2, int *Melem) {
 
 	if (fptr == NULL) {
    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_label);
+   	report(casename,0);
    	exit(EXIT_FAILURE);
   	}
   	else {
@@ -858,6 +877,7 @@ void write_feb3_prestain(char const *casename, char **runpath,int nelem, int *el
 
 			if (fptr == NULL) {
 			 	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+			 	report(casename,0);
 			 	exit(EXIT_FAILURE);
 			}
 			else {
@@ -1078,6 +1098,7 @@ void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *el
 
 			if (fptr == NULL) {
 			  fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+			  report(casename,0);
 			  exit(EXIT_FAILURE);
 			}
 			else {
@@ -1336,6 +1357,7 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 
 			if (fptr == NULL) {
 			  fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+			  report(casename,0);
 			  exit(EXIT_FAILURE);
 			}
 			else {
@@ -1634,6 +1656,7 @@ char path[500];
 
 	if (fptr == NULL) {
     	printf("ERROR: Cannot open file - %s.\n", path);
+    	report(casename,0);
     	exit(EXIT_FAILURE);
   	}
   	else {
@@ -1666,6 +1689,7 @@ char path[500];
 			printf("    Finding the result of time = %d.\n",number);
 		    if (nscan != 3) {
 			printf("ERROR: Problem on Time line.\n");
+			report(casename,0);
 			exit(EXIT_FAILURE);
 			}
 			str = edit_endline_character(line, buffer, fptr); // description data line 
@@ -1680,6 +1704,7 @@ char path[500];
 				nscan = sscanf(str, "%d %lf %lf %lf",&junk,&(uxyz[dimension*iline + 0]),&(uxyz[dimension*iline + 1]),&(uxyz[dimension*iline + 2]));
 				if (nscan != 4) {
 				printf("ERROR: Incorrect number of displacement on line %d of POINTS.\n", iline+1);
+				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
 				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
@@ -1698,6 +1723,7 @@ char path[500];
 				if (nscan != 7) {
 					printf("%s\n",str);
 				printf("ERROR: Incorrect number of entites on line %d of Strain.\n", ele+1);
+				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
 				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
@@ -1716,6 +1742,7 @@ char path[500];
 				if (nscan != 7) {
 					printf("%s\n",str);
 				printf("ERROR: Incorrect number of entites on line %d of Stress.\n", ele+1);
+				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
 				// printf("nscan = %d, iline = %d. %lf, %lf %lf.\n",
