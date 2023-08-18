@@ -222,7 +222,7 @@ int main(int argc, char **argv){
 
 	printf("--> iteration %d ,  Max_disp: %lf , Max_strain: %lf \n",iter,max_value(disp,3*npoin),max_value(strain,6*nelem));	
 
-		if (terminate_iter==0 || iter>=1) break;
+		if (terminate_iter==0 || iter>=30) break;
 		iter+=1;
 	}
 

@@ -42,6 +42,7 @@ int main(int argc, char const *argv[]){
 //find the database in the dagon1 and make directory in the dagon for this new case
 		if (argc==1) {
 			printf("ERROR: there is problem in specifying database and casename correctly\n");
+			report(argv[1],0);
 			exit(EXIT_FAILURE);
 		}else{
 			
@@ -51,7 +52,7 @@ int main(int argc, char const *argv[]){
 	//system("clear");
 
 	 // read the FEBio_GeneralPara.txt 	
-		read_Generalinput();  	
+		read_Generalinput(argv[1]);  	
 
 
 	// the name & directory of filenames
@@ -64,7 +65,7 @@ int main(int argc, char const *argv[]){
 	// build required data structures
 		// read points and connectivity of the open surface :
 			printf("%s\n",path_labels);
-			read_zfem(path_opensurf_temp,&npoin, &nelem, &ptxyz, &elems);
+			read_zfem(casename,path_opensurf_temp,&npoin, &nelem, &ptxyz, &elems);
 			
 		// finding neighbor elements surround each point :
 			save_esurp(npoin,nelem,elems,&esurp,&esurp_pointer);
@@ -74,10 +75,11 @@ int main(int argc, char const *argv[]){
 	// clustering the element of each hole 
 		clustering_hole(nelem,open, esure, elems,ptxyz, &boundary,&centers,&num_bound);
 
-		write_labels(nelem,open,path_labels);
+		write_labels(casename,nelem,open,path_labels);
 
 		write_input(num_bound,centers,path_input,casename);				
 
+	report(argv[1],1);	
 	return 0;
 }
 

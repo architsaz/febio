@@ -1619,6 +1619,24 @@ char path[500];
 	char run[500]="tail ";
 	strcat(run,path);
 	system(run);
+// check normal or error termination 
+	FILE* fp;
+    fp = fopen(path, "r");
+    char s [500];
+ 
+    // Moving pointer to end
+    fseek(fp, -35, SEEK_END);
+
+    // print line ; 
+    fgets(s, 500, fp);
+
+    if (s[0]=='E'){  
+    	fprintf(stderr,"ERROR: the febio solver doesn't terminated normally.\n");
+    	report(casename,0);
+		exit(EXIT_FAILURE);
+    }
+
+    fclose(fp);	
 }
 void read_logfile_data(char const *casename,int nelem,int npoin, double *uxyz, double *stress, double *strain,int iter){
 char path[500];
@@ -1655,7 +1673,7 @@ char path[500];
 	fptr = fopen(path, "r");
 
 	if (fptr == NULL) {
-    	printf("ERROR: Cannot open file - %s.\n", path);
+    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
     	report(casename,0);
     	exit(EXIT_FAILURE);
   	}
@@ -1688,7 +1706,7 @@ char path[500];
 		if(number==1){
 			printf("    Finding the result of time = %d.\n",number);
 		    if (nscan != 3) {
-			printf("ERROR: Problem on Time line.\n");
+			fprintf(stderr,"ERROR: Problem on Time line.\n");
 			report(casename,0);
 			exit(EXIT_FAILURE);
 			}
@@ -1703,7 +1721,7 @@ char path[500];
 		    	str = edit_endline_character(line, buffer, fptr);
 				nscan = sscanf(str, "%d %lf %lf %lf",&junk,&(uxyz[dimension*iline + 0]),&(uxyz[dimension*iline + 1]),&(uxyz[dimension*iline + 2]));
 				if (nscan != 4) {
-				printf("ERROR: Incorrect number of displacement on line %d of POINTS.\n", iline+1);
+				fprintf(stderr,"ERROR: Incorrect number of displacement on line %d of POINTS.\n", iline+1);
 				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
@@ -1722,7 +1740,7 @@ char path[500];
 					nscan = sscanf(str, "%d %lf %lf %lf %lf %lf %lf",&junk, &(strain[6*ele]),&(strain[6*ele+1]),&(strain[6*ele+2]),&(strain[6*ele+3]),&(strain[6*ele+4]),&(strain[6*ele+5]));
 				if (nscan != 7) {
 					printf("%s\n",str);
-				printf("ERROR: Incorrect number of entites on line %d of Strain.\n", ele+1);
+				fprintf(stderr,"ERROR: Incorrect number of entites on line %d of Strain.\n", ele+1);
 				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
@@ -1741,7 +1759,7 @@ char path[500];
 					nscan = sscanf(str, "%d %lf %lf %lf %lf %lf %lf",&junk, &(stress[6*ele]),&(stress[6*ele+1]),&(stress[6*ele+2]),&(stress[6*ele+3]),&(stress[6*ele+4]),&(stress[6*ele+5]));
 				if (nscan != 7) {
 					printf("%s\n",str);
-				printf("ERROR: Incorrect number of entites on line %d of Stress.\n", ele+1);
+				fprintf(stderr,"ERROR: Incorrect number of entites on line %d of Stress.\n", ele+1);
 				report(casename,0);
 				exit(EXIT_FAILURE);
 				}
@@ -1753,7 +1771,7 @@ char path[500];
 				endcount += 1;
 			}
 			
-			}
+		}
 
 		  
 		if (endcount == 3) {

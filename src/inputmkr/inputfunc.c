@@ -43,7 +43,7 @@
 
 void makedir(char const *casename){
 	// finding the database and check the availablity 
-		system("rm ../temp/path.txt");
+		system("rm ../temp/path.txt 2>/dev/null");
 		char command [500] = "find /dagon1/jcebral/aneuDB/db.R01/ -type d -maxdepth 2 -name \"";
 		strcat(command,casename);
 		char option [500] ="\" 2>/dev/null >../temp/path.txt";
@@ -62,7 +62,8 @@ void makedir(char const *casename){
 	        fseek (fp, 0, SEEK_END);
 	        size = ftell(fp);
 	        if (size ==0) {
-	        	printf("ERROR: Could not find directory in dagon for this case.\n");
+	        	fprintf(stderr,"ERROR: Could not find directory in dagon for this case.\n");
+	        	report(casename,0);
 	        	exit(EXIT_FAILURE);
 	        }
 	        fclose(fp);
@@ -115,7 +116,7 @@ void makedir(char const *casename){
 	 	system("clear");
  
 }
-void read_Generalinput(void) {
+void read_Generalinput(char const *casename) {
 //creat path :
 char path_input[200]= "../../../FEBio_GeneralPara.txt";	
 
@@ -129,7 +130,8 @@ fptr = calloc(1, sizeof(*fptr));
 fptr = fopen(path_input, "r");
 
 if (fptr == NULL) {
-	printf("ERROR: Cannot open file - %s.\n", path_input);
+	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_input);
+	report(casename,0);
 	exit(EXIT_FAILURE);
 	}
 	else {
@@ -161,7 +163,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%d %d %d %d %d %d %d %d %d",&(labl_red),&(labl_yel),&(labl_whi),&(labl_cya),&(labl_rup),&(labl_rem),&(labl_bou),&(labl_tra),&(labl_ane));
 			    if (nscan != 9) {
-					printf("ERROR: Incorrect number of labels @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect number of labels @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Labels:\n%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",labl_red,labl_yel,labl_whi,labl_cya,labl_rup,labl_rem,labl_bou,labl_tra,labl_ane);
@@ -174,7 +177,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(y_red),&(y_yel),&(y_whi),&(y_ane),&(y_rem));
 			    if (nscan != 5) {
-					printf("ERROR: Incorrect number of Young modulus @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect number of Young modulus @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Young Modulus:\n%lf\t%lf\t%lf\t%lf\t%lf\n",y_red,y_yel,y_whi,y_ane,y_rem);
@@ -188,7 +192,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf %lf %lf %lf %lf",&(t_red),&(t_yel),&(t_whi),&(t_ane),&(t_rem));
 			    if (nscan != 5) {
-					printf("ERROR: Incorrect number of Thickness @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect number of Thickness @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Thickness:\n%lf\t%lf\t%lf\t%lf\t%lf\n",t_red,t_yel,t_whi,t_ane,t_rem);
@@ -202,7 +207,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf",&(dens));
 			    if (nscan != 1) {
-					printf("ERROR: Incorrect number of Density @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect number of Density @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Density:\n%lf\n",dens);
@@ -215,7 +221,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf",&(pois));
 			    if (nscan != 1) {
-					printf("ERROR: Incorrect number of Poisson Nr @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect number of Poisson Nr @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Poisson nr:\n%lf\n",pois);
@@ -229,7 +236,8 @@ int nscan, iline;
 	    	str = edit_endline_character(line, buffer, fptr);  
 	    	nscan = sscanf(str, "%lf %lf",&(pre_pres),&(ulti_pres));
 			    if (nscan != 2) {
-					printf("ERROR: Incorrect Pressure value @ FEBio_GeneralPara.txt file.\n");
+					fprintf(stderr,"ERROR: Incorrect Pressure value @ FEBio_GeneralPara.txt file.\n");
+					report(casename,0);
 					exit(EXIT_FAILURE);
 			    }
 			    printf("Pressure:\n%lf\t%lf\n",pre_pres,ulti_pres);
@@ -288,7 +296,8 @@ void build_path (char const *casename,char **path_opensurf_achit, char **path_la
 		fptr = fopen("../temp/path.txt", "r");
 
 		if (fptr == NULL) {
-			printf("ERROR: Cannot open file - ../temp/path.txt.\n");
+			fprintf(stderr,"ERROR: Cannot open file - ../temp/path.txt.\n");
+			report(casename,0);
 			exit(EXIT_FAILURE);
 		}	
 
@@ -322,7 +331,8 @@ void build_path (char const *casename,char **path_opensurf_achit, char **path_la
 			system(command12);
 		}	
 		else{
-			printf("ERROR: there is not REGION MASK file in the %s/stc/\n",pathdb);
+			fprintf(stderr,"ERROR: there is not REGION MASK file in the %s/stc/\n",pathdb);
+			report(casename,0);
 			exit(EXIT_FAILURE);
 		}
 
@@ -369,7 +379,8 @@ void build_path (char const *casename,char **path_opensurf_achit, char **path_la
 			printf("\n");
 			}
 		else{
-			printf("ERROR: there is not zhemo file in the %s/mdl/\n",pathdb);
+			fprintf(stderr,"ERROR: there is not zhemo file in the %s/mdl/\n",pathdb);
+			report(casename,0);
 			exit(EXIT_FAILURE);
 		}
 		// read the zhemo file 
@@ -379,7 +390,8 @@ void build_path (char const *casename,char **path_opensurf_achit, char **path_la
 				fptr = fopen(path_zhemo_achit, "r");
 
 				if (fptr == NULL) {
-				    printf("ERROR: Cannot open file - %s.\n", path_zhemo_achit);
+				    fprintf(stderr,"ERROR: Cannot open file - %s.\n", path_zhemo_achit);
+				    report(casename,0);
 				    exit(EXIT_FAILURE);
 				}
 				else {
@@ -416,7 +428,8 @@ void build_path (char const *casename,char **path_opensurf_achit, char **path_la
 			system(command4);
 				//system("clear");
 		}else{
-			printf("ERROR: there is not %s file in the %s\n",name_opensurf,path_opensurf);
+			fprintf(stderr,"ERROR: there is not %s file in the %s\n",name_opensurf,path_opensurf);
+			report(casename,0);
 			exit(EXIT_FAILURE);
 		}
 		strcpy(path_opensurf2,path_achit);
@@ -607,7 +620,8 @@ void write_input(int num_bound, double *centers, char *filename, char const	*cas
 		fptr = fopen(filename, "w");
 
 		if(fptr == NULL) {
-		    printf("ERROR: Cannot open file - %s.\n", filename);
+		    fprintf(stderr,"ERROR: Cannot open file - %s.\n", filename);
+		    report(casename,0);
 		    exit(EXIT_FAILURE);
 		}
 		else {
@@ -634,7 +648,7 @@ void write_input(int num_bound, double *centers, char *filename, char const	*cas
 				fprintf(fptr,"\n");
 		}
 }
-void write_labels(int nelem, int *open, char *path){
+void write_labels(char const *casename,int nelem, int *open, char *path){
 
 	printf("%s\n",path);
 
@@ -650,7 +664,8 @@ void write_labels(int nelem, int *open, char *path){
 		fptr = fopen(filename, "w");
 
 		if(fptr == NULL) {
-		    printf("ERROR: Cannot open file - %s.\n", filename);
+		    fprintf(stderr,"ERROR: Cannot open file - %s.\n", filename);
+		    report(casename,0);
 		    exit(EXIT_FAILURE);
 		}
 		else {

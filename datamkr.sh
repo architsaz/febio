@@ -20,6 +20,11 @@ then
     exit 1
 fi
 
+if ! command -v febio4 &> /dev/null
+then
+    echo "febio4 could not be found"
+    exit 1
+fi
 # create or check required directories in working directory : febio/script/temp febio/script/src febio/output
 FEBIOdir=febio
 if [ -d "$FEBIOdir" ]; then
@@ -52,12 +57,25 @@ else
 	mkdir $FEBIOdir
 fi
 
+FEBIOdir=febio/output/error_report
+if [ -d "$FEBIOdir" ]; then
+    echo "$FEBIOdir exist."
+else
+	mkdir $FEBIOdir
+fi
 # copy or check exist febio script
 FEBIOscr=febio/script/src/inputmkr 
 if [ -f "$FEBIOscr" ]; then
     echo "$FEBIOscr exist."
 else
 	cp /dagon1/achitsaz/scripts/febio/inputmkr $FEBIOscr
+fi
+
+FEBIOscr=febio/script/src/febmkr 
+if [ -f "$FEBIOscr" ]; then
+    echo "$FEBIOscr exist."
+else
+	cp /dagon1/achitsaz/scripts/febio/febmkr $FEBIOscr
 fi
 
 # Finding files needed for this project
@@ -73,8 +91,12 @@ cd febio/script/src
 for eachfile in $FILE
 do
    casename=$(basename $eachfile .wall)
-#   ./inputmkr $casename
+   ./inputmkr $casename 2>../../output/error_report/$casename.input.txt
 done
 
-
+for eachfile in $FILE
+do
+   casename=$(basename $eachfile .wall)
+#   ./febmkr $casename febio4  2>../../output/error_report/$casename.feb.txt
+done
 
