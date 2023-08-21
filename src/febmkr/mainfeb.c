@@ -226,6 +226,28 @@ int main(int argc, char **argv){
 		iter+=1;
 	}
 
+// ---------> derive the stress by considering the pre-stress tensor and applied ultimate pressure 
+
+	printf("******************* applied the ultimate pressure by considering the pre_stress tensor  ***************************\n");
+
+	iter=999;
+
+	if (!strcmp(argv[2],febio_gen3)){
+	write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,ulti_pres,iter);
+	} else{
+	//the time_stepper in this model is omitted 		
+	write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,ulti_pres,iter); 
+	//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
+	}	
+
+	strcpy(run_st,run);
+	strcat(run_st,filename_feb); 
+
+	system(run_st);
+	check_febio_run(argv[1],iter);
+
+	read_logfile_data(argv[1],nelem,npoin,disp,stress,strain,iter);
+
 
 // report the status of run in the txt file:
 report(argv[1],1);
