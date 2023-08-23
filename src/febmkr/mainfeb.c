@@ -54,6 +54,8 @@
 extern double pre_pres;
 extern double ulti_pres;	
 
+// control solver : 
+extern int change_solver;
 
 void help(void){
 	printf("---->this script just developed for the febio3 and febio4 solver<----\n\n\n");
@@ -175,8 +177,11 @@ int main(int argc, char **argv){
 	int iter=1;
 	int terminate_iter=1;
 	char febio_gen3[10]="febio3";char febio_gen4[10]="febio4";
+	int CHECK_SOLVER = 0;
+
 	while (terminate_iter==1){
 		printf("******************* %d iteration of calculating pre_strain ***************************\n",iter);
+		printf("------>CHECK_SOLVER:%d\n",CHECK_SOLVER);
 
 		//value of gradual pre pressure applied  
 		if (iter<=19) {
@@ -186,22 +191,33 @@ int main(int argc, char **argv){
 		}
 		printf("gradual pressure is : %lf MPa\n",pres_gradual);
 
-		if (!strcmp(argv[2],febio_gen3)){
-		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
-		} else if (!strcmp(argv[2],febio_gen4)){
-		//the time_stepper in this model is omitted 		
-		write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter); 
-		//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
-		}else{
-			fprintf(stderr,"the solver defined in the argument is not valid\n");
-			report(argv[1],0);
-			exit(EXIT_FAILURE);
-		}
-		strcpy(run_st,run);
-		strcat(run_st,filename_feb); 
+		do{
 
-		system(run_st);
-		check_febio_run(argv[1],iter);
+			if (!strcmp(argv[2],febio_gen3)){
+			write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
+			} else if (!strcmp(argv[2],febio_gen4)){
+			
+			// find the best time step size for solver 
+			if (CHECK_SOLVER==0){
+				//the time_stepper in this model is omitted 
+				write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
+			}else{
+				write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter); 				
+			}	
+
+			}else{
+				fprintf(stderr,"the solver defined in the argument is not valid\n");
+				report(argv[1],0);
+				exit(EXIT_FAILURE);
+			}
+
+			strcpy(run_st,run);
+			strcat(run_st,filename_feb); 
+
+			system(run_st);
+			CHECK_SOLVER=check_febio_run(argv[1],iter);
+
+		}while(CHECK_SOLVER==1);	
 
 	/* read strain for guess the gradiant tensor of strain */
 		read_logfile_data(argv[1],nelem,npoin,disp,stress,strain,iter);
@@ -229,22 +245,31 @@ int main(int argc, char **argv){
 // ---------> derive the stress by considering the pre-stress tensor and applied ultimate pressure 
 
 	printf("******************* applied the ultimate pressure by considering the pre_stress tensor  ***************************\n");
+	printf("------>CHECK_SOLVER:%d\n",CHECK_SOLVER);
 
 	iter=999;
 
-	if (!strcmp(argv[2],febio_gen3)){
-	write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,ulti_pres,iter);
-	} else{
-	//the time_stepper in this model is omitted 		
-	write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,ulti_pres,iter); 
-	//write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
-	}	
+	do{
+		if (!strcmp(argv[2],febio_gen3)){
+		write_feb3_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,ulti_pres,iter);
+		} else{
+			// find the best time step size for solver 
+			if (change_solver==0){
+				//the time_stepper in this model is omitted 
+				write_feb4_prestain(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter);
+			}else{
+				write_feb4_prestain_verold(argv[1],&filename_feb,nelem,elems,npoin,ptxyz,t_fele,E_fele,region_id,updated_gstrain,pres_gradual,iter); 				
+			}
+		}
+		
 
-	strcpy(run_st,run);
-	strcat(run_st,filename_feb); 
+		strcpy(run_st,run);
+		strcat(run_st,filename_feb); 
 
-	system(run_st);
-	check_febio_run(argv[1],iter);
+		system(run_st);
+		check_febio_run(argv[1],iter);
+
+	}while(CHECK_SOLVER==1);	
 
 	read_logfile_data(argv[1],nelem,npoin,disp,stress,strain,iter);
 

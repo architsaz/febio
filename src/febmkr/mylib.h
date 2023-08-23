@@ -38,7 +38,7 @@
  	void write_feb4_prestain(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *Melem, double *st,double pres_gradual, int iter);
  	void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, int *elems,int npoin, double *ptxyz,double *t_fele,double *E_fele,int *region_id, double *st,double pres_gradual, int iter);
  	void read_logfile_data(char const *casename,int nelem,int npoin,double *uxyz,double *stress, double *strain,int iter);
- 	void check_febio_run(char const *casename,int iter);
+ 	int check_febio_run(char const *casename,int iter);
  	double max_value(double *array, int size);
 
 	#endif 

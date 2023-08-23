@@ -43,6 +43,9 @@ double ulti_pres;
 int nr_cen;
 double *center;	
 
+// control solver : 
+int change_solver=0;
+
 void checkdir(char const *casename, char **path,char **path_surf2,char **path_label2,char **path_input2){
 	// parameters and variables
 	char path_achit[200] = "../../output";
@@ -1427,7 +1430,7 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 					fprintf(fptr,"\t</Control>\n");
 					fprintf(fptr,"\t<Globals>\n");
 						fprintf(fptr,"\t\t<Constants>\n");
-							fprintf(fptr,"\t\t\t<T>0</T>\n\t\t\t<R>8.31446</R>\n\t\t\t<Fc>96485.3</Fc>\n");
+							fprintf(fptr,"\t\t\t<T>0</T>\n\t\t\t<P>0</P>\n\t\t\t<R>8.31446</R>\n\t\t\t<Fc>96485.3</Fc>\n");
 						fprintf(fptr,"\t\t</Constants>\n");
 					fprintf(fptr,"\t</Globals>\n");
 			// writting a Material porsion for *.feb file		
@@ -1435,9 +1438,9 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 
 
 						fprintf(fptr,"\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
-							fprintf(fptr,"\t\t\t<density>%lf</density>\n",dens);
+							fprintf(fptr,"\t\t\t<density>%.1lf</density>\n",dens);
 							fprintf(fptr,"\t\t\t<elastic type=\"neo-Hookean\">\n");
-							fprintf(fptr,"\t\t\t\t<density>%lf</density>\n",dens);
+							fprintf(fptr,"\t\t\t\t<density>%.1lf</density>\n",dens);
 							fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
 							//fprintf(fptr,"\t\t\t\t<E>10000</E>\n");
 							fprintf(fptr,"\t\t\t\t<v>%.3lf</v>\n",pois);
@@ -1509,13 +1512,13 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 					fprintf(fptr,"\t<MeshData>\n");
 						fprintf(fptr,"\t\t<ElementData type=\"shell thickness\" elem_set=\"Part1\">\n");
 							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf,%lf,%lf</elem>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
+								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf,%lf,%lf</e>\n",ele+1,t_fele[ele],t_fele[ele],t_fele[ele]);		
 							}
 						fprintf(fptr,"\t\t</ElementData>\n");
 
 						fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
 							for (ele=0;ele<nelem;ele++){
-								fprintf(fptr,"\t\t\t<elem lid=\"%d\">%lf</elem>\n",ele+1,E_fele[ele]);		
+								fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf</e>\n",ele+1,E_fele[ele]);		
 							}
 						fprintf(fptr,"\t\t</ElementData>\n");	
 
@@ -1532,9 +1535,9 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 					fprintf(fptr,"\t<Boundary>\n");
 
 						fprintf(fptr,"\t\t<bc name=\"FixedShellDisplacement1\" type=\"zero displacement\" node_set=\"@surface:FixedShellDisplacement1\">\n");
-							fprintf(fptr,"<x_dof>1</x_dof>\n");
-							fprintf(fptr,"<y_dof>1</y_dof>\n");
-							fprintf(fptr,"<z_dof>1</z_dof>\n");
+							fprintf(fptr,"\t\t\t<x_dof>1</x_dof>\n");
+							fprintf(fptr,"\t\t\t<y_dof>1</y_dof>\n");
+							fprintf(fptr,"\t\t\t<z_dof>1</z_dof>\n");
 						fprintf(fptr,"\t\t</bc>\n");
 
 					fprintf(fptr,"\t</Boundary>\n");
@@ -1596,7 +1599,7 @@ void write_feb4_prestain_verold(char const *casename, char **runpath,int nelem, 
 		*runpath=path;
 		fclose(fptr);
 }
-void check_febio_run(char const *casename,int iter){
+int check_febio_run(char const *casename,int iter){
 char path[500];
 //creat path :
 	char iterID[50]="_";
@@ -1629,14 +1632,21 @@ char path[500];
 
     // print line ; 
     fgets(s, 500, fp);
+    fclose(fp);
 
     if (s[0]=='E'){  
-    	fprintf(stderr,"ERROR: the febio solver doesn't terminated normally.\n");
-    	report(casename,0);
-		exit(EXIT_FAILURE);
-    }
+    	if (change_solver==1){
+	    	fprintf(stderr,"ERROR: the febio solver doesn't terminated normally.\n");
+	    	report(casename,0);
+			exit(EXIT_FAILURE);
+		}else{
+			change_solver=1; 
+			return 1;
+		}
+	}
 
-    fclose(fp);	
+return 0;
+
 }
 void read_logfile_data(char const *casename,int nelem,int npoin, double *uxyz, double *stress, double *strain,int iter){
 char path[500];
