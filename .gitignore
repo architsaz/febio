@@ -1,0 +1,13 @@
+# ignore these files: 
+./gitignore
+
+
+# ignore directories :
+/old
+/build
+/tests
+/docs
+
+
+
+
