@@ -9,4 +9,7 @@ int main(int argc, char const *argv[])
 {
 // input variable : 	
     CHECK_ERROR(rinputf());
+// make important directories: 
+    CHECK_ERROR(mkdirs());    
+
 }

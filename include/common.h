@@ -60,6 +60,11 @@
 
 	extern double *t,*t2;
 
+	// directories:
+	extern    char rundir[50];
+    extern	char datadir[50];
+    extern	char slash[10];
+
 	// MESH: 
 	extern	char mesh_type[50];
 	// Solver 

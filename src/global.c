@@ -38,6 +38,11 @@
 
 	double *t,*t2;
 
+	// directories:
+	    char rundir[50];
+    	char datadir[50];
+    	char slash[10]="/";
+
 	// MESH: 
 		char mesh_type[50];
 	// Solver 
