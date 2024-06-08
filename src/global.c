@@ -39,16 +39,16 @@
 	double *t,*t2;
 
 	// MESH: 
-		char *mesh_type;
+		char mesh_type[50];
 	// Solver 
-		char *nonlinear_FE;
+		char nonlinear_FE[50];
 		int total_iter,pres_iter,symetric_stiff,used_prev;
 		double pres_incre;	
 	
 	// uncoupled Moony_Rivlin 2 parameters model
 		double c1para,c2para,kpara;
 	// Neo-Hooken model
-		char *Mmodel; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
+		char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 		double *young,young_remain,pois,ro;		
 	// label : <red, yellow, white, cyan, rupture, remain>
 		int *label; 
@@ -63,5 +63,5 @@
 	double pres,ultipres,finalpres;//[dyne/cm^2]             120 mmHg  
 
 	//filename
-	char *filename;
+	char filename[50];
 

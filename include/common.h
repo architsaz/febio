@@ -61,16 +61,16 @@
 	extern double *t,*t2;
 
 	// MESH: 
-	extern	char *mesh_type;
+	extern	char mesh_type[50];
 	// Solver 
-	extern	char *nonlinear_FE;
+	extern	char nonlinear_FE[50];
 	extern	int total_iter,pres_iter,symetric_stiff,used_prev;
 	extern	double pres_incre;	
 	
 	// uncoupled Moony_Rivlin 2 parameters model
 	extern	double c1para,c2para,kpara;
 	// Neo-Hooken model
-	extern	char *Mmodel; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
+	extern	char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 	extern	double *young,young_remain,pois,ro;		
 	// label :
 	extern	int *label; 
@@ -85,6 +85,6 @@
 	extern double pres,ultipres,finalpres;//[dyne/cm^2]  
 
 	//filename
-	extern char *filename;	
+	extern char filename[50];	
 
 #endif // COMMON_H

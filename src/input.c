@@ -7,10 +7,10 @@ int rinputf(){
 
 	// MESH: 
 		char mesh_type2[50] = "tri6"; // tri3 tri6 quad4 quad8 quad9
-		mesh_type=mesh_type2;
+		strcpy(mesh_type,mesh_type2);
 	// Solver 
 		char nonlinear_FE2 [50] = "full Newton"; // BFGS or  full Newton
-		nonlinear_FE=nonlinear_FE2;
+		strcpy(nonlinear_FE,nonlinear_FE2);
 		total_iter =8;
 		pres_iter = 5;
 		symetric_stiff =0;
@@ -23,7 +23,7 @@ int rinputf(){
 		kpara=10000000;
 	// Neo-Hooken model
 		char Mmodel2 [100] = "isotropic elastic"; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-		Mmodel=Mmodel2;
+		strcpy(Mmodel,Mmodel2);
 		double young2 [3]= {10000000,10000000,10000000}; //{red, yellow, white} [dyne/cm^2]
 		young=young2;
 		young_remain = 10000000;
@@ -66,7 +66,7 @@ int rinputf(){
 	//char filename2 [100] = "agh075.1";
 	//char filename2 [100] = "agh088.1";
 	//char filename2 [100] = "agh100.1";
-	filename=filename2;
+	strcpy(filename,filename2);
 
 	return 0;
 }
