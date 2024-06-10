@@ -17,8 +17,10 @@ int main(int argc, char const *argv[])
 	CHECK_ERROR(read_zfem(datafilepath[0],&npoin,&nelem,&ptxyz,&elems)); 
 // reading wall charectristics [colored fields] from .wall file//
 // label : <red=1, yellow=2, white=7, cyan=0, rupture=0, remain=0>
-    CHECK_ERROR(read_wallmask(datafilepath[1],&Melem));  
+    CHECK_ERROR(read_wallmask(datafilepath[1],&Melem)); 
+// reading regional mask [domme=16 body=8 neck=4 parental=1 distal=2 another e.g. aneu2=0]   
+    CHECK_ERROR(read_regionmask(datafilepath[2],&region_id,&region_idp));
 
     
-
+    return 0;
 }

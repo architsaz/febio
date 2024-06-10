@@ -79,14 +79,14 @@
 	extern	char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 	extern	double *young,young_remain,pois,ro;		
 	// label :
-	extern	int *label; 
+	extern	int *label,label_num; 
 	// boundary condition:
-	extern	int used_maskfile,*colorid,*fix_region,*load_region;	//region 
+	extern	int used_maskfile,*colorid,colorid_num,*fix_region,fix_region_num,*load_region,load_region_num;	//region 
 	// analysis region
-	extern	int *anls_region;//region 
+	extern	int *anls_region,anls_region_num;//region 
 	// thickness 
 	extern	double *thick_r,*thick_l; //[cm]		
-	
+	extern int thick_r_num,thick_l_num;
 	// pre
 	extern double pres,ultipres,finalpres;//[dyne/cm^2]  
 
@@ -94,6 +94,6 @@
 	extern char filename[50];
 
 	//data file 
-	extern char datafilepath [][500];
+	extern char datafilepath [10][500];
 
 #endif // COMMON_H

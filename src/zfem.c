@@ -172,7 +172,7 @@ int read_wallmask(char *path,int **Melem2) {
         return e++;
     }
     // check the value of the Melem: (remove rupture and cyan color from dataset)
-    	for (int k=0;k<3;k++) {if (temp==label[k]) Melem[iline]=label[k];};
+    	for (int k=0;k<label_num;k++) {if (temp==label[k]) Melem[iline]=label[k];};
 	//printf("\t\t the lable of element %d is:\t%d\n.",iline,Melem[iline]);  
 	}
 	//printf("All of lables was readed.");
@@ -181,4 +181,102 @@ fclose(fptr);
 *Melem2=Melem;
 printf("*  Exiting function for reading .WALL mask file!\n\n");
 return e;
+}
+int read_regionmask(char *path, int **region_id2, int **region_idp2) {
+    int e=0;
+    // the id of each portion @ labels_surf.zfem : 
+    // dome : 	16
+    // body :	8
+    // neck : 	4
+    // parent arteries : 1 
+    // distal arteries : 2	
+
+    int *region_id;
+    region_id = malloc(npoin * sizeof(*(region_id)));
+
+    // Allocate space to File pointer 
+    FILE *fptr;
+    fptr = calloc(1, sizeof(*fptr));
+
+    /* Opening File */
+    fptr = fopen(path, "r");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return e++;
+        }
+        else{
+        //printf("  File opened - %s.\n", path);
+        }
+        
+    /* Read all lines of the file */
+    int buffer = 100;
+    char *str;
+    char line[buffer];
+
+    int endcount = 0;
+    int nscan;
+    int iline;
+
+    char  test[20];
+    // initializing memory:	
+    while(1){
+        str = edit_endline_character(line, buffer, fptr);
+        nscan = sscanf(str, "%s",test);
+        // start reading regions labels:	
+        //if (!strcmp(test,"regions")){
+        if (!strcmp(test,"regions")){	
+            //printf("    Reading region mask file.\n");
+            str = edit_endline_character(line, buffer, fptr);
+            nscan = sscanf(str, "%s",test);
+            //printf("%s\n",test);
+            if (!strcmp(test,"1")){
+                //printf("    Starting to read the label of each region.\n");
+            }
+                    
+            for (iline = 0; iline < npoin; iline++) {   
+            str = edit_endline_character(line, buffer, fptr);
+            nscan = sscanf(str, "%d",&region_id[iline]);
+            // check number			        
+                if (nscan != 1) {
+                    fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
+                    return e++;
+                }
+            // check value of mask with colorid array: 
+            int checkflag=0;
+            for (int k=0; k<(colorid_num);k++) {if(region_id[iline]==colorid[k]){checkflag++; break;}}		
+            if (checkflag!=1) {printf("ERROR: the value of element %d (value=%d) is not in the colorId array\n",iline,region_id[iline]);return e++;};	
+
+            }
+
+            //printf("    Done Reading labels of regional mask (iline = %d).\n\n\n", iline);
+            endcount += 1;		      		
+        }
+                
+        if (endcount == 1) {
+            printf("* Done Reading region mask file!\n");
+            break;
+            }    
+        }
+
+        /* free(line); */
+        fclose(fptr);
+        int *region_id_ele,ele;
+    
+        region_id_ele=malloc(nelem*sizeof(*(region_id_ele)));
+
+        int points[3]={0,0,0};
+        for (ele=0;ele<nelem;ele++){
+        points[0]=elems[3*ele];
+        points[1]=elems[3*ele+1];
+        points[2]=elems[3*ele+2];
+        //region_id_ele[ele]=(region_id[points[0]-1]+region_id[points[1]-1]+region_id[points[2]-1])/3;
+        // to avoid the bug in average id color for element :
+        region_id_ele[ele]=region_id[points[0]-1];
+        }
+        
+        /* return */
+        *region_id2=region_id_ele;
+        *region_idp2=region_id;
+        printf("*  Exiting function for reading regional mask file.\n\n");
+    return e;    
 }

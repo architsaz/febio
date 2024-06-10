@@ -57,13 +57,14 @@
 		char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 		double *young,young_remain,pois,ro;		
 	// label : <red, yellow, white, cyan, rupture, remain>
-		int *label; 
+		int *label,label_num;
 	// boundary condition:
-		int used_maskfile,*colorid,*fix_region,*load_region;	//region { remain(another aneu),diastal,parent,neck,body,dome}
+		int used_maskfile,*colorid,colorid_num,*fix_region,fix_region_num,*load_region,load_region_num;	//region { remain(another aneu),diastal,parent,neck,body,dome}
 	// analysis region
-		int *anls_region;//region { remain(another aneu),diastal,parent,neck,body,dome}
+		int *anls_region,anls_region_num;//region { remain(another aneu),diastal,parent,neck,body,dome}
 	// thickness 
-		double *thick_r,*thick_l; // {red, yellow, white} [cm]		
+		double *thick_r,*thick_l; // {red, yellow, white} [cm]	
+		int thick_r_num,thick_l_num;	
 	
 	// pre
 	double pres,ultipres,finalpres;//[dyne/cm^2]             120 mmHg  
@@ -72,5 +73,5 @@
 	char filename[50];
 
 	//data file 
-	char datafilepath [][500];
+	char datafilepath [10][500];
 
