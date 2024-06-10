@@ -3,6 +3,7 @@
 
 int rinputf();
 int mkdirs();
+int datafiles();
 
 
 #endif // FEBIO_H

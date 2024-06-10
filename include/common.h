@@ -64,6 +64,7 @@
 	extern    char rundir[50];
     extern	char datadir[50];
     extern	char slash[10];
+	extern char dot[10];
 
 	// MESH: 
 	extern	char mesh_type[50];
@@ -90,6 +91,9 @@
 	extern double pres,ultipres,finalpres;//[dyne/cm^2]  
 
 	//filename
-	extern char filename[50];	
+	extern char filename[50];
+
+	//data file 
+	extern char datafilepath [][500];	
 
 #endif // COMMON_H

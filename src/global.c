@@ -42,6 +42,7 @@
 	    char rundir[50];
     	char datadir[50];
     	char slash[10]="/";
+		char dot[10]=".";
 
 	// MESH: 
 		char mesh_type[50];
@@ -69,4 +70,7 @@
 
 	//filename
 	char filename[50];
+
+	//data file 
+	char datafilepath [][500];
 
