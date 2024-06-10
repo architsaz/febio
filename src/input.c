@@ -4,7 +4,7 @@
 #include "common.h"
 
 int rinputf(){
-
+	int e =0;
 	// MESH: 
 		char mesh_type2[50] = "tri6"; // tri3 tri6 quad4 quad8 quad9
 		strcpy(mesh_type,mesh_type2);
@@ -68,11 +68,10 @@ int rinputf(){
 	//char filename2 [100] = "agh100.1";
 	strcpy(filename,filename2);
 
-	return 0;
+	return e;
 }
 int datafiles(){
-	int i;
-	char file [50];
+	int e =0;
 	strcpy(datafilepath[0],datadir);
 	strcat(datafilepath[0],filename);
 	strcat(datafilepath[0],dot);
@@ -84,6 +83,5 @@ int datafiles(){
 
 	strcpy(datafilepath[2],datadir);
 	strcat(datafilepath[2],"labels_srf.zfem");
-
-	return 0;
+	return e;
 }

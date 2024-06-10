@@ -94,6 +94,6 @@
 	extern char filename[50];
 
 	//data file 
-	extern char datafilepath [][500];	
+	extern char datafilepath [][500];
 
 #endif // COMMON_H
