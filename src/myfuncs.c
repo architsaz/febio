@@ -54,7 +54,7 @@ int assignDoubleArray(double **ptr, double *arr, int size) {
     return 0;
 }
 // check the start # for the element 
-// make data structure for elements surrounded a point
+// make data structure for elements surrounding a point
 int save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2,int Nredge){
     int e=0;
     // check the start ID element 
@@ -138,7 +138,7 @@ int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *
 	free(lesps);
 	return nei;
 }
-// make data structure for elements surrounded an element 
+// make data structure for elements surrounding an element 
 int save_esure(int nelem,int *elems,int *esurp_pointer,int *esurp,int **esue2, int **open2,int Nredge){
 	int e=0;
     // check the start ID element 
@@ -194,4 +194,109 @@ int save_esure(int nelem,int *elems,int *esurp_pointer,int *esurp,int **esue2, i
 	*esue2=nei;
 	*open2=open;
     return e;	
+}
+// find Nr of eadge in the mesh and make data structure for adges surrounding an element
+int save_fsure(int nelem, int *esure, int **efid2,int *numf,int Nredge){
+    int e=0;
+    int *efid,nei,ele,f;
+    int num=0;
+
+    // allocate memory
+    efid= calloc(Nredge*nelem, sizeof(*efid));
+    for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
+    
+    for (ele=0; ele<nelem; ele++){
+        for (f=0; f<Nredge; f++){
+            if (efid[Nredge*ele+f] < 0){
+                nei= esure[Nredge*ele+f];
+                if (nei>=0){  // this is not boundary face 
+                efid [Nredge*ele+f] = num;
+                for (int j=0;j<Nredge;j++){	
+                	if(esure[Nredge*nei+j]==ele)  efid[Nredge*nei+j]=num;
+                }
+                }else{ // this is on the boundary face
+                efid [Nredge*ele+f] = nei;
+                }
+                num++;
+            }
+        }
+    }
+    printf("* nr face : %d\n", num);
+    *numf=num;
+    *efid2=efid;
+    return e;
+}
+// make data structure for points surrounding an edge 
+int save_psurf(int nelem, int numf, int *elems,int *esure, int **psurf2,int Nredge){
+    int e=0;
+    int *psurf,*order;
+    int *efid,nei,*p;
+    int num = 0;
+
+    // allocate memory
+    p=calloc(Nredge,sizeof(*p));
+    order=calloc(2*Nredge,sizeof(*order));
+    efid= calloc(Nredge*nelem, sizeof(*efid));
+    for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
+    psurf= calloc(2*numf, sizeof(*psurf));
+	
+	for (int i=1;i<Nredge;i++) {
+			order[2*i-1]=i;
+			order[2*i]=i;
+	}
+
+    for (int ele=0; ele<nelem; ele++){
+        for (int f=0; f<Nredge; f++){
+            if (efid[Nredge*ele+f] < 0){
+                for (int j=0;j<Nredge;j++) p[j]=elems[Nredge*ele+j];
+                for (int j=0;j<Nredge;j++){
+	                if (f==j) {psurf[2*num]=p[order[2*j]];psurf[2*num+1]=p[order[2*j+1]];}
+	            }
+                nei= esure[Nredge*ele+f];
+                if (nei>=0){  // this is not boundary face
+                efid [Nredge*ele+f] = num;
+                for (int j=0;j<Nredge;j++){	
+                	if(esure[Nredge*nei+j]==ele)  efid[Nredge*nei+j]=num;
+                }
+                }
+                num++;
+            }
+        }
+    }
+
+    *psurf2=psurf;
+    printf("* psurf is done.\n");
+    return e;
+}
+// make data structure for elements surrounding an edge
+int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge){
+    int e=0;
+    int *esurf;
+    int *efid,nei,ele,f;
+    int num = 0;
+
+    // allocate memory
+    efid= calloc(Nredge*nelem, sizeof(*efid));
+    for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
+    esurf= calloc(2*numf, sizeof(*esurf));
+
+    for (ele=0; ele<nelem; ele++){
+        for (f=0; f<Nredge; f++){
+            if (efid[Nredge*ele+f] < 0){
+                nei= esure[Nredge*ele+f];
+                esurf[2*num]=ele;
+                esurf[2*num+1]=nei;
+                if (nei>=0){  // this is not boundary face
+                efid [Nredge*ele+f] = num;
+                if(esure[Nredge*nei]==ele)  efid[Nredge*nei]=num;
+                if(esure[Nredge*nei+1]==ele)  efid[Nredge*nei+1]=num;
+                if(esure[Nredge*nei+2]==ele)  efid[Nredge*nei+2]=num;
+                }
+                num++;
+            }
+        }
+    }
+    *esurf2=esurf;
+    printf("* esurf is done!\n");
+    return e;
 }

@@ -27,7 +27,17 @@ int main(int argc, char const *argv[])
 // find element surround an element 
     CHECK_ERROR(save_esure(nelem,elems,esurp_pointer,esurp,&esure,&open,mesh_edge));
     //for (int i=0;i<nelem;i++) printf("ele : %d e1: %d e2 : %d e3: %d\n",i,esure[3*i],esure[3*i+1],esure[3*i+2]);
-
+// find Nr of eadge and given id to adges*/
+    CHECK_ERROR(save_fsure(nelem,esure,&efid,&numf,mesh_edge)); 
+    // printf (" the number of face : %d \n",numf);
+    // for (int i=0; i<nelem ; i++){
+    //     printf("ele %d l1: %d l2: %d l3: %d \n",i,efid[3*i],efid[3*i+1],efid[3*i+2]);
+    // } 
+// find point surround a face*/
+    CHECK_ERROR(save_psurf(nelem,numf,elems,esure,&psurf,mesh_edge));
+    // for (int i=0; i<numf ; i++){
+    //     printf("f %d p1: %d p2: %d \n",i,psurf[2*i],psurf[2*i+1]);
+    // }
 
     
     return 0;
