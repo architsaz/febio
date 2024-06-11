@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+#include "myfuncs.h"
 
 char *edit_endline_character(char *line, int buffer, FILE *fptr) {
 
@@ -29,7 +30,7 @@ int e=0;
 
     if (fptr == NULL) {
         fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
-        return e++;
+        return -1;
     }
     else {
         printf("  File opened - %s.\n", path);
@@ -59,7 +60,7 @@ int e=0;
             printf("    Reading POINTS.\n");
                     if (nscan != 1) {
                         fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
-                        return e++;
+                        return -1;
                     }
                 /* Read Number of Points */	    
                     str = edit_endline_character(line, buffer, fptr);     
@@ -67,7 +68,7 @@ int e=0;
                     printf("      Number of Points = %d.\n", npoin1);
                         if (nscan != 1) {
                             fprintf(stderr,"ERROR: Incorrect number of entries on Number of Points line.\n");
-                            return e++;
+                            return -1;
                         }
 
                 /* Read Coordinates of all points */
@@ -103,7 +104,7 @@ int e=0;
                 
                 if (nscan != 1) {
                     fprintf(stderr,"ERROR: Incorrect number of entries on Number of ELEMENTS number.\n");
-                    return e++;
+                    return -1;
                 }
 
             /* Read Connectivity of all elements */
@@ -117,7 +118,7 @@ int e=0;
                             
                             if (nscan != 3) {
                                 fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
-                                return e++;
+                                return -1;
                             }
                                 // printf("nscan = %d, iline = %d,\t %d,\t %d,\t %d.\n",
                             //  						nscan, iline,
@@ -140,6 +141,7 @@ fclose(fptr);
 *ptxyz=ptxyz1;  
 /* return */
     printf("*  Exiting function for reading flds.zfem file.\n\n");
+    checkEIDS(elems1);
     return e;
 }
 int read_wallmask(char *path,int **Melem2) {
@@ -153,7 +155,7 @@ int read_wallmask(char *path,int **Melem2) {
 	fptr = fopen(path, "r");
 	if (fptr == NULL) {
    	fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
-   	return e++;
+   	return -1;
   	}
   	else {
    	printf("  File opened - %s.\n", path);
@@ -169,7 +171,7 @@ int read_wallmask(char *path,int **Melem2) {
     nscan = sscanf(str, "%d",&temp);
     if (nscan != 1) {
         fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
-        return e++;
+        return -1;
     }
     // check the value of the Melem: (remove rupture and cyan color from dataset)
     	for (int k=0;k<label_num;k++) {if (temp==label[k]) Melem[iline]=label[k];};
@@ -202,7 +204,7 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
     fptr = fopen(path, "r");
         if (fptr == NULL) {
         fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
-        return e++;
+        return -1;
         }
         else{
         //printf("  File opened - %s.\n", path);
@@ -239,12 +241,12 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
             // check number			        
                 if (nscan != 1) {
                     fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
-                    return e++;
+                    return -1;
                 }
             // check value of mask with colorid array: 
             int checkflag=0;
             for (int k=0; k<(colorid_num);k++) {if(region_id[iline]==colorid[k]){checkflag++; break;}}		
-            if (checkflag!=1) {printf("ERROR: the value of element %d (value=%d) is not in the colorId array\n",iline,region_id[iline]);return e++;};	
+            if (checkflag!=1) {printf("ERROR: the value of element %d (value=%d) is not in the colorId array\n",iline,region_id[iline]);return -1;};	
 
             }
 
