@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-// Define a function pointer type for comparison functions
-typedef int (*compare_func)(void*, void*);
+#include "mystructs.h"
+#include "common.h"
 // Comparison functions
 int compare_int_min(void* a, void* b) {
     return (*(int*)a < *(int*)b);
@@ -34,7 +34,7 @@ int checkEIDS(int *elems){
     size_t int_size = sizeof(elems) / sizeof(elems[0]);
     // Find min and max for int array
     int* int_min = (int*)find_extreme(elems, sizeof(int), int_size, compare_int_min);
-    //printf("--> ID of elements start from %d!\n",*int_min);
+    printf("--> ID of elements start from %d!\n",*int_min);
     return *int_min;
 }
 // assign an integer array to a pointer
@@ -270,6 +270,7 @@ int save_psurf(int nelem, int numf, int *elems,int *esure, int **psurf2,int Nred
 }
 // make data structure for elements surrounding an edge
 int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge){
+
     int e=0;
     int *esurf;
     int *efid,nei,ele,f;
@@ -298,5 +299,137 @@ int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge){
     }
     *esurf2=esurf;
     printf("* esurf is done!\n");
+    return e;
+}
+// conver mesh from tri3 to other type of mesh 
+void tri3_to_tri6(mesh *M1,mesh **M2){
+
+// define type of mesh for M2
+    strcpy((*M2)->type,"tri");
+    (*M2)->nredge=3;    
+    (*M2)->nrpts=6;     
+//  define coordinate and elems for M2        
+	double *ptxyz2;
+	int npoin2,*elems2,nelem2;
+	    //allocate memmory
+		nelem2=M1->nelem;
+		npoin2=M1->numf+M1->npoin;
+		ptxyz2=calloc(3*npoin2,sizeof(*ptxyz2));
+		elems2=calloc(6*M1->nelem,sizeof(*elems2));
+
+	    // coordinate of all(new+old) points
+		for (int i=0;i<(3*M1->npoin);i++) ptxyz2[i]=M1->ptxyz[i];
+		for (int i=0;i<M1->numf;i++){
+			for (int j=0;j<3;j++){	
+				ptxyz2[3*M1->npoin+3*i+j]=(M1->ptxyz[3*(M1->psurf[2*i]-1)+j]+M1->ptxyz[3*(M1->psurf[2*i+1]-1)+j])/2;
+			}
+		}
+	    // 	new connectivity 
+		for (int i=0;i<M1->nelem;i++){
+			elems2[6*i+0]=M1->elems[3*i+0];		
+			elems2[6*i+1]=M1->elems[3*i+1];
+			elems2[6*i+2]=M1->elems[3*i+2];
+			elems2[6*i+3]=M1->fsure[3*i+0]+M1->npoin+1;
+			elems2[6*i+4]=M1->fsure[3*i+1]+M1->npoin+1;
+			elems2[6*i+5]=M1->fsure[3*i+2]+M1->npoin+1;
+		}
+        //return:
+        (*M2)->npoin=npoin2;
+        (*M2)->elems=elems2;
+        (*M2)->ptxyz=ptxyz2;
+        (*M2)->nelem=nelem2;
+// all other data structure same as M1
+        (*M2)->Melem=M1->Melem; // wall charectristics from .wall file
+        (*M2)->rpts=M1->rpts; // pointal value of regional mask     --> read labels_srf.zfem
+        (*M2)->relems=M1->relems; // elemental value of regional mask --> approximate
+printf("* the tri3 mesh converted to the tri6 mesh.\n- new npoin: %d\n- new nelem: %d\n",npoin2,nelem2);	
+}
+void tri3_to_quad4(mesh *M1,mesh **M2){
+// define type of mesh for M2
+    strcpy((*M2)->type,"quad");
+    (*M2)->nredge=4;    
+    (*M2)->nrpts=4;     
+//  define coordinate and elems for M2  	
+	double *ptxyz2;
+	int npoin2,*elems2,nelem2,*Melem2,*relems2;
+
+	//allocate memmory
+		npoin2=M1->npoin+M1->nelem+M1->numf;
+		nelem2=3*M1->nelem;
+		ptxyz2=calloc(3*npoin2,sizeof(*ptxyz2));
+		elems2=calloc(4*nelem2,sizeof(*elems2));
+		Melem2=calloc(nelem2,sizeof(*Melem2));
+		relems2=calloc(nelem2,sizeof(*relems2));
+
+	// coordinate of all(new+old) points
+		for (int i=0;i<(3*M1->npoin);i++) ptxyz2[i]=M1->ptxyz[i];
+		for (int i=0;i<M1->nelem;i++){
+			for (int j=0;j<3;j++){	
+				ptxyz2[3*M1->npoin+3*i+j]=(M1->ptxyz[3*(M1->elems[3*i]-1)+j]+M1->ptxyz[3*(M1->elems[3*i+1]-1)+j]+M1->ptxyz[3*(M1->elems[3*i+2]-1)+j])/3;
+			}
+		}
+		for (int i=0;i<M1->numf;i++){
+			for (int j=0;j<3;j++){	
+				ptxyz2[3*M1->npoin+3*M1->nelem+3*i+j]=(M1->ptxyz[3*(M1->psurf[2*i]-1)+j]+M1->ptxyz[3*(M1->psurf[2*i+1]-1)+j])/2;
+			}
+		}
+	// 	new connectivity 
+		for (int i=0;i<M1->nelem;i++){
+			// first quadrilateral
+			elems2[12*i+0*4+0]=M1->elems[3*i+0];	
+			elems2[12*i+0*4+1]=M1->fsure[3*i+0]+M1->nelem+M1->npoin+1;
+			elems2[12*i+0*4+2]=M1->npoin+i+1;
+			elems2[12*i+0*4+3]=M1->fsure[3*i+2]+M1->nelem+M1->npoin+1;	
+			Melem2[3*i]=M1->Melem[i];
+			relems2[3*i]=M1->relems[i];
+
+			// second quadrilateral
+			elems2[12*i+1*4+0]=M1->elems[3*i+1];	
+			elems2[12*i+1*4+1]=M1->fsure[3*i+1]+M1->nelem+M1->npoin+1;
+			elems2[12*i+1*4+2]=M1->npoin+i+1;
+			elems2[12*i+1*4+3]=M1->fsure[3*i+0]+M1->nelem+M1->npoin+1;			
+			Melem2[3*i+1]=M1->Melem[i];
+			relems2[3*i+1]=M1->relems[i];
+
+			// third quadrilateral
+			elems2[12*i+2*4+0]=M1->elems[3*i+2];	
+			elems2[12*i+2*4+1]=M1->fsure[3*i+2]+M1->nelem+M1->npoin+1;
+			elems2[12*i+2*4+2]=M1->npoin+i+1;
+			elems2[12*i+2*4+3]=M1->fsure[3*i+1]+M1->nelem+M1->npoin+1;
+			Melem2[3*i+2]=M1->Melem[i];
+			relems2[3*i+2]=M1->relems[i];
+
+		}
+	//return:
+        (*M2)->npoin=npoin2;
+        (*M2)->elems=elems2;
+        (*M2)->ptxyz=ptxyz2;
+        (*M2)->nelem=nelem2;
+// other data structure : 
+	(*M2)->Melem=Melem2;
+	(*M2)->relems=relems2;
+
+printf("the tri3 mesh converted to the quad4 mesh.\n- new npoin: %d\n- new nelem: %d\n",npoin2,nelem2);	
+}
+int ConverMesh(mesh *M1,mesh *M2,ConvertorFunc Func){
+    int e=0;
+    // find element surround a point
+    CHECK_ERROR(save_esurp(M1->npoin,M1->nelem,M1->elems,&M1->esurp,&M1->esurp_ptr,M1->nredge));
+    //for (int i=0;i<20;i++) printf("%d \n",esurp_pointer[i]);  
+// find element surround an element 
+    CHECK_ERROR(save_esure(M1->nelem,M1->elems,M1->esurp_ptr,M1->esurp,&M1->esure,&M1->open,M1->nredge));
+    //for (int i=0;i<M1->nelem;i++) printf("ele : %d e1: %d e2 : %d e3: %d\n",i,M1->esure[3*i],M1->esure[3*i+1],M1->esure[3*i+2]);
+// find Nr of eadge and given id to adges*/
+    CHECK_ERROR(save_fsure(M1->nelem,M1->esure,&M1->fsure,&M1->numf,M1->nredge)); 
+    printf (" the number of face : %d \n",M1->numf);
+    // for (int i=0; i<M1->nelem ; i++){
+    //     printf("ele %d l1: %d l2: %d l3: %d \n",i,M1->fsure[3*i],M1->fsure[3*i+1],M1->fsure[3*i+2]);
+    // } 
+// find point surround a face*/
+    CHECK_ERROR(save_psurf(M1->nelem,M1->numf,M1->elems,M1->esure,&M1->psurf,M1->nredge));
+    // for (int i=0; i<M1->numf ; i++){
+    //     printf("f %d p1: %d p2: %d \n",i,M1->psurf[2*i],M1->psurf[2*i+1]);
+    // }
+    Func(M1,&M2);
     return e;
 }

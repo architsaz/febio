@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
 
@@ -18,7 +19,7 @@ char *edit_endline_character(char *line, int buffer, FILE *fptr) {
 int read_zfem(char *path,int *npoin, int *nelem, double **ptxyz,int **elems) {
 int e=0;
 // defined arrayes and varables
-    int npoin1 ,nelem1,*elems1;
+    int npoin1,nelem1,*elems1;
     double *ptxyz1;
 
 /* Allocate space to File pointer */
@@ -135,19 +136,19 @@ int e=0;
         }    
     }
 fclose(fptr);
-*npoin=npoin1;
-*nelem=nelem1;
-*elems=elems1;
-*ptxyz=ptxyz1;  
+    *npoin=npoin1;
+    *nelem=nelem1;
+    *elems=elems1;
+    *ptxyz=ptxyz1;  
 /* return */
     printf("*  Exiting function for reading flds.zfem file.\n\n");
     checkEIDS(elems1);
     return e;
 }
-int read_wallmask(char *path,int **Melem2) {
+int read_wallmask(char *path,mesh *M,input *inp,int **Melem2) {
     int e=0;
 	int *Melem;
-	Melem = malloc(nelem * sizeof(*(Melem)));
+	Melem = malloc(M->nelem * sizeof(*(Melem)));
 /* Allocate space to File pointer */
 	FILE *fptr;
 	fptr = calloc(1, sizeof(*fptr));
@@ -166,7 +167,7 @@ int read_wallmask(char *path,int **Melem2) {
 	int nscan,iline;
 /* Read labes of all elements */
 	int temp=0;
-	for (iline = 0; iline<nelem;iline++){
+	for (iline = 0; iline<M->nelem;iline++){
 	str = edit_endline_character(line, buffer, fptr);
     nscan = sscanf(str, "%d",&temp);
     if (nscan != 1) {
@@ -174,7 +175,7 @@ int read_wallmask(char *path,int **Melem2) {
         return -1;
     }
     // check the value of the Melem: (remove rupture and cyan color from dataset)
-    	for (int k=0;k<label_num;k++) {if (temp==label[k]) Melem[iline]=label[k];};
+    	for (int k=0;k<inp->label_num;k++) {if (temp==inp->label[k]) Melem[iline]=inp->label[k];};
 	//printf("\t\t the lable of element %d is:\t%d\n.",iline,Melem[iline]);  
 	}
 	//printf("All of lables was readed.");
@@ -184,7 +185,7 @@ fclose(fptr);
 printf("*  Exiting function for reading .WALL mask file!\n\n");
 return e;
 }
-int read_regionmask(char *path, int **region_id2, int **region_idp2) {
+int read_regionmask(char *path,mesh *M,input *inp,int **region_id2, int **region_idp2) {
     int e=0;
     // the id of each portion @ labels_surf.zfem : 
     // dome : 	16
@@ -194,7 +195,7 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
     // distal arteries : 2	
 
     int *region_id;
-    region_id = malloc(npoin * sizeof(*(region_id)));
+    region_id = malloc(M->npoin * sizeof(*(region_id)));
 
     // Allocate space to File pointer 
     FILE *fptr;
@@ -235,7 +236,7 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
                 //printf("    Starting to read the label of each region.\n");
             }
                     
-            for (iline = 0; iline < npoin; iline++) {   
+            for (iline = 0; iline < M->npoin; iline++) {   
             str = edit_endline_character(line, buffer, fptr);
             nscan = sscanf(str, "%d",&region_id[iline]);
             // check number			        
@@ -245,7 +246,7 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
                 }
             // check value of mask with colorid array: 
             int checkflag=0;
-            for (int k=0; k<(colorid_num);k++) {if(region_id[iline]==colorid[k]){checkflag++; break;}}		
+            for (int k=0; k<(inp->colorid_num);k++) {if(region_id[iline]==inp->colorid[k]){checkflag++; break;}}		
             if (checkflag!=1) {printf("ERROR: the value of element %d (value=%d) is not in the colorId array\n",iline,region_id[iline]);return -1;};	
 
             }
@@ -264,13 +265,13 @@ int read_regionmask(char *path, int **region_id2, int **region_idp2) {
         fclose(fptr);
         int *region_id_ele,ele;
     
-        region_id_ele=malloc(nelem*sizeof(*(region_id_ele)));
+        region_id_ele=malloc(M->nelem*sizeof(*(region_id_ele)));
 
         int points[3]={0,0,0};
-        for (ele=0;ele<nelem;ele++){
-        points[0]=elems[3*ele];
-        points[1]=elems[3*ele+1];
-        points[2]=elems[3*ele+2];
+        for (ele=0;ele<M->nelem;ele++){
+        points[0]=M->elems[3*ele];
+        points[1]=M->elems[3*ele+1];
+        points[2]=M->elems[3*ele+2];
         //region_id_ele[ele]=(region_id[points[0]-1]+region_id[points[1]-1]+region_id[points[2]-1])/3;
         // to avoid the bug in average id color for element :
         region_id_ele[ele]=region_id[points[0]-1];
