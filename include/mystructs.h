@@ -41,7 +41,17 @@
         //filename
             char filename[50];
     }input;
+
 // Define a function pointer type for comparison functions
     typedef int (*compare_func)(void *, void *);
-    typedef void ConvertorFunc(mesh *,mesh **);    
+    typedef void ConvertorFunc(mesh *,mesh **); 
+    typedef void (*elefieldVTK)(FILE *,char *,int ,int ,void *);  
+    typedef void (elemVTK)(FILE *,int ,int *);
+    typedef struct {
+        char *name;
+        int col;
+        int nr;   
+        void *field;
+        elefieldVTK function;
+    } FunctionWithArgs;
 #endif // MYSTRUCT_H

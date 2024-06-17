@@ -433,3 +433,91 @@ int ConverMesh(mesh *M1,mesh *M2,ConvertorFunc Func){
     Func(M1,&M2);
     return e;
 }
+void SCA_int_VTK(FILE *fptr,char *name,int col,int num,void *field){
+	int* int_field = (int*)field;
+	fprintf(fptr,"SCALARS %s int %d\nLOOKUP_TABLE default\n\n",name,col);
+	for (int ie=0;ie<num;ie++){
+		fprintf(fptr,"%d\n",int_field[ie]);
+	}
+}
+void SCA_double_VTK(FILE *fptr,char *name,int col,int num,void *field){
+	double* int_field = (double*)field;
+	fprintf(fptr,"SCALARS %s double %d\nLOOKUP_TABLE default\n\n",name,col);
+	for (int ie=0;ie<num;ie++){
+		fprintf(fptr,"%lf\n",int_field[ie]);
+	}
+}
+void tri3funcVTK(FILE *fptr,int nelem,int *elems){
+	fprintf(fptr,"CELLS %d %d\n",nelem,4*nelem);
+	for (int ie=0;ie<nelem;ie++){
+		fprintf(fptr,"3 %d %d %d\n",elems[3*ie]-1,elems[3*ie+1]-1,elems[3*ie+2]-1);
+	}
+	fprintf(fptr,"\n");
+
+	fprintf(fptr,"CELL_TYPES %d\n",nelem);
+	for (int ie=0;ie<nelem;ie++){
+		fprintf(fptr,"5\n");
+	}
+	fprintf(fptr,"\n");
+}
+void tri6funcVTK(FILE *fptr,int nelem,int *elems){
+	fprintf(fptr,"CELLS %d %d\n",nelem,7*nelem);
+	for (int ie=0;ie<nelem;ie++){
+		fprintf(fptr,"6 %d %d %d %d %d %d\n",elems[6*ie]-1,elems[6*ie+1]-1,elems[6*ie+2]-1
+		,elems[6*ie+3]-1,elems[6*ie+4]-1,elems[6*ie+5]-1);
+	}
+	fprintf(fptr,"\n");
+
+	fprintf(fptr,"CELL_TYPES %d\n",nelem);
+	for (int ie=0;ie<nelem;ie++){
+		fprintf(fptr,"22\n");
+	}
+	fprintf(fptr,"\n");
+}
+int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionWithArgs elefuncs[], size_t nrelefield,FunctionWithArgs pntfuncs[], size_t nrpntfield){
+	int e=0;	
+	char num[10];
+    sprintf(num,"%d",step);
+    char path[500];
+    strcpy(path,dir);
+	strcat(path,filenam);
+    strcat(path,"_");
+    strcat(path,num);
+    strcat(path,".vtk");
+
+	/* define File pointer:*/
+        FILE *fptr;
+        fptr = calloc(1, sizeof(*fptr));
+    /* Opening File */
+        fptr = fopen(path, "w");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+    /*write the header of file : */ 
+        fprintf(fptr,"# vtk DataFile Version 3.0\n");
+        fprintf(fptr,"3D Unstructured Surface Grid  with %s%d mesh type\n",M->type,M->nrpts);
+        fprintf(fptr,"ASCII\n\n");
+	/*write the position of file : */ 
+        fprintf(fptr,"DATASET UNSTRUCTURED_GRID\n");
+        fprintf(fptr,"POINTS %d float\n",M->npoin);
+        for (int ip=0;ip<M->npoin;ip++){
+            fprintf(fptr,"%lf %lf %lf\n",M->ptxyz[3*ip],M->ptxyz[3*ip+1],M->ptxyz[3*ip+2]);
+        }
+        fprintf(fptr,"\n");
+	/*write the elems and cell type : */
+		elemfunc(fptr,M->nelem,M->elems);
+       
+	// write SCALER elemental fields in the file: 
+		if (nrelefield!=0)fprintf(fptr,"CELL_DATA %d\n",M->nelem);
+		for (size_t i = 0; i < nrelefield; ++i) {
+        	elefuncs[i].function(fptr, elefuncs[i].name,elefuncs[i].col,elefuncs[i].nr,elefuncs[i].field); // Call each function with its array and size
+    	}
+	// write SCALER pointal fields in the file: 
+		if (nrpntfield!=0)fprintf(fptr,"POINT_DATA %d\n",M->npoin);
+		for (size_t i = 0; i < nrpntfield; ++i) {
+        	pntfuncs[i].function(fptr, pntfuncs[i].name,pntfuncs[i].col,pntfuncs[i].nr,pntfuncs[i].field); // Call each function with its array and size
+    	}
+
+	return e;
+}
