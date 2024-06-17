@@ -475,7 +475,12 @@ void tri6funcVTK(FILE *fptr,int nelem,int *elems){
 	fprintf(fptr,"\n");
 }
 int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionWithArgs elefuncs[], size_t nrelefield,FunctionWithArgs pntfuncs[], size_t nrpntfield){
-	int e=0;	
+	int e=0;
+	// check the start ID element 
+	if (checkEIDS(M->elems)!=1){
+		fprintf(stderr,"ERROR: The element ID should start from 1 for SaveVTK function!\n");
+		return -1;
+	}	
 	char num[10];
     sprintf(num,"%d",step);
     char path[500];
@@ -518,6 +523,11 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
 		for (size_t i = 0; i < nrpntfield; ++i) {
         	pntfuncs[i].function(fptr, pntfuncs[i].name,pntfuncs[i].col,pntfuncs[i].nr,pntfuncs[i].field); // Call each function with its array and size
     	}
-
+	if (fclose(fptr) == EOF) {
+        // If fclose returns EOF, it means there was an error closing the file
+    	printf("Error closing %s\n",path);
+        return -1;
+    }	
+	printf ("* write %s in the VTK format!\n",path);	
 	return e;
 }

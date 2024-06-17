@@ -135,7 +135,11 @@ int e=0;
             break;
         }    
     }
-fclose(fptr);
+	if (fclose(fptr) == EOF) {
+        // If fclose returns EOF, it means there was an error closing the file
+    	printf("Error closing %s\n",path);
+        return -1;
+    }
     *npoin=npoin1;
     *nelem=nelem1;
     *elems=elems1;
@@ -179,7 +183,11 @@ int read_wallmask(char *path,mesh *M,input *inp,int **Melem2) {
 	//printf("\t\t the lable of element %d is:\t%d\n.",iline,Melem[iline]);  
 	}
 	//printf("All of lables was readed.");
-fclose(fptr);  
+	if (fclose(fptr) == EOF) {
+        // If fclose returns EOF, it means there was an error closing the file
+    	printf("Error closing %s\n",path);
+        return -1;
+    }  
 /* done */
 *Melem2=Melem;
 printf("*  Exiting function for reading .WALL mask file!\n\n");
@@ -262,7 +270,11 @@ int read_regionmask(char *path,mesh *M,input *inp,int **region_id2, int **region
         }
 
         /* free(line); */
-        fclose(fptr);
+        if (fclose(fptr) == EOF) {
+            // If fclose returns EOF, it means there was an error closing the file
+            printf("Error closing %s\n",path);
+            return -1;
+        }
         int *region_id_ele,ele;
     
         region_id_ele=malloc(M->nelem*sizeof(*(region_id_ele)));
