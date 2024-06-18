@@ -34,7 +34,7 @@ int checkEIDS(int *elems){
     size_t int_size = sizeof(elems) / sizeof(elems[0]);
     // Find min and max for int array
     int* int_min = (int*)find_extreme(elems, sizeof(int), int_size, compare_int_min);
-    printf("--> ID of elements start from %d!\n",*int_min);
+    //printf("--> ID of elements start from %d!\n",*int_min);
     return *int_min;
 }
 // assign an integer array to a pointer
@@ -441,10 +441,10 @@ void SCA_int_VTK(FILE *fptr,char *name,int col,int num,void *field){
 	}
 }
 void SCA_double_VTK(FILE *fptr,char *name,int col,int num,void *field){
-	double* int_field = (double*)field;
+	double* double_field = (double*)field;
 	fprintf(fptr,"SCALARS %s double %d\nLOOKUP_TABLE default\n\n",name,col);
 	for (int ie=0;ie<num;ie++){
-		fprintf(fptr,"%lf\n",int_field[ie]);
+		fprintf(fptr,"%lf\n",double_field[ie]);
 	}
 }
 void tri3funcVTK(FILE *fptr,int nelem,int *elems){
@@ -489,7 +489,9 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
     strcat(path,"_");
     strcat(path,num);
     strcat(path,".vtk");
-
+	char command[500];
+	strcpy(command,"rm ");
+	strcat(command,path);
 	/* define File pointer:*/
         FILE *fptr;
         fptr = calloc(1, sizeof(*fptr));
@@ -513,16 +515,16 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
 	/*write the elems and cell type : */
 		elemfunc(fptr,M->nelem,M->elems);
        
-	// write SCALER elemental fields in the file: 
-		if (nrelefield!=0)fprintf(fptr,"CELL_DATA %d\n",M->nelem);
-		for (size_t i = 0; i < nrelefield; ++i) {
-        	elefuncs[i].function(fptr, elefuncs[i].name,elefuncs[i].col,elefuncs[i].nr,elefuncs[i].field); // Call each function with its array and size
-    	}
 	// write SCALER pointal fields in the file: 
 		if (nrpntfield!=0)fprintf(fptr,"POINT_DATA %d\n",M->npoin);
 		for (size_t i = 0; i < nrpntfield; ++i) {
         	pntfuncs[i].function(fptr, pntfuncs[i].name,pntfuncs[i].col,pntfuncs[i].nr,pntfuncs[i].field); // Call each function with its array and size
     	}
+	// write SCALER elemental fields in the file: 
+		if (nrelefield!=0)fprintf(fptr,"CELL_DATA %d\n",M->nelem);
+		for (size_t i = 0; i < nrelefield; ++i) {
+        	elefuncs[i].function(fptr, elefuncs[i].name,elefuncs[i].col,elefuncs[i].nr,elefuncs[i].field); // Call each function with its array and size
+    	}		
 	if (fclose(fptr) == EOF) {
         // If fclose returns EOF, it means there was an error closing the file
     	printf("Error closing %s\n",path);

@@ -21,6 +21,7 @@
             int *Melem; // wall charectristics from .wall file
             int *rpts; // pointal value of regional mask     --> read labels_srf.zfem
             int *relems; // elemental value of regional mask --> approximate
+            double *t;  //thickness shell element 
     }mesh;
     typedef struct{
         // Solver 
