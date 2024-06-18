@@ -51,26 +51,25 @@ int main(int argc, char const *argv[])
         }  
     CHECK_ERROR(ConverMesh(M1,M2,tri3_to_tri6));
 // material propertices 
-    CHECK_ERROR(calcthick(M2,inp));
-    //for (int i=0;i<10;i++) printf("%lf\n",M1->t[i]);
+    CHECK_ERROR(calctrithick(M2,inp));
+    CHECK_ERROR(calctriyoung(M2,inp));
+    CHECK_ERROR(calctripres(M2,inp));
+    CHECK_ERROR(calctrifixb(M2,inp));
         
     // check the mask after converting :
-        char *fieldname1 = "Melems";
-        int colo=1;
-        char *fieldname2 = "relems"; 
-        char *fieldname3 = "thickness"; 
         FunctionWithArgs prtelefield []= {
-            { fieldname1,colo,M2->nelem, M2->Melem,SCA_int_VTK},
-            { fieldname2,colo,M2->nelem, M2->relems,SCA_int_VTK},
+            { "Melems",1,M2->nelem, M2->Melem,SCA_int_VTK},
+            { "relems",1,M2->nelem, M2->relems,SCA_int_VTK},
+            { "Young_Modulus",1,M2->nelem, M2->young,SCA_double_VTK},
+            { "Press_mask",1,M2->nelem, M2->presmask ,SCA_int_VTK},
+            { "fixed_mask",1,M2->nelem, M2->fixbmask,SCA_int_VTK},
         };
         size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
         FunctionWithArgs prtpntfield []={
-            { fieldname3,colo,M2->npoin, M2->t,SCA_double_VTK}
+            { "thickness",1,M2->npoin, M2->t,SCA_double_VTK}
         };
         size_t countpnt = sizeof(prtpntfield) / sizeof(prtpntfield[0]);
-        CHECK_ERROR(SaveVTK(rundir,"test",0,M2,tri6funcVTK,prtelefield,countele,prtpntfield,countpnt));
+        CHECK_ERROR(SaveVTK(rundir,"checkinput",0,M2,tri6funcVTK,prtelefield,countele,prtpntfield,countpnt));
 
-            
-    
     return 0;
 }

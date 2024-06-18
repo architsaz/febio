@@ -15,7 +15,7 @@ int rinputf(mesh *M1,input *inp){
 		strcpy(inp->Mmodel,"isotropic elastic"); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 		static double young2 [3]= {10000000,10000000,10000000}; //{red, yellow, white} [dyne/cm^2]
 		inp->young=young2;
-		inp->young_remain = 10000000;
+		inp->young_remain = 20000000;
 		inp->pois=0.49; 
 		inp->ro=1.101;//[gr/cm^3]		
 	// label : <red, yellow, white, cyan, rupture, remain>
@@ -24,7 +24,7 @@ int rinputf(mesh *M1,input *inp){
 		inp->label=label2; 
 		
 	// boundary condition:
-		inp->used_maskfile = 0;               //  1 :  use mask --- 0 : used region id 
+		//inp->used_maskfile = 0;               //  1 :  use mask --- 0 : used region id 
 		static int colorid2 [6] = {0,2,1,4,8,16};   //region { remain(another aneu),diastal,parent,neck,body,dome} 
 		inp->colorid_num=6;
 		inp->colorid=colorid2;

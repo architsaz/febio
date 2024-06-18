@@ -22,6 +22,9 @@
             int *rpts; // pointal value of regional mask     --> read labels_srf.zfem
             int *relems; // elemental value of regional mask --> approximate
             double *t;  //thickness shell element 
+            double *young; // Young modulus for each element [dyne/cm^2]
+            int *presmask; // maks of pressure applied for pre-stressed configuration
+            int *fixbmask; // maks of fixed element for boundary consition 
     }mesh;
     typedef struct{
         // Solver 
@@ -29,11 +32,12 @@
             int  symetric_stiff;
         // Neo-Hooken model
             char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-            double *young,young_remain,pois,ro;		
+            double *young,young_remain;
+            double pois,ro;		
         // label : <red, yellow, white, cyan, rupture, remain>
             int *label,label_num;
         // boundary condition:
-            int used_maskfile,*colorid,colorid_num,*fix_region,fix_region_num,*load_region,load_region_num;	//region { remain(another aneu),diastal,parent,neck,body,dome}
+            int *colorid,colorid_num,*fix_region,fix_region_num,*load_region,load_region_num;	//region { remain(another aneu),diastal,parent,neck,body,dome}
         // thickness 
                 double *thick_r,*thick_l; // {red, yellow, white} [cm]	
                 int thick_r_num,thick_l_num;	            
