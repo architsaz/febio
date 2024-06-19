@@ -524,13 +524,13 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
 		if (nrelefield!=0)fprintf(fptr,"CELL_DATA %d\n",M->nelem);
 		for (size_t i = 0; i < nrelefield; ++i) {
         	elefuncs[i].function(fptr, elefuncs[i].name,elefuncs[i].col,elefuncs[i].nr,elefuncs[i].field); // Call each function with its array and size
-    	printf("field %ld done.\n",i);
+    	//printf("field %ld done.\n",i);
 		}		
 	if (fclose(fptr) == EOF) {
         // If fclose returns EOF, it means there was an error closing the file
     	printf("Error closing %s\n",path);
         return -1;
     }	
-	printf ("* write %s in the VTK format!\n",path);	
+	printf ("* wrote %s in the VTK format!\n",path);	
 	return e;
 }

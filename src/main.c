@@ -55,7 +55,6 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(calctriyoung(M2,inp));
     CHECK_ERROR(calctripres(M2,inp));
     CHECK_ERROR(calctrifixb(M2,inp));
-        
     // check the mask after converting :
         FunctionWithArgs prtelefield []= {
             { "Melems",1,M2->nelem, M2->Melem,SCA_int_VTK},
@@ -70,6 +69,8 @@ int main(int argc, char const *argv[])
         };
         size_t countpnt = sizeof(prtpntfield) / sizeof(prtpntfield[0]);
         CHECK_ERROR(SaveVTK(rundir,"checkinput",0,M2,tri6funcVTK,prtelefield,countele,prtpntfield,countpnt));
+// creat feb file 
+    CHECK_ERROR(febmkr(rundir,"pres",0,M2,inp));
 
     return 0;
 }

@@ -12,5 +12,6 @@ int calctrithick (mesh *, input *);
 int calctriyoung (mesh *, input *);
 int calctripres(mesh *, input *);
 int calctrifixb(mesh *, input *);
+int febmkr(char *, char *,int ,mesh *,input *);
 
 #endif // FEBIO_H
