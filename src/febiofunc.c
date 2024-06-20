@@ -88,7 +88,8 @@ void NeoHokfunc(FILE *fptr,input *inp){
         fprintf(fptr,"\t\t\t<density>%lf</density>\n",inp->ro);
         fprintf(fptr,"\t\t\t<elastic type=\"neo-Hookean\">\n");
             fprintf(fptr,"\t\t\t\t<density>%lf</density>\n",inp->ro);
-            fprintf(fptr,"\t\t\t\t<E>2e+07</E>\n");
+            fprintf(fptr,"\t\t\t\t<E type=\"map\">map_E</E>\n");
+            //fprintf(fptr,"\t\t\t\t<E>2e+07</E>\n");
             fprintf(fptr,"\t\t\t\t<v>%lf</v>\n",inp->pois);
         fprintf(fptr,"\t\t\t</elastic>\n");
         fprintf(fptr,"\t\t\t<prestrain type=\"prestrain gradient\">\n");
@@ -106,9 +107,8 @@ void Elementfunc(FILE *fptr,mesh *M){
         while (ip<M->nrpts)
         {
             fprintf(fptr,"%d",M->elems[M->nrpts*ele+ip]);
-            if (ip==(M->nrpts)) continue;
-            fprintf(fptr,",");
             ip++;
+            if(ip<M->nrpts)fprintf(fptr,",");
         }
         fprintf(fptr,"</elem>\n");
     }
@@ -124,9 +124,8 @@ void Elementfunc(FILE *fptr,mesh *M){
         while (ip<M->nrpts)
         {
             fprintf(fptr,"%d",M->elems[M->nrpts*ele+ip]);
-            if (ip==(M->nrpts)) continue;
-            fprintf(fptr,",");
             ip++;
+            if(ip<M->nrpts)fprintf(fptr,",");
         }
         fprintf(fptr,"</%s%d>\n",M->type,M->nrpts);
     }
@@ -141,14 +140,12 @@ void Elementfunc(FILE *fptr,mesh *M){
         while (ip<M->nrpts)
         {
             fprintf(fptr,"%d",M->elems[M->nrpts*ele+ip]);
-            if (ip==(M->nrpts)) continue;
-            fprintf(fptr,",");
             ip++;
+            if(ip<M->nrpts)fprintf(fptr,",");
         }
         fprintf(fptr,"</%s%d>\n",M->type,M->nrpts);
     }
     fprintf(fptr,"\t\t</Surface>\n");
-
 }
 void shellthickfunc(FILE *fptr,mesh *M){
     fprintf(fptr,"\t\t<ElementData type=\"shell thickness\" elem_set=\"Part1\">\n");
@@ -158,9 +155,9 @@ void shellthickfunc(FILE *fptr,mesh *M){
         while (ip<M->nrpts)
         {
             fprintf(fptr,"%lf",M->t[(M->elems[M->nrpts*ele+ip])-1]);
-            if (ip==(M->nrpts)) continue;
-            fprintf(fptr,",");
             ip++;
+            if(ip<M->nrpts)fprintf(fptr,",");
+            
         }
         fprintf(fptr,"</e>\n");
     }    
@@ -325,6 +322,7 @@ int febmkr(char *dir, char *filename,int step,mesh *M,input *inp){
                 }
             fprintf(fptr,"\t\t</Nodes>\n");
             Elementfunc(fptr,M);
+            fprintf(fptr,"\t\t<PartList name=\"map_E\">Part1</PartList>\n");
         fprintf(fptr,"\t</Mesh>\n");
         fprintf(fptr,"\t<MeshDomains>\n");
         	fprintf(fptr,"\t\t<ShellDomain name=\"Part1\" mat=\"Material1\">\n");
@@ -333,6 +331,10 @@ int febmkr(char *dir, char *filename,int step,mesh *M,input *inp){
         fprintf(fptr,"\t</MeshDomains>\n");
         fprintf(fptr,"\t<MeshData>\n");
             shellthickfunc(fptr,M);
+            fprintf(fptr,"\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
+                for(int ele=0;ele<M->nelem;ele++)
+                fprintf(fptr,"\t\t\t<e lid=\"%d\">%lf</e>\n",ele+1,M->young[ele]);
+            fprintf(fptr,"\t\t</ElementData>\n");
         fprintf(fptr,"\t</MeshData>\n");
         fprintf(fptr,"\t<Boundary>\n");
 		fprintf(fptr,"\t\t<bc name=\"FixedDisplacement1\" node_set=\"@surface:FixedShellDisplacement1\" type=\"zero displacement\">\n");
