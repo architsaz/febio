@@ -11,10 +11,10 @@
 int main(int argc, char const *argv[])
 {
 // reading the argument of main function 
-	strcpy(filename, "a06161.1");
+	//strcpy(filename, "a06161.1");
 	//strcpy(filename,"agh075.1");
 	//strcpy(filename, "agh088.1");
-	//strcpy(filename, "agh100.1");    
+	strcpy(filename, "agh100.1");    
 // allocate memory for M1 mesh struct    
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
     if (M1 == NULL) {
@@ -71,6 +71,16 @@ int main(int argc, char const *argv[])
         CHECK_ERROR(SaveVTK(rundir,"checkinput",0,M2,tri6funcVTK,prtelefield,countele,prtpntfield,countpnt));
 // creat feb file 
     CHECK_ERROR(febmkr(rundir,"pres",0,M2,inp));
+// run febio solver 
+    char command[500];
+    sprintf(command,"febio4 -i %spres_0.feb -config febio.xml",rundir); 
+    printf("%s\n",command);   
+    //system(command);
+    sprintf(command,"grep \"Negative jacobian was detected at element\" %spres_0.log | awk '{print $8}' >%sNJ.txt",rundir,rundir);
+    printf("%s\n",command);   
+    system(command);
+    sprintf(command,"%sNJ.txt",rundir);
+    int NrNj=countline(command);
 
     return 0;
 }

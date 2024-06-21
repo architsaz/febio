@@ -32,7 +32,7 @@
             int  symetric_stiff;
         // Neo-Hooken model
             char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-            double *young,young_remain;
+            double *young_r,*young_l;
             double pois,ro;		
         // label : <red, yellow, white, cyan, rupture, remain>
             int *label,label_num;

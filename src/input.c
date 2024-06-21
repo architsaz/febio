@@ -13,9 +13,10 @@ int rinputf(mesh *M1,input *inp){
 		inp->symetric_stiff =0;
 	// Neo-Hooken model
 		strcpy(inp->Mmodel,"isotropic elastic"); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-		static double young2 [3]= {10000000,10000000,10000000}; //{red, yellow, white} [dyne/cm^2]
-		inp->young=young2;
-		inp->young_remain = 20000000;
+		static double young_l2 [3]= {5000000,20000000,20000000}; //{red, yellow, white} [dyne/cm^2]
+		inp->young_l=young_l2;
+		static double young_r2 [6]= {10000000,10000000,10000000,7000000,7000000,7000000}; ////region { remain(another aneu),diastal,parent,neck,body,dome} [dyne/cm^2]
+		inp->young_r=young_r2;
 		inp->pois=0.49; 
 		inp->ro=1.101;//[gr/cm^3]		
 	// label : <red, yellow, white, cyan, rupture, remain>
@@ -36,7 +37,7 @@ int rinputf(mesh *M1,input *inp){
 		inp->load_region=load_region2;
 		inp->load_region_num=6;
 	// thickness 
-		static double thick_r2[6] ={0.01,0.01,0.01,0.01,0.01,0.01}; // { remain(another aneu),diastal,parent,neck,body,dome}[cm]
+		static double thick_r2[6] ={0.015,0.015,0.015,0.01,0.01,0.01}; // { remain(another aneu),diastal,parent,neck,body,dome}[cm]
 		inp->thick_r=thick_r2;
 		inp->thick_r_num=6;
 		static double thick_l2[3] ={0.005,0.02,0.02}; // {red, yellow, white} [cm]		

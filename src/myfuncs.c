@@ -534,3 +534,29 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
 	printf ("* wrote %s in the VTK format!\n",path);	
 	return e;
 }
+int countline(char *path) {
+  FILE *fp;
+  int count = 0;  // Initialize line counter
+  char c;  // To store a character read from file
+
+  // Open the file in read mode
+  fp = fopen(path, "r");
+
+  // Check if file exists
+  if (fp == NULL) {
+    printf("Error: Could not open file\n");
+    return 1;
+  }
+
+  // Read contents of file
+  while ((c = fgetc(fp)) != EOF) {
+    if (c == '\n') {  // Increment count if newline character is encountered
+      count++;
+    }
+  }
+
+  // Print the number of lines
+  printf("The number of lines in the file is: %d\n", count);
+
+  return count;
+}

@@ -10,5 +10,6 @@
     int SaveVTK(char *, char *,int ,mesh *,elemVTK ,FunctionWithArgs *,size_t,FunctionWithArgs *,size_t );
     void tri3funcVTK(FILE *,int ,int *);
     void tri6funcVTK(FILE *,int ,int *);
+    int countline(char *);
 #endif // MYFUNCS_H
 

@@ -35,12 +35,20 @@ int calctriyoung (mesh *M, input *inp){
     int e=0;
     static double *young;
     young = malloc(M->nelem * sizeof(*young));
-    for (int i=0;i<M->nelem;i++) young[i]=inp->young_remain;	 
+    // applied region mask
+        for (int ele =0; ele<M->nelem; ele++){
+            for(int k=0;k<inp->colorid_num;k++){
+                if (M->relems[ele]==inp->colorid[k]){	
+                    young[ele] = inp->young_r[k];					
+                    break;
+                }
+            }
+        }
     // applied the label{color} mask
         for (int ele =0; ele<M->nelem; ele++){
             for(int k=0;k<inp->label_num;k++){
                 if (M->Melem[ele]==inp->label[k]){	
-                    young[ele] = inp->young[k];
+                    young[ele] = inp->young_l[k];
                     break;
                 }
             }
@@ -355,7 +363,7 @@ int febmkr(char *dir, char *filename,int step,mesh *M,input *inp){
         fprintf(fptr,"\t</Boundary>\n");
         fprintf(fptr,"\t<Loads>\n");
 		fprintf(fptr,"\t\t<surface_load name=\"Pressure1\" surface=\"PressureLoad1\" type=\"pressure\">\n");
-			fprintf(fptr,"\t\t\t<pressure lc=\"1\">106658</pressure>\n");
+			fprintf(fptr,"\t\t\t<pressure lc=\"1\">%lf</pressure>\n",inp->pres);
 			fprintf(fptr,"\t\t\t<symmetric_stiffness>0</symmetric_stiffness>\n");
 			fprintf(fptr,"\t\t\t<linear>0</linear>\n");
 			fprintf(fptr,"\t\t\t<shell_bottom>0</shell_bottom>\n");
@@ -378,7 +386,7 @@ int febmkr(char *dir, char *filename,int step,mesh *M,input *inp){
                 fprintf(fptr,"\t\t\t<points>\n");
                     fprintf(fptr,"\t\t\t\t<pt>0,0</pt>\n");
                     fprintf(fptr,"\t\t\t\t<pt>1,1</pt>\n");
-                    fprintf(fptr,"\t\t\t\t<pt>2,1.67</pt>\n");
+                    fprintf(fptr,"\t\t\t\t<pt>2,%lf</pt>\n",inp->ultipres/inp->pres);
                 fprintf(fptr,"\t\t\t</points>\n");
 		    fprintf(fptr,"\t\t</load_controller>\n");
         fprintf(fptr,"\t</LoadData>\n");
