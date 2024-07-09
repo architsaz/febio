@@ -3,8 +3,192 @@
 #include <string.h>
 #include "mystructs.h"
 #include "myfuncs.h"
+#include "common.h"
+#include "febiofuncs.h"
 
+int runfebio(){
+    int e=0;
+    /* define path */
+        char path [500];
+        strcpy(path,rundir);
+        strcat(path,"runfebio.sh");
 
+	/* define File pointer:*/
+        FILE *fptr;
+        fptr = calloc(1, sizeof(*fptr));
+    /* Opening File */
+        fptr = fopen(path, "w");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+    /*write & run runfeb file : */ 
+        fprintf(fptr,"#!/bin/bash\n\n");
+        fprintf(fptr,"febio4 -i %spres_0.feb -config febio.xml\n",rundir);
+        if (fclose(fptr) == EOF) {
+            // If fclose returns EOF, it means there was an error closing the file
+            printf("Error closing %s\n",path);
+            return -1;
+        }	
+        char command [500];
+        sprintf(command,"./%srunfebio.sh",rundir);
+        printf("%s\n",command);
+        system(command);
+
+        // //system(command);
+        // sprintf(command,"grep \"Negative jacobian was detected at element\" %spres_0.log | awk '{print $8}' >%sNJ.txt",rundir,rundir);
+        // printf("%s\n",command);   
+        // system(command);
+        // sprintf(command,"%sNJ.txt",rundir);
+        // int NrNj=countline(command);
+    return e;
+}
+int readNJ(){
+    int e=0;
+    /* define path */
+        char path [500];
+        strcpy(path,rundir);
+        strcat(path,"runfebio.sh");
+
+	/* define File pointer:*/
+        FILE *fptr;
+        fptr = calloc(1, sizeof(*fptr));
+    /* Opening File */
+        fptr = fopen(path, "w");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+    /*write & run runfeb file : */ 
+        fprintf(fptr,"#!/bin/bash\n\n");
+        fprintf(fptr,"grep \"Negative jacobian was detected at element\" %spres_0.log | awk '{print $8}' >%sNJ.txt",rundir,rundir);
+        if (fclose(fptr) == EOF) {
+            // If fclose returns EOF, it means there was an error closing the file
+            printf("Error closing %s\n",path);
+            return -1;
+        }	
+        char command [500];
+        sprintf(command,"./%srunfebio.sh",rundir);
+        printf("%s\n",command);
+        system(command);
+    /*read the Nr of the Negative Jacobian elements*/
+        strcpy(path,rundir);
+        strcat(path,"NJ.txt");
+        NrNj=countline(path);
+    /*read NJ.txt file and make NJ mask*/
+        fptr = fopen(path, "r");
+        if (fptr == NULL) {
+            fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+            return -1;
+        }
+        int buffer = 100;
+        char *str,line[buffer];
+        int nscan,*NJele;
+        NJele=calloc(NrNj,sizeof(*NJele));
+        for (int i=0;i<NrNj;i++){
+            str = edit_endline_character(line, buffer, fptr); 
+            //printf("%s\n",str);
+            nscan = sscanf(str, "%d",&NJele[i]);
+            if (nscan != 1) {
+                fprintf(stderr,"ERROR: Incorrect number of entries on line %d of NJ.txt.\n",i);
+                return -1;
+            }
+        }
+        for (int i=0;i<NrNj;i++) NJmask[NJele[i]]=1;
+    return e;
+}
+int appliedgfilt_ptri6(mesh *M0,double *arrp, int clc){
+    int e=0;
+    double *arre;
+    arre=calloc(M0->nelem,sizeof(*arre));
+    for (int iter=0;iter<clc;iter++){
+        for (int ele=0;ele<M0->nelem;ele++){
+            double mean=0;
+            for (int p=0;p<M0->nrpts;p++) mean+=arrp[(M0->elems[M0->nrpts*ele+p])-1];
+            arre[ele]=mean/M0->nrpts;        
+        }
+        for (int i=1;i<=M0->npoin;i++){
+            double mean=0;
+            for (int j=M0->esurp_ptr[i];j<M0->esurp_ptr[i+1];j++) mean+=arre[M0->esurp[j]];
+            arrp[i-1]=mean/(M0->esurp_ptr[i+1]-M0->esurp_ptr[i]);
+        }
+        for (int i=0;i<M0->numf;i++){	
+			arrp[M0->npoin+i]=(arrp[M0->psurf[2*i]-1]+arrp[M0->psurf[2*i+1]-1])/2;
+		}
+    }
+    return e;
+}
+int appliedgfilt_etri(mesh *M0,double *arre, int clc){
+    int e=0;
+    double *arrp;
+    arrp=calloc(M0->npoin,sizeof(*arrp));
+    for (int iter=0;iter<clc;iter++){
+        for (int i=1;i<=M0->npoin;i++){
+            double mean=0;
+            for (int j=M0->esurp_ptr[i];j<M0->esurp_ptr[i+1];j++) mean+=arre[M0->esurp[j]];
+            arrp[i-1]=mean/(M0->esurp_ptr[i+1]-M0->esurp_ptr[i]);
+        }
+        for (int ele=0;ele<M0->nelem;ele++){
+            double mean=0;
+            for (int p=0;p<M0->nrpts;p++) mean+=arrp[(M0->elems[M0->nrpts*ele+p])-1];
+            arre[ele]=mean/M0->nrpts;        
+        }
+    }
+    return e;
+}
+int checkresult(char *filename){
+    int IS_ERROR =0;
+    /* define path */
+        char path [500];
+        strcpy(path,rundir);
+        strcat(path,"runfebio.sh");
+
+	/* define File pointer:*/
+        FILE *fptr;
+        fptr = calloc(1, sizeof(*fptr));
+    /* Opening File */
+        fptr = fopen(path, "w");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+    /*remove txt files*/    
+        char command1[500]="rm -r ";
+        strcat(command1,rundir);
+        strcat(command1,"*.txt");
+        system(command1);    
+    /*write & run runfeb file : */ 
+        fprintf(fptr,"#!/bin/bash\n\n");
+        fprintf(fptr,"grep \"E R R O R\" %s%s.log > %sresult.txt",rundir,filename,rundir);
+        if (fclose(fptr) == EOF) {
+            // If fclose returns EOF, it means there was an error closing the file
+            printf("Error closing %s\n",path);
+            return -1;
+        }	
+        char command [500];
+        sprintf(command,"./%srunfebio.sh",rundir);
+        printf("%s\n",command);
+        system(command);
+        strcpy(path,rundir);
+        strcat(path,"result.txt");
+    /* Opening File */
+        fptr = fopen(path, "r");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+        int c;
+        do {
+        c = fgetc(fptr);
+        if(c=='E') {
+            IS_ERROR ++;
+            break ;
+        }
+        if( feof(fptr)) break ;
+        } while(1);
+    fclose(fptr);
+    return IS_ERROR;
+}
 int calctrithick (mesh *M, input *inp){
     int e=0;
     static double *t;

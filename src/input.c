@@ -18,7 +18,8 @@ int rinputf(mesh *M1,input *inp){
 		static double young_r2 [6]= {10000000,10000000,10000000,7000000,7000000,7000000}; ////region { remain(another aneu),diastal,parent,neck,body,dome} [dyne/cm^2]
 		inp->young_r=young_r2;
 		inp->pois=0.49; 
-		inp->ro=1.101;//[gr/cm^3]		
+		inp->ro=1.101;//[gr/cm^3]	
+		inp->NJyoung=50000000;
 	// label : <red, yellow, white, cyan, rupture, remain>
 		static int label2 [3] = {1,2,7};
 		inp->label_num=3;

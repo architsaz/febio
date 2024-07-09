@@ -35,4 +35,7 @@
 	extern char datafilepath [10][500];
 	extern char filename[50]; 
 
+	extern int NrNj;
+	extern double *NJmask;
+
 #endif // COMMON_H

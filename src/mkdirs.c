@@ -11,9 +11,31 @@ int mkdirs(){
     system(command);
     strcat(rundir,filename);
     strcat(rundir,slash);
+
     strcpy(command,"rm -r ");
     strcat(command,rundir);
+    strcat(command,"*.feb");
     system(command);
+
+    strcpy(command,"rm -r ");
+    strcat(command,rundir);
+    strcat(command,"*.txt");
+    system(command);
+
+    strcpy(command,"rm -r ");
+    strcat(command,rundir);
+    strcat(command,"*.sh");
+    system(command);
+
+    strcpy(command,"rm -r ");
+    strcat(command,rundir);
+    strcat(command,"*.vtk");
+    system(command);    
+
+    // strcpy(command,"rm -r ");
+    // strcat(command,rundir);
+    // strcat(command,"*.log");
+    // system(command); 
 
     strcpy(command,"mkdir ");
     strcat(command,rundir);

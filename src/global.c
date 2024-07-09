@@ -9,4 +9,7 @@
     //data file 
 	    char datafilepath [10][500]; 
     //filename 
-        char filename[50];       
+        char filename[50];  
+	//solver para
+		int NrNj=0;	
+		double *NJmask;     

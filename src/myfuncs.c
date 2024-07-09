@@ -556,7 +556,8 @@ int countline(char *path) {
   }
 
   // Print the number of lines
-  printf("The number of lines in the file is: %d\n", count);
+  //printf("The number of lines in the file is: %d\n", count);
 
   return count;
 }
+
