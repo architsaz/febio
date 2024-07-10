@@ -76,31 +76,27 @@ int main(int argc, char const *argv[])
     char febname[10]="pres";
     CHECK_ERROR(febmkr(rundir,febname,step,M2,inp));
 // run febio solver 
-    //CHECK_ERROR(runfebio());
+    CHECK_ERROR(runfebio(0));
     //printf("error: %d\n",checkresult("pres_0"));
 // check Negative Jacobian: 
     NJmask = calloc(M2->nelem,sizeof(NJmask));
     double *org_young;org_young=calloc(M2->nelem,sizeof(*org_young));
     char logname[50];strcpy(logname,febname);strcat(logname,"_0");
-    while (checkresult("pres_0")==1 && step<10){
-    //while (checkresult(logname)==1 || step>10){
+    //while (checkresult("pres_0")==1 && step<1){
+    while (checkresult(logname)==1 && step<10){
         step++; printf("**\n**\n* Fixing Negative jacobian detected - step : %d\n**\n**\n",step);
         strcpy(logname,febname);
         char num[10];sprintf(num,"%d",step);
         strcat(logname,"_");strcat(logname,num);
 
-        //make a copy of original young modulus to avoid over filtering on inappropriate region
-        if (step==1){
-            for (int i=0;i<M2->nelem;i++) org_young[i]=M2->young[i];
-        }
-
         // initialized NJmask to avoid the over-correcting on inappropriate region
         for(int i=0;i<M2->nelem;i++) NJmask[i]=0;
 
-        CHECK_ERROR(readNJ());
+        CHECK_ERROR(readNJ(step));
         CHECK_ERROR(appliedgfilt_etri(M1,NJmask,10));
 
         printf("Nr of Negative Jacobian : %d\n",NrNj);
+        if (NrNj==0) break;
         FunctionWithArgs prtelefield2 []= {
             { "NJmask",1,M2->nelem, NJmask,SCA_double_VTK}
         };
@@ -110,11 +106,11 @@ int main(int argc, char const *argv[])
         size_t countpnt2 = sizeof(prtpntfield2) / sizeof(prtpntfield2[0]);
         CHECK_ERROR(SaveVTK(rundir,"checkNJmask",step,M2,tri6funcVTK,prtelefield2,countele2,prtpntfield2,countpnt2));
         // modified the young modulus using Njmask
-        for (int ele=0;ele<M2->nelem;ele++) M2->young[ele]=org_young[ele]+inp->NJyoung*NJmask[ele];
+        for (int ele=0;ele<M2->nelem;ele++) M2->young[ele]+=inp->NJyoung*NJmask[ele];
         CHECK_ERROR(SaveVTK(rundir,"checkinput",step,M2,tri6funcVTK,prtelefield,countele,prtpntfield,countpnt));
    
         CHECK_ERROR(febmkr(rundir,febname,step,M2,inp));
-        //CHECK_ERROR(runfebio());
+        CHECK_ERROR(runfebio(step));
     }
 
 

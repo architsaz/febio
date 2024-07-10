@@ -32,10 +32,10 @@ int mkdirs(){
     strcat(command,"*.vtk");
     system(command);    
 
-    // strcpy(command,"rm -r ");
-    // strcat(command,rundir);
-    // strcat(command,"*.log");
-    // system(command); 
+    strcpy(command,"rm -r ");
+    strcat(command,rundir);
+    strcat(command,"*.log");
+    system(command); 
 
     strcpy(command,"mkdir ");
     strcat(command,rundir);

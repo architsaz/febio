@@ -13,9 +13,9 @@ int calctriyoung (mesh *, input *);
 int calctripres(mesh *, input *);
 int calctrifixb(mesh *, input *);
 int febmkr(char *, char *,int ,mesh *,input *);
-int runfebio();
-int readNJ();
-int checkresult();
+int runfebio(int );
+int readNJ(int );
+int checkresult(char *);
 int appliedgfilt_ptri6(mesh *,double *,int );
 int appliedgfilt_etri(mesh *,double *, int );
 #endif // FEBIO_H

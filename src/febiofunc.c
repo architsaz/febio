@@ -6,8 +6,9 @@
 #include "common.h"
 #include "febiofuncs.h"
 
-int runfebio(){
+int runfebio(int step){
     int e=0;
+
     /* define path */
         char path [500];
         strcpy(path,rundir);
@@ -24,7 +25,7 @@ int runfebio(){
         }
     /*write & run runfeb file : */ 
         fprintf(fptr,"#!/bin/bash\n\n");
-        fprintf(fptr,"febio4 -i %spres_0.feb -config febio.xml\n",rundir);
+        fprintf(fptr,"febio4 -i %spres_%d.feb -config febio.xml\n",rundir,step);
         if (fclose(fptr) == EOF) {
             // If fclose returns EOF, it means there was an error closing the file
             printf("Error closing %s\n",path);
@@ -43,7 +44,7 @@ int runfebio(){
         // int NrNj=countline(command);
     return e;
 }
-int readNJ(){
+int readNJ(int step){
     int e=0;
     /* define path */
         char path [500];
@@ -61,7 +62,7 @@ int readNJ(){
         }
     /*write & run runfeb file : */ 
         fprintf(fptr,"#!/bin/bash\n\n");
-        fprintf(fptr,"grep \"Negative jacobian was detected at element\" %spres_0.log | awk '{print $8}' >%sNJ.txt",rundir,rundir);
+        fprintf(fptr,"grep \"Negative jacobian was detected at element\" %spres_%d.log | awk '{print $8}' >%sNJ.txt",rundir,step,rundir);
         if (fclose(fptr) == EOF) {
             // If fclose returns EOF, it means there was an error closing the file
             printf("Error closing %s\n",path);
@@ -150,7 +151,7 @@ int checkresult(char *filename){
         fptr = fopen(path, "w");
         if (fptr == NULL) {
         fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
-        return -1;
+        exit(EXIT_FAILURE);
         }
     /*remove txt files*/    
         char command1[500]="rm -r ";
@@ -163,7 +164,7 @@ int checkresult(char *filename){
         if (fclose(fptr) == EOF) {
             // If fclose returns EOF, it means there was an error closing the file
             printf("Error closing %s\n",path);
-            return -1;
+            exit(EXIT_FAILURE);
         }	
         char command [500];
         sprintf(command,"./%srunfebio.sh",rundir);
@@ -175,7 +176,7 @@ int checkresult(char *filename){
         fptr = fopen(path, "r");
         if (fptr == NULL) {
         fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
-        return -1;
+        exit(EXIT_FAILURE);
         }
         int c;
         do {
