@@ -172,38 +172,48 @@ int checkresult(char *filename)
 {
     int IS_ERROR = 0;
     /* define path */
-    char path[500];
-    strcpy(path, rundir);
-    strcat(path, "runfebio.sh");
+    // char path[500];
+    // strcpy(path, rundir);
+    // strcat(path, "runfebio.sh");
 
-    /* define File pointer:*/
-    FILE *fptr;
-    fptr = calloc(1, sizeof(*fptr));
-    /* Opening File */
-    fptr = fopen(path, "w");
-    if (fptr == NULL)
-    {
-        fprintf(stderr, "ERROR: Cannot open file - %s.\n", path);
-        exit(EXIT_FAILURE);
-    }
-    /*remove txt files*/
-    char command1[500] = "rm -r ";
-    strcat(command1, rundir);
-    strcat(command1, "*.txt");
-    system(command1);
-    /*write & run runfeb file : */
-    fprintf(fptr, "#!/bin/bash\n\n");
-    fprintf(fptr, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, filename, rundir);
-    if (fclose(fptr) == EOF)
-    {
-        // If fclose returns EOF, it means there was an error closing the file
-        printf("Error closing %s\n", path);
-        exit(EXIT_FAILURE);
-    }
+    // /* define File pointer:*/
+    // FILE *fptr;
+    // fptr = calloc(1, sizeof(*fptr));
+    // /* Opening File */
+    // fptr = fopen(path, "w");
+    // if (fptr == NULL)
+    // {
+    //     fprintf(stderr, "ERROR: Cannot open file - %s.\n", path);
+    //     exit(EXIT_FAILURE);
+    // }
+    // /*remove txt files*/
+    // char command1[500] = "rm -r ";
+    // strcat(command1, rundir);
+    // strcat(command1, "*.txt");
+    // system(command1);
+    // /*write & run runfeb file : */
+    // fprintf(fptr, "#!/bin/bash\n\n");
+    // fprintf(fptr, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, filename, rundir);
+    // if (fclose(fptr) == EOF)
+    // {
+    //     // If fclose returns EOF, it means there was an error closing the file
+    //     printf("Error closing %s\n", path);
+    //     exit(EXIT_FAILURE);
+    // }
+    // char command[500];
+    // sprintf(command, "./%srunfebio.sh", rundir);
+    // printf("%s\n", command);
+    // system(command);
+
+    //------------------> OPTION2
     char command[500];
-    sprintf(command, "./%srunfebio.sh", rundir);
+    sprintf(command, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, filename, rundir);
     printf("%s\n", command);
     system(command);
+
+    char path[500];
+    FILE *fptr;
+    fptr = calloc(1, sizeof(*fptr));
     strcpy(path, rundir);
     strcat(path, "result.txt");
     /* Opening File */

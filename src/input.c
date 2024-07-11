@@ -13,9 +13,9 @@ int rinputf(mesh *M1,input *inp){
 		inp->symetric_stiff =0;
 	// Neo-Hooken model
 		strcpy(inp->Mmodel,"isotropic elastic"); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-		static double young_l2 [3]= {5000000,20000000,20000000}; //{red, yellow, white} [dyne/cm^2]
+		static double young_l2 [3]= {20000000,20000000,20000000}; //{red, yellow, white} [dyne/cm^2]
 		inp->young_l=young_l2;
-		static double young_r2 [6]= {10000000,10000000,10000000,7000000,7000000,7000000}; ////region { remain(another aneu),diastal,parent,neck,body,dome} [dyne/cm^2]
+		static double young_r2 [6]= {10000000,10000000,10000000,20000000,20000000,20000000}; ////region { remain(another aneu),diastal,parent,neck,body,dome} [dyne/cm^2]
 		inp->young_r=young_r2;
 		inp->pois=0.49; 
 		inp->ro=1.101;//[gr/cm^3]	
@@ -50,8 +50,8 @@ int rinputf(mesh *M1,input *inp){
 		inp->pres=106658;//diastolic [dyne/cm^2]            80 mmHgquit
 		//inp->pres=10000;
 
-		//inp->ultipres=159987;//systolic [dyne/cm^2]             120 mmHg  s
-		inp->ultipres=106658;//diastolic [dyne/cm^2]            80 mmHg
+		inp->ultipres=159987;//systolic [dyne/cm^2]             120 mmHg  s
+		//inp->ultipres=106658;//diastolic [dyne/cm^2]            80 mmHg
 		//inp->ultipres=60000;
 
 	return e;
