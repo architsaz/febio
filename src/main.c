@@ -17,10 +17,19 @@ int main(int argc, char const *argv[])
     char febname[10] = "pres";
     //int step = 9;
     //int step_end=20;
-    if (argc!=4) {fprintf(stderr,"ERROR need more argument\nargv:\n<filename> <start_step> <end_step>\n");exit(EXIT_FAILURE);}
+    if (argc!=5) {fprintf(stderr,"ERROR: need more argument\nargv:\n<filename> <start_step> <end_step> <corrbynj/unify/enhance>\n");exit(EXIT_FAILURE);}
     strcpy(filename,argv[1]);
     int step = atoi(argv[2]);
     int step_end=atoi(argv[3]);
+    modifyoung modifoption;
+    if (!strcmp(argv[4],"corrbynj")) modifoption=corrbynj;
+    else if (!strcmp(argv[4],"unify")) modifoption=unify;
+    else if (!strcmp(argv[4],"enhance")) modifoption=enhance;
+    else {
+        fprintf(stderr,"ERROR: the option %s used for modifying Young modulus does not match with what supposed for program\n",argv[4]);
+        fprintf(stderr,"choose from the this option : corrbynj/unify/enhance\n");
+        exit(EXIT_FAILURE);
+    }
 // allocate memory for M1 mesh struct
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
     if (M1 == NULL)
@@ -106,35 +115,50 @@ int main(int argc, char const *argv[])
     char str_step[10];sprintf(str_step,"%d",step);
     strcat(logname,str_step);
     // while (checkresult("pres_0")==1 && step<1){
-    while (checkresult(logname) == 1 && step < step_end)
+    //while (checkresult(logname) == 1 && step < step_end)
+    int iter = 0;
+    while ( step < step_end)
     {
         step++;
-        printf("**\n**\n* Fixing Negative jacobian detected - step : %d\n**\n**\n", step);
+        printf("**\n**\n* Modifying the Young Modulus with option %s  - step : %d\n**\n**\n",argv[4] ,step);
         strcpy(logname, febname);
         char num[10];sprintf(num, "%d", step);
         strcat(logname, "_");
         strcat(logname, num);
 
-        // initialized NJmask to avoid the over-correcting on inappropriate region
-        for (int i = 0; i < M2->nelem; i++)
-            NJmask[i] = 0;
+        if (modifoption==corrbynj)
+        {
+            // initialized NJmask to avoid the over-correcting on inappropriate region
+            for (int i = 0; i < M2->nelem; i++)
+                NJmask[i] = 0;
+            //CHECK_ERROR(readNJ(step - 1));
+            CHECK_ERROR(readNJ(9));
+            CHECK_ERROR(appliedgfilt_etri(M1, NJmask, 10));
+            printf("Nr of Negative Jacobian : %d\n", NrNj);
+            if (NrNj == 0)
+                break;
+            FunctionWithArgs prtelefield2[] = {
+                {"NJmask", 1, M2->nelem, NJmask, SCA_double_VTK}};
+            size_t countele2 = sizeof(prtelefield2) / sizeof(prtelefield2[0]);
+            FunctionWithArgs prtpntfield2[] = {};
+            size_t countpnt2 = sizeof(prtpntfield2) / sizeof(prtpntfield2[0]);
+            CHECK_ERROR(SaveVTK(rundir, "checkNJmask", step, M2, tri6funcVTK, prtelefield2, countele2, prtpntfield2, countpnt2));
+            // modified the young modulus using Njmask
+            for (int ele = 0; ele < M2->nelem; ele++) M2->young[ele] += inp->NJyoung * NJmask[ele];
+        }
+        if (modifoption==enhance)
+        {
+            // modified the young modulus just by increasing young modulus 
+            for (int ele = 0; ele < M2->nelem; ele++) M2->young[ele] += inp->incyoung;
+        }
+        if (modifoption==unify)
+        {
+            // modified the young modulus just by increasing young modulus 
+            if (iter==0) {for (int ele = 0; ele < M2->nelem; ele++) M2->young[ele] = inp->young_r[1];}
+            else{for (int ele = 0; ele < M2->nelem; ele++) M2->young[ele] += inp->incyoung;}
+            iter++;
+        }
 
-        //CHECK_ERROR(readNJ(step - 1));
-        CHECK_ERROR(readNJ(9));
-        CHECK_ERROR(appliedgfilt_etri(M1, NJmask, 10));
-
-        printf("Nr of Negative Jacobian : %d\n", NrNj);
-        if (NrNj == 0)
-            break;
-        FunctionWithArgs prtelefield2[] = {
-            {"NJmask", 1, M2->nelem, NJmask, SCA_double_VTK}};
-        size_t countele2 = sizeof(prtelefield2) / sizeof(prtelefield2[0]);
-        FunctionWithArgs prtpntfield2[] = {};
-        size_t countpnt2 = sizeof(prtpntfield2) / sizeof(prtpntfield2[0]);
-        CHECK_ERROR(SaveVTK(rundir, "checkNJmask", step, M2, tri6funcVTK, prtelefield2, countele2, prtpntfield2, countpnt2));
-        // modified the young modulus using Njmask
-        for (int ele = 0; ele < M2->nelem; ele++)
-            M2->young[ele] += inp->NJyoung * NJmask[ele];
         CHECK_ERROR(SaveVTK(rundir, "checkinput", step, M2, tri6funcVTK, prtelefield, countele, prtpntfield, countpnt));
 
         CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));

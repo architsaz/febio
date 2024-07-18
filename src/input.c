@@ -20,6 +20,8 @@ int rinputf(mesh *M1,input *inp){
 		inp->pois=0.49; 
 		inp->ro=1.101;//[gr/cm^3]	
 		inp->NJyoung=50000000;
+        inp->incyoung=5000000;
+
 	// label : <red, yellow, white, cyan, rupture, remain>
 		static int label2 [3] = {1,2,7};
 		inp->label_num=3;

@@ -32,7 +32,7 @@
             int  symetric_stiff;
         // Neo-Hooken model
             char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
-            double *young_r,*young_l,NJyoung;
+            double *young_r,*young_l,NJyoung,incyoung;
             double pois,ro;		
         // label : <red, yellow, white, cyan, rupture, remain>
             int *label,label_num;
@@ -66,5 +66,10 @@
         int nr; 
         void **arr;  
         readfieldVTK function;
-    } FunctionWithArgs2;    
+    } FunctionWithArgs2;  
+    typedef enum {
+        corrbynj,
+        unify,
+        enhance,
+    } modifyoung; 
 #endif // MYSTRUCT_H
