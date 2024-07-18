@@ -5,17 +5,6 @@
 #include "common.h"
 #include "myfuncs.h"
 
-char *edit_endline_character(char *line, int buffer, FILE *fptr) {
-
-	char *str;
-	int len;
-
-	str = fgets(line, buffer, fptr);
-	len = strlen(str);
-	if(str[len-1] == '\n') str[len-1] = '\0';
-
-	return str;
-}
 int read_zfem(char *path,int *npoin, int *nelem, double **ptxyz,int **elems) {
 int e=0;
 // defined arrayes and varables

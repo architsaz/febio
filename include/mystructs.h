@@ -50,7 +50,8 @@
 // Define a function pointer type for comparison functions
     typedef int (*compare_func)(void *, void *);
     typedef void ConvertorFunc(mesh *,mesh **); 
-    typedef void (*elefieldVTK)(FILE *,char *,int ,int ,void *);  
+    typedef void (*elefieldVTK)(FILE *,char *,int ,int ,void *);
+    typedef void (*readfieldVTK)(FILE *,int ,int ,void **);  
     typedef void (elemVTK)(FILE *,int ,int *);
     typedef struct {
         char *name;
@@ -59,4 +60,11 @@
         void *field;
         elefieldVTK function;
     } FunctionWithArgs;
+    typedef struct {
+        char *name;
+        int col;
+        int nr; 
+        void **arr;  
+        readfieldVTK function;
+    } FunctionWithArgs2;    
 #endif // MYSTRUCT_H

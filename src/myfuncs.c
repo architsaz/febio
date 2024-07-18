@@ -5,6 +5,17 @@
 #include "mystructs.h"
 #include "common.h"
 // Comparison functions
+char *edit_endline_character(char *line, int buffer, FILE *fptr) {
+
+	char *str;
+	int len;
+
+	str = fgets(line, buffer, fptr);
+	len = strlen(str);
+	if(str[len-1] == '\n') str[len-1] = '\0';
+
+	return str;
+}
 int compare_int_min(void* a, void* b) {
     return (*(int*)a < *(int*)b);
 }
@@ -31,7 +42,7 @@ void* find_extreme(void* array, size_t element_size, size_t num_elements, compar
 }
 // check the start ID of elements in the mesh file 
 int checkEIDS(int *elems){
-    size_t int_size = sizeof(elems) / sizeof(elems[0]);
+    size_t int_size = sizeof(* elems) / sizeof(elems[0]);
     // Find min and max for int array
     int* int_min = (int*)find_extreme(elems, sizeof(int), int_size, compare_int_min);
     //printf("--> ID of elements start from %d!\n",*int_min);
@@ -473,6 +484,130 @@ void tri6funcVTK(FILE *fptr,int nelem,int *elems){
 		fprintf(fptr,"22\n");
 	}
 	fprintf(fptr,"\n");
+}
+void read_VTK_double(FILE *fptr,int col,int nr,void **field){
+	void *arr;
+	int buffer = 100;
+    char line[buffer];
+	char *token;
+    const char delimiters[] = " \t\n"; // Delimiters: space, tab, and newline
+    int nscan;
+	arr = malloc(col*nr * sizeof(double));
+	for (int iline = 0; iline < nr; iline++) {
+		fgets(line, buffer, fptr);
+		nscan = 0;
+		// Get the first token
+			token = strtok(line, delimiters);
+
+		// Continue getting tokens until NULL is returned
+			while (token != NULL) {
+				//printf("Token: %s\n", token);
+				((double *)arr)[iline] = atof(token);
+				//sscanf(token, "%lf", &arr[iline]);
+				token = strtok(NULL, delimiters);
+				nscan++;
+			}
+			if (nscan!=col) {
+				fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+				exit(EXIT_FAILURE);
+			}
+
+	}
+	*field=arr;
+}
+void read_VTK_int(FILE *fptr,int col,int nr,void **field){
+	void *arr;
+	int buffer = 100;
+    char line[buffer];
+	char *token;
+    const char delimiters[] = " \t\n"; // Delimiters: space, tab, and newline
+    int nscan;
+	arr = malloc(col*nr * sizeof(int));
+	for (int iline = 0; iline < nr; iline++) {
+		fgets(line, buffer, fptr);
+		nscan = 0;
+		// Get the first token
+			token = strtok(line, delimiters);
+
+		// Continue getting tokens until NULL is returned
+			while (token != NULL) {
+				//printf("Token: %s\n", token);
+				//sscanf(token, "%d", &arr[iline]);
+				((int *)arr)[iline]=atoi(token);
+				token = strtok(NULL, delimiters);
+				nscan++;
+			}
+			if (nscan!=col) {
+				fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+				exit(EXIT_FAILURE);
+			}
+
+	}
+	*field=arr;
+}
+int ReadVTK(char *dir, char *filenam,int step,FunctionWithArgs2 *prtfield,int countfield){
+	int e = 0;
+	char num[10];
+    sprintf(num,"%d",step);
+    char path[500];
+    strcpy(path,dir);
+	strcat(path,filenam);
+    strcat(path,"_");
+    strcat(path,num);
+    strcat(path,".vtk");
+	/* define File pointer:*/
+        FILE *fptr;
+        fptr = calloc(1, sizeof(*fptr));
+		printf("open file - %s.\n", path);
+    /* Opening File */
+        fptr = fopen(path, "r");
+        if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+        }
+	/* Read all lines of the file */
+    int buffer = 100;
+    char *str;
+    char line[buffer];
+    int endcount = 0;
+
+    char  test1[20], test[20];
+
+	while(1){
+		// start reading points:	
+		str = edit_endline_character(line, buffer, fptr);
+		sscanf(str, "%s %s ",test1,test);
+		for (int ifield=0;ifield<countfield;ifield++){
+			if(!strcmp(test,prtfield[ifield].name)){
+				printf("    Reading %s.\n",prtfield[ifield].name);
+				/* Read header of field */	    
+					str = edit_endline_character(line, buffer, fptr);
+					sscanf(str, "%s",test1);
+					if(!strcmp(test1,"LOOKUP_TABLE")) {
+						str = edit_endline_character(line, buffer, fptr);
+						sscanf(str, "%s",test1);
+					}
+					if(!strcmp(test1,"")) {
+						str = edit_endline_character(line, buffer, fptr);
+					}
+
+				/* Read value of field */
+				prtfield[ifield].function(fptr,prtfield[ifield].col,prtfield[ifield].nr,prtfield[ifield].arr);     
+				endcount += 1;
+			} 
+		}
+		if (endcount == countfield) {
+			printf("  Done Reading all %d fields.\n",countfield);
+			break;
+		}
+	}
+	if (fclose(fptr) == EOF) {
+        // If fclose returns EOF, it means there was an error closing the file
+    	printf("Error closing %s\n",path);
+        return -1;
+    }
+    		
+	return e;
 }
 int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionWithArgs elefuncs[], size_t nrelefield,FunctionWithArgs pntfuncs[], size_t nrpntfield){
 	int e=0;

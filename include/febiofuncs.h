@@ -2,9 +2,8 @@
 #define FEBIO_H
 
 int rinputf(mesh *,input *);
-int mkdirs();
+int mkdirs(int );
 int datafiles();
-char *edit_endline_character(char *, int , FILE *);
 int read_zfem(char *,int *, int *, double **,int **);
 int read_wallmask(char *,mesh *,input *,int **);
 int read_regionmask(char *,mesh *,input *,int **, int **);
