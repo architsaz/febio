@@ -43,11 +43,11 @@ int main(int argc, char const *argv[])
         fprintf(stderr, "Memory allocation failed for inp pointer\n");
         exit(EXIT_FAILURE);
     }
-// input variable :
-    CHECK_ERROR(rinputf(M1, inp));
 // make important directories:
     CHECK_ERROR(mkdirs(step)); // printf("run: %s\ndata: %s\n",rundir,datadir);
     CHECK_ERROR(datafiles());
+// input variable :
+    CHECK_ERROR(rinputf(datadir,M1, inp));    
     // printf("path1: %s\npath2: %s\npath3: %s\n",datafilepath[0],datafilepath[1],datafilepath[2]);
 // reading domain parameters for unloaded geometry from .FLDS.ZFEM file //
     CHECK_ERROR(read_zfem(datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
@@ -80,7 +80,7 @@ int main(int argc, char const *argv[])
             {"Young_Modulus", 1, M2->nelem, &field1,read_VTK_double},
         };
         int countfield = sizeof(prtreadfield) / sizeof(prtreadfield[0]);
-        CHECK_ERROR(ReadVTK(rundir,"checkinput", step, prtreadfield, countfield));
+        CHECK_ERROR(ReadVTK(datadir,"checkinput", step, prtreadfield, countfield));
         M2->young=(double *)field1;
     }
 // boundary condition    
@@ -103,7 +103,7 @@ int main(int argc, char const *argv[])
 // creat feb file
     CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
 // run febio solver
-    //CHECK_ERROR(runfebio(step));
+    CHECK_ERROR(runfebio(step));
     // printf("error: %d\n",checkresult("pres_0"));
 // check Negative Jacobian:
     NJmask = calloc(M2->nelem, sizeof(NJmask));
@@ -162,7 +162,7 @@ int main(int argc, char const *argv[])
         CHECK_ERROR(SaveVTK(rundir, "checkinput", step, M2, tri6funcVTK, prtelefield, countele, prtpntfield, countpnt));
 
         CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
-        //CHECK_ERROR(runfebio(step));
+        CHECK_ERROR(runfebio(step));
     }
 
 return 0;

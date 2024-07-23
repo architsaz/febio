@@ -1,6 +1,8 @@
 
 #ifndef MYSTRUCT_H
 #define MYSTRUCT_H
+
+#define TABLE_SIZE 100
 // Define structs 
     typedef struct {
             char type[10]; // tri or quad
@@ -46,13 +48,29 @@
         //filename
             char filename[50];
     }input;
-
-// Define a function pointer type for comparison functions
+    // Define the structure for a hash table entry
+    typedef struct Entry {
+        char *key;
+        char *value;
+        struct Entry *next;  // For handling collisions using chaining
+    } Entry;
+    // Define the structure for the hash table
+    typedef struct {
+        Entry *entries[TABLE_SIZE];
+    } HashTable;
+// Define enum parameter
+    typedef enum {
+        corrbynj,
+        unify,
+        enhance,
+    } modifyoung; 
+// Define function pointers 
     typedef int (*compare_func)(void *, void *);
+
     typedef void ConvertorFunc(mesh *,mesh **); 
+
     typedef void (*elefieldVTK)(FILE *,char *,int ,int ,void *);
-    typedef void (*readfieldVTK)(FILE *,int ,int ,void **);  
-    typedef void (elemVTK)(FILE *,int ,int *);
+    typedef void (*readfieldVTK)(FILE *,int ,int ,void **); 
     typedef struct {
         char *name;
         int col;
@@ -66,10 +84,7 @@
         int nr; 
         void **arr;  
         readfieldVTK function;
-    } FunctionWithArgs2;  
-    typedef enum {
-        corrbynj,
-        unify,
-        enhance,
-    } modifyoung; 
+    } FunctionWithArgs2; 
+    typedef void (elemVTK)(FILE *,int ,int *);      
+   
 #endif // MYSTRUCT_H

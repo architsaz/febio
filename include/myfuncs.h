@@ -15,5 +15,8 @@
     void tri3funcVTK(FILE *,int ,int *);
     void tri6funcVTK(FILE *,int ,int *);
     int countline(char *);
+    void inserthash(HashTable *table, const char *key, const char *value);
+    char *gethash(HashTable *table, const char *key);
+    void freeTable(HashTable *table);
 #endif // MYFUNCS_H
 

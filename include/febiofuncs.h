@@ -1,7 +1,7 @@
 #ifndef FEBIO_H
 #define FEBIO_H
 
-int rinputf(mesh *,input *);
+int rinputf(char *,mesh *,input *);
 int mkdirs(int );
 int datafiles();
 int read_zfem(char *,int *, int *, double **,int **);
