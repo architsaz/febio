@@ -3,13 +3,15 @@
 #include "mystructs.h"
 #include "myfuncs.h"
 
-int rinputf(char *path,mesh *M1,input *inp){
+int rinputf(char *dir,mesh *M1,input *inp){
 	int e =0;
 	// Create a hash table
     HashTable table = {0};
 
     FILE *fprt;
     fprt=calloc(1,sizeof(*fprt));
+	char path[500];
+	strcpy(path,dir);
     strcat(path,"input.txt");
     fprt=fopen(path,"r");
     if (fprt==NULL){
