@@ -101,9 +101,9 @@ int main(int argc, char const *argv[])
     size_t countpnt = sizeof(prtpntfield) / sizeof(prtpntfield[0]);
     CHECK_ERROR(SaveVTK(rundir, "checkinput", step, M2, tri6funcVTK, prtelefield, countele, prtpntfield, countpnt));
 // creat feb file
-    CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
+    if (step==0) CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
 // run febio solver
-    CHECK_ERROR(runfebio(step));
+    if (step==0) CHECK_ERROR(runfebio(step));
     // printf("error: %d\n",checkresult("pres_0"));
 // check Negative Jacobian:
     NJmask = calloc(M2->nelem, sizeof(NJmask));
@@ -115,9 +115,9 @@ int main(int argc, char const *argv[])
     char str_step[10];sprintf(str_step,"%d",step);
     strcat(logname,str_step);
     // while (checkresult("pres_0")==1 && step<1){
-    //while (checkresult(logname) == 1 && step < step_end)
     int iter = 0;
-    while ( step < step_end)
+    //while ( step < step_end)
+    while (checkresult(logname) == 1 && step < step_end)
     {
         step++;
         printf("**\n**\n* Modifying the Young Modulus with option %s  - step : %d\n**\n**\n",argv[4] ,step);
@@ -131,8 +131,8 @@ int main(int argc, char const *argv[])
             // initialized NJmask to avoid the over-correcting on inappropriate region
             for (int i = 0; i < M2->nelem; i++)
                 NJmask[i] = 0;
-            //CHECK_ERROR(readNJ(step - 1));
-            CHECK_ERROR(readNJ(9));
+            CHECK_ERROR(readNJ(step - 1));
+            //CHECK_ERROR(readNJ(9));
             CHECK_ERROR(appliedgfilt_etri(M1, NJmask, 10));
             printf("Nr of Negative Jacobian : %d\n", NrNj);
             if (NrNj == 0)
