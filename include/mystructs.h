@@ -64,6 +64,11 @@
         unify,
         enhance,
     } modifyoung; 
+    typedef enum {
+        error,
+        normal,
+        unknown,
+    } runstatus;
 // Define function pointers 
     typedef int (*compare_func)(void *, void *);
 

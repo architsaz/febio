@@ -117,7 +117,7 @@ int main(int argc, char const *argv[])
     // while (checkresult("pres_0")==1 && step<1){
     int iter = 0;
     //while ( step < step_end)
-    while (checkresult(logname) == 1 && step < step_end)
+    while (checkresult(logname) == error && step < step_end)
     {
         step++;
         printf("**\n**\n* Modifying the Young Modulus with option %s  - step : %d\n**\n**\n",argv[4] ,step);

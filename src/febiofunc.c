@@ -168,9 +168,9 @@ int appliedgfilt_etri(mesh *M0, double *arre, int clc)
     }
     return e;
 }
-int checkresult(char *filename)
+runstatus checkresult(char *filename)
 {
-    int IS_ERROR = 0;
+    runstatus status = unknown;
     /* define path */
     // char path[500];
     // strcpy(path, rundir);
@@ -210,6 +210,9 @@ int checkresult(char *filename)
     sprintf(command, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, filename, rundir);
     printf("%s\n", command);
     system(command);
+    sprintf(command, "grep \"N O R M A L\" %s%s.log >> %sresult.txt", rundir, filename, rundir);
+    printf("%s\n", command);
+    system(command);
 
     char path[500];
     FILE *fptr;
@@ -224,19 +227,24 @@ int checkresult(char *filename)
         exit(EXIT_FAILURE);
     }
     int c;
-    do
-    {
+    do{
         c = fgetc(fptr);
         if (c == 'E')
         {
-            IS_ERROR++;
+            status= error;
             break;
         }
+        if (c == 'N')
+        {
+            status=normal;
+            break;
+        }
+
         if (feof(fptr))
             break;
     } while (1);
     fclose(fptr);
-    return IS_ERROR;
+    return status;
 }
 int calctrithick(mesh *M, input *inp)
 {
