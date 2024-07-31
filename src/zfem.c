@@ -273,6 +273,34 @@ int e=0;
     checkEIDS(elems1);
     return e;
 }
+int read_BCmask(char *path,mesh *M,int **BCmask2){
+    static int *arr;
+    arr=calloc((size_t)M->nelem,sizeof(*arr));
+    FILE *fptr;
+    fptr=calloc(1,sizeof(*fptr));
+    fptr = fopen(path, "r");
+	if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+  	}
+  	else {
+   	    printf("  File opened - %s.\n", path);
+  	}
+    /* Read all lines of the file */
+	int buffer = 100;
+	char *str,line[buffer];
+	int nscan,iline;
+	for (iline = 0; iline<M->nelem;iline++){
+	    str = edit_endline_character(line, buffer, fptr);
+        nscan = sscanf(str, "%d",&arr[iline]);
+        if (nscan!=1) {
+            fprintf(stderr,"ERROR: there is error in line %d of file %s.\n",iline,path);
+            exit(EXIT_FAILURE);
+        }
+    }
+    *BCmask2=arr;
+    return 0;
+}
 int read_wallmask(char *path,mesh *M,input *inp,int **Melem2) {
     int e=0;
 	int *Melem;

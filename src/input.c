@@ -54,7 +54,7 @@ int rinputf(char *dir,mesh *M1,input *inp){
 			young_r2 [4]=atof(gethash(&table,"young_body"));
 			young_r2 [5]=atof(gethash(&table,"young_dome"));
 		inp->young_r=young_r2;
-		printf("%lf %lf %lf %lf %lf %lf\n",inp->young_r[0],inp->young_r[1],inp->young_r[2],inp->young_r[3],inp->young_r[4],inp->young_r[5]);
+		//printf("%lf %lf %lf %lf %lf %lf\n",inp->young_r[0],inp->young_r[1],inp->young_r[2],inp->young_r[3],inp->young_r[4],inp->young_r[5]);
 		inp->pois=atof(gethash(&table,"pois")); 
 		inp->ro=atof(gethash(&table,"ro"));//[gr/cm^3]	
 		inp->NJyoung=atof(gethash(&table,"NJyoung"));
@@ -67,10 +67,10 @@ int rinputf(char *dir,mesh *M1,input *inp){
 			label2 [2] = atoi(gethash(&table,"label_white"));
 		inp->label_num=3;
 		inp->label=label2; 
-		printf("label : %d %d %d \n",inp->label[0],inp->label[1],inp->label[2]);
+		//printf("label : %d %d %d \n",inp->label[0],inp->label[1],inp->label[2]);
 		
 	// boundary condition:
-		//inp->used_maskfile = atoi(gethash(&table,"used_maskfile"));               //  1 :  use mask --- 0 : used region id 
+		inp->used_BCmask = atoi(gethash(&table,"used_BCmask"));               //  1 :  use mask --- 0 : used region id 
 		static int colorid2 [6] = {0,0,0,0,0,0};//region { remain(another aneu),diastal,parent,neck,body,dome} 
 			colorid2 [0] = atoi(gethash(&table,"colorid_remain"));
 			colorid2 [1] = atoi(gethash(&table,"colorid_distal"));
@@ -120,15 +120,6 @@ int rinputf(char *dir,mesh *M1,input *inp){
 		inp->pres = atof(gethash(&table,"pre_stress"));
 		inp->ultipres = atof(gethash(&table,"2step_pres"));
 
-		//inp->pres=186651;//hypertension [dyne/cm^2]         140 mmHg
-		//inp->pres=159987;//systolic [dyne/cm^2]             120 mmHg  
-		//inp->pres=106658;//diastolic [dyne/cm^2]            80 mmHgquit
-		//inp->pres=10000;
-
-		//inp->ultipres=159987;//systolic [dyne/cm^2]             120 mmHg  s
-		//inp->ultipres=106658;//diastolic [dyne/cm^2]            80 mmHg
-		//inp->ultipres=60000;
-
     // Free the memory allocated for the hash table
     freeTable(&table);
 	return e;
@@ -146,5 +137,8 @@ int datafiles(void){
 
 	strcpy(datafilepath[2],datadir);
 	strcat(datafilepath[2],"labels_srf.zfem");
+
+	strcpy(datafilepath[3],datadir);
+	strcat(datafilepath[3],"BCmask.txt");
 	return e;
 }

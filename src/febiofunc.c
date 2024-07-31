@@ -321,15 +321,22 @@ int calctripres(mesh *M, input *inp)
     int e = 0;
     static int *pres;
     pres = calloc((size_t)M->nelem, sizeof(*pres));
-    // applied the regional mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->load_region_num; k++)
+    if (inp->used_BCmask==1){
+        //appled the BCmask
+        for (int ele=0;ele<M->nelem;ele++){
+            pres[ele]=M->BCmask[ele];
+        }
+    }else{
+        // applied the regional mask
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->relems[ele] == inp->colorid[k])
+            for (int k = 0; k < inp->load_region_num; k++)
             {
-                pres[ele] = inp->load_region[k];
-                break;
+                if (M->relems[ele] == inp->colorid[k])
+                {
+                    pres[ele] = inp->load_region[k];
+                    break;
+                }
             }
         }
     }
@@ -342,15 +349,30 @@ int calctrifixb(mesh *M, input *inp)
     int e = 0;
     static int *fixb;
     fixb = calloc((size_t)M->nelem, sizeof(*fixb));
-    // applied the regional  mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->fix_region_num; k++)
+    if (inp->used_BCmask==1){
+        //appled the BCmask
+        for (int ele=0;ele<M->nelem;ele++){
+            if (M->BCmask[ele]==0){
+                fixb[ele]=1;   
+            }else if (M->BCmask[ele]==1){
+                fixb[ele]=0;
+            }else{
+                fprintf(stderr,"ERROR: there is problem in the line %d of the BCmask file.\n",ele);
+                fprintf(stderr,"the value of the BCmask should be 0 or 1 but here is %d\n",M->BCmask[ele]);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }else{    
+        // applied the regional  mask
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->relems[ele] == inp->colorid[k])
+            for (int k = 0; k < inp->fix_region_num; k++)
             {
-                fixb[ele] = inp->fix_region[k];
-                break;
+                if (M->relems[ele] == inp->colorid[k])
+                {
+                    fixb[ele] = inp->fix_region[k];
+                    break;
+                }
             }
         }
     }

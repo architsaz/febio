@@ -2,7 +2,7 @@
 #ifndef MYSTRUCT_H
 #define MYSTRUCT_H
 
-#define TABLE_SIZE 100
+#define TABLE_SIZE 500
 // Define structs 
     typedef struct {
             char type[10]; // tri or quad
@@ -25,8 +25,9 @@
             int *relems; // elemental value of regional mask --> approximate
             double *t;  //thickness shell element 
             double *young; // Young modulus for each element [dyne/cm^2]
-            int *presmask; // maks of pressure applied for pre-stressed configuration
-            int *fixbmask; // maks of fixed element for boundary consition 
+            int *presmask; // mask of pressure applied for pre-stressed configuration
+            int *fixbmask; // mask of fixed element for boundary consition 
+            int *BCmask;   // mask of Boundary Condition is getting its value from the BCmask.txt file. 
     }mesh;
     typedef struct{
         // Solver 
@@ -40,6 +41,7 @@
             int *label,label_num;
         // boundary condition:
             int *colorid,colorid_num,*fix_region,fix_region_num,*load_region,load_region_num;	//region { remain(another aneu),diastal,parent,neck,body,dome}
+            int used_BCmask;      
         // thickness 
                 double *thick_r,*thick_l; // {red, yellow, white} [cm]	
                 int thick_r_num,thick_l_num;	            

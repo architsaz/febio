@@ -82,7 +82,8 @@ int main(int argc, char const *argv[])
         CHECK_ERROR(ReadVTK(datadir,"checkinput", step, prtreadfield, countfield));
         M2->young=(double *)field1;
     }
-// boundary condition    
+// boundary condition
+    if (inp->used_BCmask==1) read_BCmask(datafilepath[3],M2,&M2->BCmask);    
     CHECK_ERROR(calctripres(M2, inp));
     CHECK_ERROR(calctrifixb(M2, inp));
 

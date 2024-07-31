@@ -10,6 +10,7 @@ int read_zfem(char *,int *, int *, double **,int **);
 int readgz_zfem(char *,int *, int *, double **,int **);
 int read_wallmask(char *,mesh *,input *,int **);
 int read_regionmask(char *,mesh *,input *,int **, int **);
+int read_BCmask(char *,mesh *,int **);
 int calctrithick (mesh *, input *);
 int calctriyoung (mesh *, input *);
 int calctripres(mesh *, input *);
