@@ -100,7 +100,7 @@ int readNJ(int step)
     int buffer = 100;
     char *str, line[buffer];
     int nscan, *NJele;
-    NJele = calloc(NrNj, sizeof(*NJele));
+    NJele = calloc((size_t)NrNj, sizeof(*NJele));
     for (int i = 0; i < NrNj; i++)
     {
         str = edit_endline_character(line, buffer, fptr);
@@ -120,7 +120,7 @@ int appliedgfilt_ptri6(mesh *M0, double *arrp, int clc)
 {
     int e = 0;
     double *arre;
-    arre = calloc(M0->nelem, sizeof(*arre));
+    arre = calloc((size_t)M0->nelem, sizeof(*arre));
     for (int iter = 0; iter < clc; iter++)
     {
         for (int ele = 0; ele < M0->nelem; ele++)
@@ -142,13 +142,14 @@ int appliedgfilt_ptri6(mesh *M0, double *arrp, int clc)
             arrp[M0->npoin + i] = (arrp[M0->psurf[2 * i] - 1] + arrp[M0->psurf[2 * i + 1] - 1]) / 2;
         }
     }
+    free(arre);
     return e;
 }
 int appliedgfilt_etri(mesh *M0, double *arre, int clc)
 {
     int e = 0;
     double *arrp;
-    arrp = calloc(M0->npoin, sizeof(*arrp));
+    arrp = calloc((size_t)M0->npoin, sizeof(*arrp));
     for (int iter = 0; iter < clc; iter++)
     {
         for (int i = 1; i <= M0->npoin; i++)
@@ -166,9 +167,10 @@ int appliedgfilt_etri(mesh *M0, double *arre, int clc)
             arre[ele] = mean / M0->nrpts;
         }
     }
+    free(arrp);
     return e;
 }
-runstatus checkresult(char *filename)
+runstatus checkresult(char *file)
 {
     runstatus status = unknown;
     /* define path */
@@ -207,10 +209,10 @@ runstatus checkresult(char *filename)
 
     //------------------> OPTION2
     char command[500];
-    sprintf(command, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, filename, rundir);
+    sprintf(command, "grep \"E R R O R\" %s%s.log > %sresult.txt", rundir, file, rundir);
     printf("%s\n", command);
     system(command);
-    sprintf(command, "grep \"N O R M A L\" %s%s.log >> %sresult.txt", rundir, filename, rundir);
+    sprintf(command, "grep \"N O R M A L\" %s%s.log >> %sresult.txt", rundir, file, rundir);
     printf("%s\n", command);
     system(command);
 
@@ -250,7 +252,7 @@ int calctrithick(mesh *M, input *inp)
 {
     int e = 0;
     static double *t;
-    t = malloc(M->npoin * sizeof(*t));
+    t = malloc((size_t)M->npoin * sizeof(*t));
     // applied region mask
     for (int ele = 0; ele < M->nelem; ele++)
     {
@@ -285,7 +287,7 @@ int calctriyoung(mesh *M, input *inp)
 {
     int e = 0;
     static double *young;
-    young = malloc(M->nelem * sizeof(*young));
+    young = malloc((size_t)M->nelem * sizeof(*young));
     // applied region mask
     for (int ele = 0; ele < M->nelem; ele++)
     {
@@ -318,7 +320,7 @@ int calctripres(mesh *M, input *inp)
 {
     int e = 0;
     static int *pres;
-    pres = calloc(M->nelem, sizeof(*pres));
+    pres = calloc((size_t)M->nelem, sizeof(*pres));
     // applied the regional mask
     for (int ele = 0; ele < M->nelem; ele++)
     {
@@ -339,7 +341,7 @@ int calctrifixb(mesh *M, input *inp)
 {
     int e = 0;
     static int *fixb;
-    fixb = calloc(M->nelem, sizeof(*fixb));
+    fixb = calloc((size_t)M->nelem, sizeof(*fixb));
     // applied the regional  mask
     for (int ele = 0; ele < M->nelem; ele++)
     {
@@ -562,7 +564,7 @@ void norm_stepfunc(FILE *fptr)
     fprintf(fptr, "\t\t\t\t\t</solver>\n");
     fprintf(fptr, "\t\t\t\t</Control>\n");
 }
-int febmkr(char *dir, char *filename, int step, mesh *M, input *inp)
+int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
 {
     int e = 0;
     // check the start ID element
@@ -575,7 +577,7 @@ int febmkr(char *dir, char *filename, int step, mesh *M, input *inp)
     sprintf(num, "%d", step);
     char path[500];
     strcpy(path, dir);
-    strcat(path, filename);
+    strcat(path, name);
     strcat(path, "_");
     strcat(path, num);
     strcat(path, ".feb");

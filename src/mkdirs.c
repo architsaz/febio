@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+#include "febiofuncs.h"
 
 int mkdirs(int step ){
     strcpy(rundir,"runfebio/");

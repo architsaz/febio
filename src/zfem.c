@@ -1,15 +1,150 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zlib.h>
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
+#include "febiofuncs.h"
 
-int read_zfem(char *path,int *npoin, int *nelem, double **ptxyz,int **elems) {
+int readgz_zfem(char *path,int *npoin, int *nelem, double **ptxyz,int **elems) {
 int e=0;
 // defined arrayes and varables
     int npoin1,nelem1,*elems1;
     double *ptxyz1;
+    ptxyz1 = NULL;
+    elems1 = NULL;
+
+/* Allocate space to File pointer */
+    gzFile fptr = gzopen(path, "r");
+
+    if (fptr == NULL) {
+        fprintf(stderr,"ERROR: Cannot open file - %s.\n", path);
+        return -1;
+    }
+    else {
+        printf("  File opened - %s.\n", path);
+    }
+    printf("%s\n",path);
+    
+/* Read all lines of the file */
+    int buffer = 100;
+    char *str;
+    char line[buffer];
+
+    int endcount = 0;
+    int nscan;
+    int iline;
+
+    char  test[20];
+        // initializing memory:
+            npoin1=0;
+            nelem1=0;	
+
+    while(1){
+    // start reading points:	
+        str = edit_endlinegz_character(line, buffer, fptr);
+        nscan = sscanf(str, "%s",test);
+        if(!strcmp(test,"POINTS")){
+
+            printf("    Reading POINTS.\n");
+                    if (nscan != 1) {
+                        fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
+                        return -1;
+                    }
+                /* Read Number of Points */	    
+                    str = edit_endlinegz_character(line, buffer, fptr);     
+                    nscan = sscanf(str, "%d",&(npoin1));
+                    printf("      Number of Points = %d.\n", npoin1);
+                        if (nscan != 1) {
+                            fprintf(stderr,"ERROR: Incorrect number of entries on Number of Points line.\n");
+                            return -1;
+                        }
+
+                /* Read Coordinates of all points */
+                        ptxyz1 = malloc((size_t)dimension*(size_t)npoin1 * sizeof(*(ptxyz1)));				      
+                    for (iline = 0; iline < npoin1; iline++) {
+                        str = edit_endlinegz_character(line, buffer, fptr);
+                            nscan = sscanf(str, "%lf %lf %lf",
+                                        &(ptxyz1[dimension*iline + 0]),&(ptxyz1[dimension*iline + 1]),&(ptxyz1[dimension*iline + 2]));
+                                    if (nscan != 3) {
+                                        fprintf(stderr,"ERROR: Incorrect number of coordinates on line %d of POINTS.\n", iline+1);
+                                        return(e++);
+                                    }
+                                    // printf("nscan = %d, iline = %d. %lf, %lf, %lf.\n",
+                                    // 	       	nscan, iline,
+                                    // 	       	ptxyz1[dimension*iline+0], ptxyz1[dimension*iline+1], ptxyz1[dimension*iline+2]);  
+                        }     
+                        printf("    Done Reading cordination of points (iline = %d)(dimension= %d).\n\n\n", iline,dimension);
+                        endcount += 1;
+        }
+    // start reading elements:
+
+        if (!strcmp(test,"TRIANGLE")){
+            printf("    Reading ELEMENTS.\n");
+            str = edit_endlinegz_character(line, buffer, fptr);
+            nscan = sscanf(str, "%s",test);
+            if (!strcmp(test,"mesh")){
+                printf("    Starting to read conectivity of elements.\n");
+            }
+            /* Read Number of Elements */	
+                str = edit_endlinegz_character(line, buffer, fptr);
+                nscan = sscanf(str, "%d",&(nelem1));
+                printf("      Number of ELEMENTS = %d.\n", nelem1);
+                
+                if (nscan != 1) {
+                    fprintf(stderr,"ERROR: Incorrect number of entries on Number of ELEMENTS number.\n");
+                    return -1;
+                }
+
+            /* Read Connectivity of all elements */
+                elems1 = malloc(3 * (size_t)nelem1 * sizeof(*(elems1)));
+                
+                for (iline = 0; iline < nelem1; iline++) {
+                
+                str = edit_endlinegz_character(line, buffer, fptr);
+                        nscan = sscanf(str, "%d %d %d",
+                                    &(elems1[3*iline]), &(elems1[3*iline + 1]),&(elems1[3*iline + 2]));
+                            
+                            if (nscan != 3) {
+                                fprintf(stderr,"ERROR: Incorrect number of conectinity of elements on line %d th of elements.\n", iline+1);
+                                return -1;
+                            }
+                                // printf("nscan = %d, iline = %d,\t %d,\t %d,\t %d.\n",
+                            //  						nscan, iline,
+                            //  						elems1[3*iline+0], elems1[3*iline+1], elems1[3*iline+2]);	
+                }	
+                                            printf("    Done Reading connectinity of elements (iline = %d).\n\n\n", iline);
+                printf("      Number of Triangular elements = %d.\n", nelem1);
+                endcount += 1;		      		
+        }
+            
+        if (endcount == 2) {
+        printf("  Done Reading Nodes.\n\n\n");
+            break;
+        }    
+    }
+	if (gzclose(fptr) == EOF) {
+        // If fclose returns EOF, it means there was an error closing the file
+    	printf("Error closing %s\n",path);
+        return -1;
+    }
+    *npoin=npoin1;
+    *nelem=nelem1;
+    *elems=elems1;
+    *ptxyz=ptxyz1;  
+/* return */
+    printf("*  Exiting function for reading %s file.\n\n",path);
+    checkEIDS(elems1);
+    return e;
+}
+int read_zfem(char *path,int *npoin, int *nelem, double **ptxyz,int **elems) {
+int e=0;
+// defined arrayes and varables
+    static int npoin1,nelem1,*elems1;
+    static double *ptxyz1;
+    ptxyz1 = NULL;
+    elems1 = NULL;
 
 /* Allocate space to File pointer */
     FILE *fptr;
@@ -62,7 +197,7 @@ int e=0;
                         }
 
                 /* Read Coordinates of all points */
-                        ptxyz1 = malloc(dimension*npoin1 * sizeof(*(ptxyz1)));				      
+                        ptxyz1 = malloc((size_t)dimension*(size_t)npoin1 * sizeof(*(ptxyz1)));				      
                     for (iline = 0; iline < npoin1; iline++) {
                         str = edit_endline_character(line, buffer, fptr);
                             nscan = sscanf(str, "%lf %lf %lf",
@@ -98,7 +233,7 @@ int e=0;
                 }
 
             /* Read Connectivity of all elements */
-                elems1 = malloc(3 * nelem1 * sizeof(*(elems1)));
+                elems1 = malloc(3 * (size_t)nelem1 * sizeof(*(elems1)));
                 
                 for (iline = 0; iline < nelem1; iline++) {
                 
@@ -141,7 +276,7 @@ int e=0;
 int read_wallmask(char *path,mesh *M,input *inp,int **Melem2) {
     int e=0;
 	int *Melem;
-	Melem = malloc(M->nelem * sizeof(*(Melem)));
+	Melem = calloc((size_t)M->nelem, sizeof(*(Melem)));
 /* Allocate space to File pointer */
 	FILE *fptr;
 	fptr = calloc(1, sizeof(*fptr));
@@ -167,9 +302,12 @@ int read_wallmask(char *path,mesh *M,input *inp,int **Melem2) {
         fprintf(stderr,"ERROR: Incorrect number of entries on POINTS line.\n");
         return -1;
     }
+    
+    //printf("label : %d %d %d \n",inp->label[0],inp->label[1],inp->label[2]);
+
     // check the value of the Melem: (remove rupture and cyan color from dataset)
     	for (int k=0;k<inp->label_num;k++) {if (temp==inp->label[k]) Melem[iline]=inp->label[k];};
-	//printf("\t\t the lable of element %d is:\t%d\n.",iline,Melem[iline]);  
+	    //if (iline<10)printf("\t\t the lable of element %d is:\t%d should be : %d\n.",iline,Melem[iline],temp);  
 	}
 	//printf("All of lables was readed.");
 	if (fclose(fptr) == EOF) {
@@ -192,7 +330,7 @@ int read_regionmask(char *path,mesh *M,input *inp,int **region_id2, int **region
     // distal arteries : 2	
 
     int *region_id;
-    region_id = malloc(M->npoin * sizeof(*(region_id)));
+    region_id = malloc((size_t)M->npoin * sizeof(*(region_id)));
 
     // Allocate space to File pointer 
     FILE *fptr;
@@ -266,7 +404,7 @@ int read_regionmask(char *path,mesh *M,input *inp,int **region_id2, int **region
         }
         int *region_id_ele,ele;
     
-        region_id_ele=malloc(M->nelem*sizeof(*(region_id_ele)));
+        region_id_ele=malloc((size_t)M->nelem*sizeof(*(region_id_ele)));
 
         int points[3]={0,0,0};
         for (ele=0;ele<M->nelem;ele++){

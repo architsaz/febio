@@ -2,7 +2,12 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -Iinclude -lm
+CFLAGS = -Wall -Wextra -pedantic -std=c99 -O -g -fsanitize=address \
+         -fsanitize=undefined -fstack-protector -Wshadow -Wpointer-arith \
+         -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wconversion \
+         -Wformat=2 -I/usr/include -Iinclude
+
+LDFLAGS = -L/usr/lib -lz -lm -fsanitize=address -fsanitize=undefined
 
 # Directories
 SRC_DIR = src
@@ -38,7 +43,7 @@ all: $(EXEC)$(EXEC_EXT)
 
 # Linking main executable
 $(EXEC)$(EXEC_EXT): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $@
+	$(CC) $(OBJ_FILES) $(LDFLAGS) -o $@
 
 # Linking test executable
 $(TEST_EXEC)$(EXEC_EXT): $(OBJ_FILES) $(TEST_OBJ_FILES)

@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <zlib.h>
 #include "mystructs.h"
 #include "common.h"
+#include "myfuncs.h"
+
 // Comparison functions
 char *edit_endline_character(char *line, int buffer, FILE *fptr) {
 
@@ -11,7 +14,18 @@ char *edit_endline_character(char *line, int buffer, FILE *fptr) {
 	int len;
 
 	str = fgets(line, buffer, fptr);
-	len = strlen(str);
+	len = (int)strlen(str);
+	if(str[len-1] == '\n') str[len-1] = '\0';
+
+	return str;
+}
+char *edit_endlinegz_character(char *line, int buffer, gzFile fptr) {
+
+	char *str;
+	int len;
+
+	str = gzgets(fptr,line, buffer);
+	len = (int)strlen(str);
 	if(str[len-1] == '\n') str[len-1] = '\0';
 
 	return str;
@@ -50,7 +64,7 @@ int checkEIDS(int *elems){
 }
 // assign an integer array to a pointer
 int assignIntArray(int **ptr, int *arr, int size) {
-    *ptr = (int *)malloc(size * sizeof(int));
+    *ptr = (int *)malloc((size_t)size * sizeof(int));
     for (int i = 0; i < size; i++) {
         (*ptr)[i] = arr[i];
     }
@@ -58,7 +72,7 @@ int assignIntArray(int **ptr, int *arr, int size) {
 }
 // assign a double array to a pointer
 int assignDoubleArray(double **ptr, double *arr, int size) {
-    *ptr = (double *)malloc(size * sizeof(double));
+    *ptr = (double *)malloc((size_t)size * sizeof(double));
     for (int i = 0; i < size; i++) {
         (*ptr)[i] = arr[i];
     }
@@ -76,8 +90,8 @@ int save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2,
 	// define parameter
 	int *pointer,*pointer2,*esurp;
 	// allocate memory for pointer
-		pointer=calloc(npoin+2,sizeof(*(pointer)));
-		pointer2=calloc(npoin+2,sizeof(*(pointer2)));
+		pointer=calloc((size_t)npoin+2,sizeof(*(pointer)));
+		pointer2=calloc((size_t)npoin+2,sizeof(*(pointer2)));
 	// find the nr of Elements surround each point
 		for(int ele=0;ele<nelem;ele++) {
 			for(int i=0;i<Nredge;i++) pointer[elems[Nredge*ele+i]+1]++;
@@ -86,7 +100,7 @@ int save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2,
 		for(int pt=1;pt<=npoin;pt++) pointer[pt+1]+=pointer[pt];
 		for(int pt=0;pt<=npoin+1;pt++) pointer2[pt]=pointer[pt];
 	// allocate memory for the esurp
-		esurp=malloc(pointer[npoin+1]*sizeof(*(esurp)));	
+		esurp=malloc((size_t)pointer[npoin+1]*sizeof(*(esurp)));	
 
 	// find elements surround each point
 		for(int ele=0;ele<nelem;ele++) {
@@ -103,11 +117,11 @@ int save_esurp(int npoin,int nelem,int *elems,int **esurp2,int **esurp_pointer2,
 int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *elems, int ele, int ele_p1, int ele_p2,int Nredge){
 
 	int elemnum,*p,*order;
-	int *nei;//if nei[0] is -9999 it means that there is problem to find a neighbour element ----------->nei[1] indicate to the number of neighbour in the nei[0]	
-	nei=calloc(2, sizeof(*(nei)));
+	static int *nei;//if nei[0] is -9999 it means that there is problem to find a neighbour element ----------->nei[1] indicate to the number of neighbour in the nei[0]	
+	nei=calloc((size_t)2, sizeof(*(nei)));
 	nei[0]=-9999;
-	p=calloc(Nredge,sizeof(*p));
-	order=calloc(2*Nredge,sizeof(*order));
+	p=calloc((size_t)Nredge,sizeof(*p));
+	order=calloc(2*(size_t)Nredge,sizeof(*order));
 	for (int i=1;i<Nredge;i++) {
 		order[2*i-1]=i;
 		order[2*i]=i;
@@ -116,7 +130,7 @@ int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *
 	int *lesps; //list of element around ele_p1 and ele_p2
 	int j=0;
 	int nr=esurp_pointer[ele_p1+1]+esurp_pointer[ele_p2+1]-esurp_pointer[ele_p1]-esurp_pointer[ele_p2];
-	lesps=calloc(nr,sizeof(*lesps));
+	lesps=calloc((size_t)nr,sizeof(*lesps));
 	for (int i = esurp_pointer[ele_p1]; i < esurp_pointer[ele_p1+1]; i++) {
 		lesps[j]=esurp[i];
 		j++;}
@@ -131,22 +145,24 @@ int *find_nei_elem3D(int *esurp_pointer,int *esurp,int *num_nei, int *open,int *
 
 			if (elemnum==ele) continue; // checking the same element ID
 			
-			for (int j=0;j<Nredge;j++) p[j]=elems[Nredge*elemnum+j];
-			for (int j=0;j<Nredge;j++){
-				if (p[order[2*j]]==ele_p1&&p[order[2*j+1]]==ele_p2){
+			for (int k=0;k<Nredge;k++) p[k]=elems[Nredge*elemnum+k];
+			for (int k=0;k<Nredge;k++){
+				if (p[order[2*k]]==ele_p1&&p[order[2*k+1]]==ele_p2){
 					nei[0]=elemnum;
-					nei[1]=j;
+					nei[1]=k;
 					break;
 				}
-				if(p[order[2*j]]==ele_p2&&p[order[2*j+1]]==ele_p1){
+				if(p[order[2*k]]==ele_p2&&p[order[2*k+1]]==ele_p1){
 					nei[0]=elemnum;
-					nei[1]=j;
+					nei[1]=k;
 					break;
 				}
 			}
         }	
 	}
 	free(lesps);
+	free(order);
+	free(p);
 	return nei;
 }
 // make data structure for elements surrounding an element 
@@ -161,11 +177,11 @@ int save_esure(int nelem,int *elems,int *esurp_pointer,int *esurp,int **esue2, i
 	int *p,*order,*nei,*num_nei,*out,*open;
 
 	/* Allocate space to nei pointer */
-		p=calloc(Nredge,sizeof(*p));
-		order=calloc(2*Nredge,sizeof(*order));
-		nei = calloc(Nredge*nelem, sizeof(*(nei)));
-		num_nei=calloc(nelem, sizeof(*(num_nei)));
-		open = calloc(nelem, sizeof(*(open)));
+		p=calloc((size_t)Nredge,sizeof(*p));
+		order=calloc(2*(size_t)Nredge,sizeof(*order));
+		nei = calloc((size_t)Nredge*(size_t)nelem, sizeof(*(nei)));
+		num_nei=calloc((size_t)nelem, sizeof(*(num_nei)));
+		open = calloc((size_t)nelem, sizeof(*(open)));
 	// initializing 
 		for (int ele = 0; ele < nelem; ele++){
 			for (int j=0;j<Nredge;j++) nei[Nredge*ele+j]=-1;
@@ -201,7 +217,7 @@ int save_esure(int nelem,int *elems,int *esurp_pointer,int *esurp,int **esue2, i
 			
 	}
 	// Done;
-	free (num_nei);
+	free (num_nei);free(p);free(order);
 	*esue2=nei;
 	*open2=open;
     return e;	
@@ -209,11 +225,12 @@ int save_esure(int nelem,int *elems,int *esurp_pointer,int *esurp,int **esue2, i
 // find Nr of eadge in the mesh and make data structure for adges surrounding an element
 int save_fsure(int nelem, int *esure, int **efid2,int *numf,int Nredge){
     int e=0;
-    int *efid,nei,ele,f;
+    static int *efid;
+	int nei,ele,f;
     int num=0;
 
     // allocate memory
-    efid= calloc(Nredge*nelem, sizeof(*efid));
+    efid= calloc((size_t)Nredge*(size_t)nelem, sizeof(*efid));
     for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
     
     for (ele=0; ele<nelem; ele++){
@@ -245,11 +262,11 @@ int save_psurf(int nelem, int numf, int *elems,int *esure, int **psurf2,int Nred
     int num = 0;
 
     // allocate memory
-    p=calloc(Nredge,sizeof(*p));
-    order=calloc(2*Nredge,sizeof(*order));
-    efid= calloc(Nredge*nelem, sizeof(*efid));
+    p=calloc((size_t)Nredge,sizeof(*p));
+    order=calloc(2*(size_t)Nredge,sizeof(*order));
+    efid= calloc((size_t)Nredge*(size_t)nelem, sizeof(*efid));
     for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
-    psurf= calloc(2*numf, sizeof(*psurf));
+    psurf= calloc(2*(size_t)numf, sizeof(*psurf));
 	
 	for (int i=1;i<Nredge;i++) {
 			order[2*i-1]=i;
@@ -276,6 +293,7 @@ int save_psurf(int nelem, int numf, int *elems,int *esure, int **psurf2,int Nred
     }
 
     *psurf2=psurf;
+	free(efid);free(p);free(order);
     printf("* psurf is done.\n");
     return e;
 }
@@ -288,9 +306,9 @@ int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge){
     int num = 0;
 
     // allocate memory
-    efid= calloc(Nredge*nelem, sizeof(*efid));
+    efid= calloc((size_t)Nredge*(size_t)nelem, sizeof(*efid));
     for (int i=0;i<(Nredge*nelem);i++) efid[i]= -1;
-    esurf= calloc(2*numf, sizeof(*esurf));
+    esurf= calloc(2*(size_t)numf, sizeof(*esurf));
 
     for (ele=0; ele<nelem; ele++){
         for (f=0; f<Nredge; f++){
@@ -320,13 +338,13 @@ void tri3_to_tri6(mesh *M1,mesh **M2){
     (*M2)->nredge=3;    
     (*M2)->nrpts=6;     
 //  define coordinate and elems for M2        
-	double *ptxyz2;
-	int npoin2,*elems2,nelem2;
+	static double *ptxyz2;
+	static int npoin2,*elems2,nelem2;
 	    //allocate memmory
 		nelem2=M1->nelem;
 		npoin2=M1->numf+M1->npoin;
-		ptxyz2=calloc(3*npoin2,sizeof(*ptxyz2));
-		elems2=calloc(6*M1->nelem,sizeof(*elems2));
+		ptxyz2=calloc(3*(size_t)npoin2,sizeof(*ptxyz2));
+		elems2=calloc(6*(size_t)M1->nelem,sizeof(*elems2));
 
 	    // coordinate of all(new+old) points
 		for (int i=0;i<(3*M1->npoin);i++) ptxyz2[i]=M1->ptxyz[i];
@@ -367,10 +385,10 @@ void tri3_to_quad4(mesh *M1,mesh **M2){
 	//allocate memmory
 		npoin2=M1->npoin+M1->nelem+M1->numf;
 		nelem2=3*M1->nelem;
-		ptxyz2=calloc(3*npoin2,sizeof(*ptxyz2));
-		elems2=calloc(4*nelem2,sizeof(*elems2));
-		Melem2=calloc(nelem2,sizeof(*Melem2));
-		relems2=calloc(nelem2,sizeof(*relems2));
+		ptxyz2=calloc(3*(size_t)npoin2,sizeof(*ptxyz2));
+		elems2=calloc(4*(size_t)nelem2,sizeof(*elems2));
+		Melem2=calloc((size_t)nelem2,sizeof(*Melem2));
+		relems2=calloc((size_t)nelem2,sizeof(*relems2));
 
 	// coordinate of all(new+old) points
 		for (int i=0;i<(3*M1->npoin);i++) ptxyz2[i]=M1->ptxyz[i];
@@ -492,9 +510,15 @@ void read_VTK_double(FILE *fptr,int col,int nr,void **field){
 	char *token;
     const char delimiters[] = " \t\n"; // Delimiters: space, tab, and newline
     int nscan;
-	arr = malloc(col*nr * sizeof(double));
+	arr = malloc((size_t)col*(size_t)nr * sizeof(double));
 	for (int iline = 0; iline < nr; iline++) {
-		fgets(line, buffer, fptr);
+		if (fgets(line, buffer, fptr) == NULL) {
+            if (feof(fptr)) {
+                break;
+            } else {
+                exit(EXIT_FAILURE);
+            }
+        }
 		nscan = 0;
 		// Get the first token
 			token = strtok(line, delimiters);
@@ -522,9 +546,15 @@ void read_VTK_int(FILE *fptr,int col,int nr,void **field){
 	char *token;
     const char delimiters[] = " \t\n"; // Delimiters: space, tab, and newline
     int nscan;
-	arr = malloc(col*nr * sizeof(int));
+	arr = malloc((size_t)col*(size_t)nr * sizeof(int));
 	for (int iline = 0; iline < nr; iline++) {
-		fgets(line, buffer, fptr);
+		if (fgets(line, buffer, fptr) == NULL) {
+            if (feof(fptr)) {
+                break;
+            } else {
+                exit(EXIT_FAILURE);
+            }
+        }
 		nscan = 0;
 		// Get the first token
 			token = strtok(line, delimiters);
@@ -672,7 +702,7 @@ int SaveVTK(char *dir, char *filenam,int step,mesh *M,elemVTK elemfunc,FunctionW
 int countline(char *path) {
   FILE *fp;
   int count = 0;  // Initialize line counter
-  char c;  // To store a character read from file
+  int c;  // To store a character read from file
 
   // Open the file in read mode
   fp = fopen(path, "r");
@@ -685,7 +715,7 @@ int countline(char *path) {
 
   // Read contents of file
   while ((c = fgetc(fp)) != EOF) {
-    if (c == '\n') {  // Increment count if newline character is encountered
+    if ((char)c == '\n') {  // Increment count if newline character is encountered
       count++;
     }
   }
@@ -699,15 +729,24 @@ int countline(char *path) {
 unsigned int hash(const char *key) {
     unsigned int hash = 0;
     while (*key) {
-        hash = (hash << 5) + *key++;
+        hash = (hash << 5) + (unsigned int)(*key++);
     }
     return hash % TABLE_SIZE;
+}
+// Custom strdup function if strdup is not available
+char *my_strdup(const char *s) {
+    size_t len = strlen(s) + 1;
+    char *dup = malloc(len);
+    if (dup != NULL) {
+        memcpy(dup, s, len);
+    }
+    return dup;
 }
 // Function to create a new entry
 Entry *createEntry(const char *key, const char *value) {
     Entry *entry = (Entry *)malloc(sizeof(Entry));
-    entry->key = strdup(key);  // Duplicate the string
-    entry->value = strdup(value);  // Duplicate the string
+    entry->key = my_strdup(key);  // Duplicate the string
+    entry->value = my_strdup(value);  // Duplicate the string
     entry->next = NULL;
     return entry;
 }
@@ -727,7 +766,7 @@ void inserthash(HashTable *table, const char *key, const char *value) {
         if (strcmp(entry->key, key) == 0) {
             // Update the value if the key already exists
             free(entry->value);
-            entry->value = strdup(value);
+            entry->value = my_strdup(value);
         } else {
             // Add a new entry at the end of the chain
             entry->next = createEntry(key, value);

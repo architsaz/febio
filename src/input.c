@@ -2,6 +2,7 @@
 #include "common.h"
 #include "mystructs.h"
 #include "myfuncs.h"
+#include "febiofuncs.h"
 
 int rinputf(char *dir,mesh *M1,input *inp){
 	int e =0;
@@ -66,6 +67,7 @@ int rinputf(char *dir,mesh *M1,input *inp){
 			label2 [2] = atoi(gethash(&table,"label_white"));
 		inp->label_num=3;
 		inp->label=label2; 
+		printf("label : %d %d %d \n",inp->label[0],inp->label[1],inp->label[2]);
 		
 	// boundary condition:
 		//inp->used_maskfile = atoi(gethash(&table,"used_maskfile"));               //  1 :  use mask --- 0 : used region id 
@@ -131,7 +133,7 @@ int rinputf(char *dir,mesh *M1,input *inp){
     freeTable(&table);
 	return e;
 }
-int datafiles(){
+int datafiles(void){
 	int e =0;
 	strcpy(datafilepath[0],datadir);
 	strcat(datafilepath[0],filename);
