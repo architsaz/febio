@@ -143,7 +143,7 @@ int main(int argc, char const *argv[])
                 {"NJmask", 1, M2->nelem, NJmask, SCA_double_VTK}};
             size_t countele2 = sizeof(prtelefield2) / sizeof(prtelefield2[0]);
             FunctionWithArgs prtpntfield2[] = {NULL};
-            size_t countpnt2 = sizeof(prtpntfield2) / sizeof(prtpntfield2[0]);
+            size_t countpnt2 = 0;
             CHECK_ERROR(SaveVTK(rundir, "checkNJmask", step, M2, tri6funcVTK, prtelefield2, countele2, prtpntfield2, countpnt2));
             // modified the young modulus using Njmask
             for (int ele = 0; ele < M2->nelem; ele++) M2->young[ele] += inp->NJyoung * NJmask[ele];
