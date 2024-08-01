@@ -29,6 +29,7 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
     if (modifoption!=justfebmkr) {step = atoi(argv[3]);step_end=atoi(argv[4]);}
+
 // allocate memory for M1 mesh struct
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
     if (M1 == NULL)
@@ -47,7 +48,7 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(datafiles());
 // input variable :
     CHECK_ERROR(rinputf(datadir,M1, inp));    
-    // printf("path1: %s\npath2: %s\npath3: %s\n",datafilepath[0],datafilepath[1],datafilepath[2]);
+//    printf("path1: %s\npath2: %s\npath3: %s\n",datafilepath[0],datafilepath[1],datafilepath[2]);
 // reading domain parameters for unloaded geometry from .FLDS.ZFEM file //
     CHECK_ERROR(read_zfem(datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
 // reading wall charectristics [colored fields] from .wall file//
