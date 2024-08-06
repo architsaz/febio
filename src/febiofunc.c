@@ -39,7 +39,7 @@ int runfebio(int step)
 
     //---------------->OPTION 2
     char command[500];
-    sprintf(command, "febio4 -i %spres_%d.feb -config febio.xml\n", rundir, step);
+    sprintf(command, "/dagon1/achitsaz/app/FEBioStudio/bin/febio4 -i %spres_%d.feb\n", rundir, step);
     printf("%s\n", command);
     system(command);
     return e;
@@ -229,16 +229,17 @@ runstatus checkresult(char *file)
         exit(EXIT_FAILURE);
     }
     int c;
-    do{
+    do
+    {
         c = fgetc(fptr);
         if (c == 'E')
         {
-            status= error;
+            status = error;
             break;
         }
         if (c == 'N')
         {
-            status=normal;
+            status = normal;
             break;
         }
 
@@ -321,12 +322,16 @@ int calctripres(mesh *M, input *inp)
     int e = 0;
     static int *pres;
     pres = calloc((size_t)M->nelem, sizeof(*pres));
-    if (inp->used_BCmask==1){
-        //appled the BCmask
-        for (int ele=0;ele<M->nelem;ele++){
-            pres[ele]=M->BCmask[ele];
+    if (inp->used_BCmask == 1)
+    {
+        // appled the BCmask
+        for (int ele = 0; ele < M->nelem; ele++)
+        {
+            pres[ele] = M->BCmask[ele];
         }
-    }else{
+    }
+    else
+    {
         // applied the regional mask
         for (int ele = 0; ele < M->nelem; ele++)
         {
@@ -349,20 +354,29 @@ int calctrifixb(mesh *M, input *inp)
     int e = 0;
     static int *fixb;
     fixb = calloc((size_t)M->nelem, sizeof(*fixb));
-    if (inp->used_BCmask==1){
-        //appled the BCmask
-        for (int ele=0;ele<M->nelem;ele++){
-            if (M->BCmask[ele]==0){
-                fixb[ele]=1;   
-            }else if (M->BCmask[ele]==1){
-                fixb[ele]=0;
-            }else{
-                fprintf(stderr,"ERROR: there is problem in the line %d of the BCmask file.\n",ele);
-                fprintf(stderr,"the value of the BCmask should be 0 or 1 but here is %d\n",M->BCmask[ele]);
+    if (inp->used_BCmask == 1)
+    {
+        // appled the BCmask
+        for (int ele = 0; ele < M->nelem; ele++)
+        {
+            if (M->BCmask[ele] == 0)
+            {
+                fixb[ele] = 1;
+            }
+            else if (M->BCmask[ele] == 1)
+            {
+                fixb[ele] = 0;
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: there is problem in the line %d of the BCmask file.\n", ele);
+                fprintf(stderr, "the value of the BCmask should be 0 or 1 but here is %d\n", M->BCmask[ele]);
                 exit(EXIT_FAILURE);
             }
         }
-    }else{    
+    }
+    else
+    {
         // applied the regional  mask
         for (int ele = 0; ele < M->nelem; ele++)
         {

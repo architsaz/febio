@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
-<febio_config version="3.0">
-  <output_negative_jacobians>1</output_negative_jacobians>
-</febio_config>
