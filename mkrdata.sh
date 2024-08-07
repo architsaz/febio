@@ -35,7 +35,7 @@ cp $path $datadir
 path=$(find "/dagon1/jcebral/region/R01/wall" -maxdepth 1 -name "$1.wall")
 cp $path $datadir
 # unzip files
-gzip -d $datadir/*.gz
+gzip -d -f  $datadir/*.gz
 # cp input file 
 cp /dagon1/achitsaz/FEBio/scripts/input_hemo.txt $msa1dir/input.txt
 
