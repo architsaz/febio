@@ -40,4 +40,6 @@ gzip -d $datadir/*.gz
 cp /dagon1/achitsaz/FEBio/scripts/input_hemo.txt $msa1dir/input.txt
 
 cp /dagon1/achitsaz/FEBio/scripts/input_hetro.txt $msa2dir/input.txt
-
+# cp run file 
+cp /dagon1/achitsaz/FEBio/scripts/run.sh $msa1dir/
+cp /dagon1/achitsaz/FEBio/scripts/run.sh $msa2dir/
