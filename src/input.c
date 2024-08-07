@@ -145,5 +145,6 @@ int datafiles(void)
 
 	strcpy(datafilepath[3], datadir);
 	strcat(datafilepath[3], "BCmask.txt");
+
 	return e;
 }

@@ -20,15 +20,16 @@ int main(int argc, char const *argv[])
     int step,step_end;step=step_end=0;
     modifyoung modifoption;
     if (!strcmp(argv[2],"corrbynj")) modifoption=corrbynj;
+    else if (!strcmp(argv[2],"nocorr")) modifoption=nocorr;
     else if (!strcmp(argv[2],"unify")) modifoption=unify;
     else if (!strcmp(argv[2],"enhance")) modifoption=enhance;
     else if (!strcmp(argv[2],"justfebmkr")) modifoption=justfebmkr;
     else {
         fprintf(stderr,"ERROR: the option %s used for modifying Young modulus does not match with what supposed for program\n",argv[2]);
-        fprintf(stderr,"choose from the this option : corrbynj/unify/enhance or justfebmkr\n");
+        fprintf(stderr,"choose from the this option : nocorr/corrbynj/unify/enhance or justfebmkr\n");
         exit(EXIT_FAILURE);
     }
-    if (modifoption!=justfebmkr) {step = atoi(argv[3]);step_end=atoi(argv[4]);}
+    if (modifoption!=justfebmkr && modifoption!=nocorr ) {step = atoi(argv[3]);step_end=atoi(argv[4]);}
 
 // allocate memory for M1 mesh struct
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
@@ -47,7 +48,7 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(mkdirs(step)); // printf("run: %s\ndata: %s\n",rundir,datadir);
     CHECK_ERROR(datafiles());
 // input variable :
-    CHECK_ERROR(rinputf(datadir,M1, inp));    
+    CHECK_ERROR(rinputf(rundir,M1, inp));    
 //    printf("path1: %s\npath2: %s\npath3: %s\n",datafilepath[0],datafilepath[1],datafilepath[2]);
 // reading domain parameters for unloaded geometry from .FLDS.ZFEM file //
     CHECK_ERROR(read_zfem(datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
@@ -107,6 +108,8 @@ int main(int argc, char const *argv[])
     if (modifoption==justfebmkr) return 0;    
 // run febio solver
     if (step==0) CHECK_ERROR(runfebio(step));
+// check justfebmkr option    
+    if (modifoption==nocorr) return 0; 
     // printf("error: %d\n",checkresult("pres_0"));
 // check Negative Jacobian:
     NJmask = calloc((size_t)M2->nelem, sizeof(NJmask));
