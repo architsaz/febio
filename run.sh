@@ -11,7 +11,7 @@ ulimit -s unlimited
 ulimit -v unlimited
 
 #executable
-EXE=/serapis1/jcebral/zsft/abcell-1.0/build/opt/bin/ang
+EXE=/dagon1/achitsaz/FEBio/scripts/build/main
 if [ ! -e ${EXE} ]; then
   echo "Could not find ${EXE}"
   exit 1
@@ -32,14 +32,9 @@ echo "wdir=`pwd`" >> ${INFO}
 echo `env | grep OMP_NUM_THREADS` >> ${INFO}
 
 #Run
-ECHO=
-if [ "x$1" = "x-i" -o "x$1" = "x--interactive" ]; then
-  ${ECHO} $EXE
-else
-  if [ -z ${ECHO} ]; then
-    nohup $EXE > out 2>&1 &
-  fi
-  PID=$!
-  echo "running in background ... [${PID}]"
-  echo "pid=${PID}" >> ${INFO}
-fi
+nohup $EXE $1 $2 $3 > out 2>&1 &
+
+PID=$!
+echo "running in background ... [${PID}]"
+echo "pid=${PID}" >> ${INFO}
+
