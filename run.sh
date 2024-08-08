@@ -32,7 +32,7 @@ echo "wdir=`pwd`" >> ${INFO}
 echo `env | grep OMP_NUM_THREADS` >> ${INFO}
 
 #Run
-nohup $EXE $1 $2 $3 > out 2>&1 &
+nohup $EXE $1 $2 $3 $4 > out 2>&1 &
 
 PID=$!
 echo "running in background ... [${PID}]"
