@@ -15,16 +15,19 @@ INC_DIR = include
 BUILD_DIR = build
 TEST_DIR = tests
 
-# Source files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
+# Project-specific directories and files
+FEB_SRC_FILES = $(wildcard $(SRC_DIR)/feb/*.c)
+PPA_SRC_FILES = $(wildcard $(SRC_DIR)/ppa/*.c)
 TEST_FILES = $(wildcard $(TEST_DIR)/*.c)
 
-# Object files
-OBJ_FILES = $(SRC_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+# Object files for each project
+FEB_OBJ_FILES = $(FEB_SRC_FILES:$(SRC_DIR)/feb/%.c=$(BUILD_DIR)/feb_%.o)
+PPA_OBJ_FILES = $(PPA_SRC_FILES:$(SRC_DIR)/ppa/%.c=$(BUILD_DIR)/ppa_%.o)
 TEST_OBJ_FILES = $(TEST_FILES:$(TEST_DIR)/%.c=$(BUILD_DIR)/test_%.o)
 
-# Executables
-EXEC = $(BUILD_DIR)/main
+# Executables for each project
+FEB_EXEC = $(BUILD_DIR)/feb_exec
+PPA_EXEC = $(BUILD_DIR)/ppa_exec
 TEST_EXEC = $(BUILD_DIR)/test_exec
 
 # OS detection
@@ -39,18 +42,30 @@ else
 endif
 
 # Default target
-all: $(EXEC)$(EXEC_EXT)
+all: feb ppa
 
-# Linking main executable
-$(EXEC)$(EXEC_EXT): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) $(LDFLAGS) -o $@
+# Project-specific targets
+feb: $(FEB_EXEC)$(EXEC_EXT)
+
+ppa: $(PPA_EXEC)$(EXEC_EXT)
+
+# Linking executables for each project
+$(FEB_EXEC)$(EXEC_EXT): $(FEB_OBJ_FILES)
+	$(CC) $(FEB_OBJ_FILES) $(LDFLAGS) -o $@
+
+$(PPA_EXEC)$(EXEC_EXT): $(PPA_OBJ_FILES)
+	$(CC) $(PPA_OBJ_FILES) $(LDFLAGS) -o $@
 
 # Linking test executable
-$(TEST_EXEC)$(EXEC_EXT): $(OBJ_FILES) $(TEST_OBJ_FILES)
-	$(CC) $(OBJ_FILES) $(TEST_OBJ_FILES) -o $@
+$(TEST_EXEC)$(EXEC_EXT): $(TEST_OBJ_FILES)
+	$(CC) $(TEST_OBJ_FILES) $(LDFLAGS) -o $@
 
-# Compiling source files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+# Compiling source files for each project
+$(BUILD_DIR)/feb_%.o: $(SRC_DIR)/feb/%.c
+	$(MKDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/ppa_%.o: $(SRC_DIR)/ppa/%.c
 	$(MKDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -67,4 +82,4 @@ clean:
 	$(RM)
 
 # PHONY targets
-.PHONY: all clean test
+.PHONY: all clean test feb ppa
