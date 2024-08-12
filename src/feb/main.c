@@ -13,7 +13,8 @@ int main(int argc, char const *argv[])
     char febname[10] = "pres";    
 // reading the argument of main function
     if (argc!=5 && argc!=3) {fprintf(stderr,"ERROR: need more argument\noptions:\n");
-    fprintf(stderr,"- just make feb file :               <casename> justfebmkr\n"); 
+    fprintf(stderr,"- just make feb file:                <casename> justfebmkr\n");
+    fprintf(stderr,"- run feb file without modification: <casename> nocorr\n");  
     fprintf(stderr,"- run febio to modify young modulus: <casename> <corrbynj/unify/enhance> <start_step> <end_step> \n");
     exit(EXIT_FAILURE);}
     strcpy(filename,argv[1]);
