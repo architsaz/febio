@@ -36,7 +36,9 @@
         // Neo-Hooken model
             char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
             double *young_r,*young_l,NJyoung,incyoung;
-            double pois,ro;		
+            double pois,ro;	
+        // mask status 
+            int used_cmask,used_rmask;    	
         // label : <red, yellow, white, cyan, rupture, remain>
             int *label,label_num;
         // boundary condition:
@@ -49,6 +51,8 @@
             double pres,ultipres;//[dyne/cm^2]             120 mmHg  
         //filename
             char filename[50];
+        // logfile 
+            int print_st;
     }input;
     // Define the structure for a hash table entry
     typedef struct Entry {
@@ -65,8 +69,8 @@
         corrbynj,
         unify,
         enhance,
-        justfebmkr,
         nocorr,
+        mknjmask,
     } modifyoung; 
     typedef enum {
         error,

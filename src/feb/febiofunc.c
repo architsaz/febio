@@ -255,28 +255,32 @@ int calctrithick(mesh *M, input *inp)
     static double *t;
     t = malloc((size_t)M->npoin * sizeof(*t));
     // applied region mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->colorid_num; k++)
+    if (inp->used_rmask==1){
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->relems[ele] == inp->colorid[k])
+            for (int k = 0; k < inp->colorid_num; k++)
             {
-                for (int p = 0; p < M->nrpts; p++)
-                    t[(M->elems[M->nrpts * ele + p]) - 1] = inp->thick_r[k];
-                break;
+                if (M->relems[ele] == inp->colorid[k])
+                {
+                    for (int p = 0; p < M->nrpts; p++)
+                        t[(M->elems[M->nrpts * ele + p]) - 1] = inp->thick_r[k];
+                    break;
+                }
             }
         }
     }
     // applied the label{color} mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->label_num; k++)
+    if (inp->used_cmask==1){
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->Melem[ele] == inp->label[k])
+            for (int k = 0; k < inp->label_num; k++)
             {
-                for (int p = 0; p < M->nrpts; p++)
-                    t[(M->elems[M->nrpts * ele + p]) - 1] = inp->thick_l[k];
-                break;
+                if (M->Melem[ele] == inp->label[k])
+                {
+                    for (int p = 0; p < M->nrpts; p++)
+                        t[(M->elems[M->nrpts * ele + p]) - 1] = inp->thick_l[k];
+                    break;
+                }
             }
         }
     }
@@ -290,26 +294,30 @@ int calctriyoung(mesh *M, input *inp)
     static double *young;
     young = malloc((size_t)M->nelem * sizeof(*young));
     // applied region mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->colorid_num; k++)
+    if (inp->used_rmask==1){
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->relems[ele] == inp->colorid[k])
+            for (int k = 0; k < inp->colorid_num; k++)
             {
-                young[ele] = inp->young_r[k];
-                break;
+                if (M->relems[ele] == inp->colorid[k])
+                {
+                    young[ele] = inp->young_r[k];
+                    break;
+                }
             }
         }
     }
     // applied the label{color} mask
-    for (int ele = 0; ele < M->nelem; ele++)
-    {
-        for (int k = 0; k < inp->label_num; k++)
+    if (inp->used_cmask==1){
+        for (int ele = 0; ele < M->nelem; ele++)
         {
-            if (M->Melem[ele] == inp->label[k])
+            for (int k = 0; k < inp->label_num; k++)
             {
-                young[ele] = inp->young_l[k];
-                break;
+                if (M->Melem[ele] == inp->label[k])
+                {
+                    young[ele] = inp->young_l[k];
+                    break;
+                }
             }
         }
     }
@@ -317,7 +325,7 @@ int calctriyoung(mesh *M, input *inp)
     printf("* Young Modulus arr calculated by considering material mask\n");
     return e;
 }
-int calctripres(mesh *M, input *inp)
+int calctripres(mesh *M,mesh *M1, input *inp)
 {
     int e = 0;
     static int *pres;
@@ -345,7 +353,38 @@ int calctripres(mesh *M, input *inp)
             }
         }
     }
-    M->presmask = pres;
+    //check the fix and pressure mask overlap 
+        static int *pres2;int nei;
+        pres2 = calloc((size_t)M->nelem, sizeof(*pres2));
+        for (int ele=0;ele<M->nelem;ele++) pres2[ele]=pres[ele];
+        for (int ele=0;ele<M->nelem;ele++)
+        {
+            if (pres[ele]==1){
+                for (int i=0;i<M->nredge;i++)
+                {
+                    nei = M1->esure[M->nredge*ele+i];
+                    if (pres[nei]==0){
+                        pres2[ele]=0;
+                        break;
+                    }
+                }
+            }
+        }
+        for (int ele=0;ele<M->nelem;ele++) pres[ele]=pres2[ele];
+        for (int ele=0;ele<M->nelem;ele++)
+        {
+            if (pres[ele]==1){
+                for (int i=0;i<M->nredge;i++)
+                {
+                    nei = M1->esure[M->nredge*ele+i];
+                    if (pres[nei]==0){
+                        pres2[ele]=0;
+                        break;
+                    }
+                }
+            }
+        }
+    M->presmask = pres2;
     printf("* A mask of elements is applied by considering both the regional mask and the input file.\n");
     return e;
 }
@@ -719,6 +758,11 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t\t<var type=\"shell thickness\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"stress\"/>\n");
     fprintf(fptr, "\t\t</plotfile>\n");
+    if(inp->print_st==1){
+        fprintf(fptr, "\t\t<logfile>\n");
+        fprintf(fptr, "\t\t\t<element_data data=\"sx;sy;sz;sxy;syz\" name=\"element stresses\"> </element_data>\n");
+        fprintf(fptr, "\t\t</logfile>\n");
+    }
     fprintf(fptr, "\t</Output>\n");
     fprintf(fptr, "</febio_spec>\n");
     if (fclose(fptr) == EOF)

@@ -4,6 +4,9 @@ nredge  3
 nrpts   3    
 // Solver 
 nonlinear_FE    full Newton   
+// mask status 
+used_cmask	0
+used_rmask	1
 // Neo-Hooken 	
 young_red       20000000
 young_yellow    20000000
@@ -55,3 +58,4 @@ thick_white    0.04
 // pressre
 pre_stress     106658
 2step_pres     159987
+print_st	1

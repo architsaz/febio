@@ -4,7 +4,7 @@
 #include "mystructs.h"
 
 int rinputf(char *,mesh *,input *);
-int mkdirs(int );
+int mkdirs(void);
 int datafiles(void);
 int read_zfem(char *,int *, int *, double **,int **);
 int readgz_zfem(char *,int *, int *, double **,int **);
@@ -13,7 +13,7 @@ int read_regionmask(char *,mesh *,input *,int **, int **);
 int read_BCmask(char *,mesh *,int **);
 int calctrithick (mesh *, input *);
 int calctriyoung (mesh *, input *);
-int calctripres(mesh *, input *);
+int calctripres(mesh *,mesh *,input *);
 int calctrifixb(mesh *, input *);
 void NeoHokfunc(FILE *, input *);
 void Elementfunc(FILE *, mesh *);

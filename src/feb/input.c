@@ -43,6 +43,10 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	strcpy(inp->nonlinear_FE, gethash(&table, "nonlinear_FE")); // BFGS or  full Newton
 	inp->symetric_stiff = 0;
 
+	// mask status:
+	inp->used_cmask = atoi(gethash(&table, "used_cmask"));
+	inp->used_rmask = atoi(gethash(&table, "used_rmask"));
+
 	// Neo-Hooken model
 	// strcpy(inp->Mmodel,gethash(&table,"isotropic elastic")); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 	static double young_l2[3] = {0, 0, 0}; //{red, yellow, white} [dyne/cm^2]
@@ -123,6 +127,8 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	// pre
 	inp->pres = atof(gethash(&table, "pre_stress"));
 	inp->ultipres = atof(gethash(&table, "2step_pres"));
+	// logfile
+	inp->print_st = atoi(gethash(&table,"print_st"));
 
 	// Free the memory allocated for the hash table
 	freeTable(&table);

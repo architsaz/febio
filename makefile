@@ -26,7 +26,7 @@ PPA_OBJ_FILES = $(PPA_SRC_FILES:$(SRC_DIR)/ppa/%.c=$(BUILD_DIR)/ppa_%.o)
 TEST_OBJ_FILES = $(TEST_FILES:$(TEST_DIR)/%.c=$(BUILD_DIR)/test_%.o)
 
 # Executables for each project
-FEB_EXEC = $(BUILD_DIR)/feb_exec
+FEB_EXEC = $(BUILD_DIR)/febmkr_exec
 PPA_EXEC = $(BUILD_DIR)/ppa_exec
 TEST_EXEC = $(BUILD_DIR)/test_exec
 

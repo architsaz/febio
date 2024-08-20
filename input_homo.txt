@@ -4,6 +4,9 @@ nredge  3
 nrpts   3    
 // Solver 
 nonlinear_FE    full Newton   
+// mask status 
+used_cmask	0
+used_rmask	1
 // Neo-Hooken 	
 young_red       10000000
 young_yellow    10000000
@@ -11,9 +14,9 @@ young_white     10000000
 young_remain    10000000
 young_distal    10000000
 young_parent    10000000
-young_neck      10000000
-young_body      10000000
-young_dome      10000000
+young_neck      20000000
+young_body      20000000
+young_dome      20000000
 pois            0.49 
 ro              1.101	
 NJyoung         50000000
@@ -23,7 +26,7 @@ label_red       1
 label_yellow    2
 label_white     7
 // Boundary condition:
-used_BCmask    0
+used_BCmask    1
 colorid_remain 0
 colorid_distal 2
 colorid_parent 1
@@ -55,3 +58,4 @@ thick_white    0.01
 // pressre
 pre_stress     106658
 2step_pres     159987
+print_st	1
