@@ -13,7 +13,7 @@ fi
 option=$2
 
 #OpenMP
-ncpu=5
+ncpu=12
 export OMP_NUM_THREADS=$ncpu
 export KMP_STACKSIZE=1g
 export OMP_DYNAMIC=FALSE
@@ -62,7 +62,7 @@ case $2 in
         $febmkr_EXE $1 nocorr 0 > out 2>&1 
         $febio4_EXE -i pres_0.feb >> out 2>&1 
         checkresult=$(grep "N O R M A L" "pres_0.log")
-        if [ "$checkresult" = "N O R M A L   T E R M I N A T I O N" ];then
+        if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ];then
             echo "$checkresult without Young's Modulus modification."
             break
         fi
@@ -72,7 +72,8 @@ case $2 in
         ;;    
     corrbynj|enhance)
         for i in $(seq $3 $4); do
-            if [ $3 -eq 0 ]; then
+	    echo "-starting $i loop of $2 option..."
+            if [ $i -eq 0 ]; then
                 $febmkr_EXE $1 nocorr 0 > out 2>&1 
                 $febio4_EXE -i pres_0.feb >> out 2>&1 
             else
@@ -80,7 +81,7 @@ case $2 in
                 $febio4_EXE -i pres_$i.feb >> out 2>&1 
             fi
             checkresult=$(grep "N O R M A L" "pres_$i.log")
-            if [ "$checkresult" = "N O R M A L   T E R M I N A T I O N" ];then
+            if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ];then
                 echo "$checkresult at $i loop with ($2) Young's Modulus modification."
                 break
             fi
