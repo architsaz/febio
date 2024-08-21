@@ -59,8 +59,8 @@ echo "pid=${PID}" >> ${INFO}
 # Perform actions based on the argument
 case $2 in
     nocorr)
-        nohup "$febmkr_EXE" "$1" "nocorr" "0" > out 2>&1 
-        nohup "$febio4_EXE" "-i" "pres_0.feb" >> out 2>&1 
+        $febmkr_EXE $1 nocorr 0 > out 2>&1 
+        $febio4_EXE -i pres_0.feb >> out 2>&1 
         checkresult=$(grep "N O R M A L" "pres_0.log")
         if [ "$checkresult" = "N O R M A L   T E R M I N A T I O N" ];then
             echo "$checkresult without Young's Modulus modification."
@@ -68,16 +68,16 @@ case $2 in
         fi
         ;;
     mknjmask)
-        nohup "$febmkr_EXE" "$1" "$2" "$3" > out 2>&1 
+        $febmkr_EXE $1 $2 $3 > out 2>&1 
         ;;    
     corrbynj|enhance)
         for i in $(seq $3 $4); do
             if [ $3 -eq 0 ]; then
-                nohup "$febmkr_EXE" "$1" "nocorr" "0" > out 2>&1 
-                nohup "$febio4_EXE" "-i" "pres_0.feb" >> out 2>&1 
+                $febmkr_EXE $1 nocorr 0 > out 2>&1 
+                $febio4_EXE -i pres_0.feb >> out 2>&1 
             else
-                nohup "$febmkr_EXE" "$1" "$2" "$i" >> out 2>&1 
-                nohup "$febio4_EXE" "-i" "pres_$i.feb" >> out 2>&1 
+                $febmkr_EXE $1 $2 $i >> out 2>&1 
+                $febio4_EXE -i pres_$i.feb >> out 2>&1 
             fi
             checkresult=$(grep "N O R M A L" "pres_$i.log")
             if [ "$checkresult" = "N O R M A L   T E R M I N A T I O N" ];then
