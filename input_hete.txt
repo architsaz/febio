@@ -5,7 +5,7 @@ nrpts   3
 // Solver 
 nonlinear_FE    full Newton   
 // mask status 
-used_cmask	0
+used_cmask	1
 used_rmask	1
 // Neo-Hooken 	
 young_red       20000000

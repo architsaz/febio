@@ -46,9 +46,9 @@ load_neck      1
 load_body      1
 load_dome      1
 // thickness 
-thick_remain   0.01
-thick_distal   0.01
-thick_parent   0.01
+thick_remain   0.02
+thick_distal   0.02
+thick_parent   0.02
 thick_neck     0.01
 thick_body     0.01
 thick_dome     0.01
