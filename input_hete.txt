@@ -58,4 +58,4 @@ thick_white    0.04
 // pressre
 pre_stress     106658
 2step_pres     159987
-print_st	0
+print_st	   1
