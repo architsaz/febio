@@ -758,12 +758,14 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t\t<var type=\"shell thickness\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"stress\"/>\n");
     fprintf(fptr, "\t\t</plotfile>\n");
-    if(inp->print_st==1){
-        fprintf(fptr, "\t\t<logfile>\n");
-        fprintf(fptr, "\t\t\t<element_data data=\"sx;sy;sz;sxy;syz\" name=\"element stresses\"> </element_data>\n");
-        fprintf(fptr, "\t\t</logfile>\n");
-    }
     fprintf(fptr, "\t</Output>\n");
+    if(inp->print_st==1){
+        fprintf(fptr, "\t<Output>\n");
+        fprintf(fptr, "\t\t<logfile>\n");
+        fprintf(fptr, "\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\" name=\"element stresses\"> </element_data>\n");
+        fprintf(fptr, "\t\t</logfile>\n");
+        fprintf(fptr, "\t</Output>\n");
+    }
     fprintf(fptr, "</febio_spec>\n");
     if (fclose(fptr) == EOF)
     {
