@@ -46,7 +46,9 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	// mask status:
 	inp->used_cmask = atoi(gethash(&table, "used_cmask"));
 	inp->used_rmask = atoi(gethash(&table, "used_rmask"));
-
+	// curvature mask:
+	inp->norm_ang = atof(gethash(&table, "norm_ang"));
+	inp->young_highcurv = atof(gethash(&table, "young_highcurv"));
 	// Neo-Hooken model
 	// strcpy(inp->Mmodel,gethash(&table,"isotropic elastic")); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
 	static double young_l2[3] = {0, 0, 0}; //{red, yellow, white} [dyne/cm^2]

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <zlib.h>
+#include <math.h>
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
@@ -328,6 +329,51 @@ int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge){
     }
     *esurf2=esurf;
     printf("* esurf is done!\n");
+    return e;
+}
+// find the normal of each element in 3D
+int save_normele(int nelem, int *elems, double *ptxyz, double **norm) {
+    int e = 0;
+    double *norm2 = NULL;
+
+    // Allocate memory for norm2
+    norm2 = calloc(3 * (size_t)nelem, sizeof(*norm2));
+    if (norm2 == NULL) {
+        // Memory allocation failed
+        fprintf(stderr, "Memory allocation failed!\n");
+        return -1; // Return an error code
+    }
+
+    double p1[3] = {0, 0, 0}; 
+    double p2[3] = {0, 0, 0}; 
+    double p3[3] = {0, 0, 0}; 
+    double u[3] = {0, 0, 0}; 
+    double v[3] = {0, 0, 0};
+
+    for (int ele = 0; ele < nelem; ele++) {
+        for (int i = 0; i < 3; i++) p1[i] = ptxyz[3 * (elems[3 * ele]-1) + i];
+        for (int i = 0; i < 3; i++) p2[i] = ptxyz[3 * (elems[3 * ele + 1]-1) + i];
+        for (int i = 0; i < 3; i++) p3[i] = ptxyz[3 * (elems[3 * ele + 2]-1) + i];
+        
+        for (int i = 0; i < 3; i++) u[i] = p2[i] - p1[i];
+        for (int i = 0; i < 3; i++) v[i] = p3[i] - p1[i];
+
+        norm2[3 * ele] = u[1] * v[2] - u[2] * v[1];
+        norm2[3 * ele + 1] = u[2] * v[0] - u[0] * v[2];
+        norm2[3 * ele + 2] = u[0] * v[1] - u[1] * v[0];
+		double mag =0;
+		for (int i=0;i<3;i++) mag+=norm2[3*ele+i]*norm2[3*ele+i];
+		if (mag==0) {
+			// zero magnitude normal vetor
+			fprintf(stderr, "zero magnitude normal vetor at ele : %d!\n",ele);
+			return -1; // Return an error code
+		} 
+		for (int i=0;i<3;i++) norm2[3*ele+i]=norm2[3*ele+i]/sqrt(mag);
+    }
+
+    *norm = norm2; // Assign the calculated normals to the output pointer
+    printf("* normele is done!\n");
+
     return e;
 }
 // conver mesh from tri3 to other type of mesh 

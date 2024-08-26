@@ -16,7 +16,8 @@ int main(int argc, char const *argv[])
     {
         fprintf(stderr,"argc is %d\n",argc);
         fprintf(stderr, "ERROR: need more argument\n");
-        fprintf(stderr, "<casename> <mknjmask/nocorr/corrbynj/enhance> <step> \n");
+        fprintf(stderr, "<casename> <option> <step> \n\n");
+        fprintf(stderr,"available option:\n\nmknjmask\nnocorr\ncorrbynj\nenhance\nhighcurv\n");
         exit(EXIT_FAILURE);
     }
     strcpy(filename, argv[1]);
@@ -28,7 +29,9 @@ int main(int argc, char const *argv[])
     else if (!strcmp(argv[2], "enhance"))
         modifoption = enhance;
     else if (!strcmp(argv[2], "mknjmask"))
-        modifoption = mknjmask;    
+        modifoption = mknjmask;
+    else if (!strcmp(argv[2], "highcurv"))
+        modifoption = highcurv;         
     else
     {
         fprintf(stderr, "ERROR: the option %s used for modifying Young modulus does not match with what supposed for program\n", argv[2]);
@@ -40,6 +43,11 @@ int main(int argc, char const *argv[])
     if (modifoption == nocorr && step != 0)
     {
         fprintf(stderr,"ERROR: the step assigned for nocoor option should be zero but applied %d\n",step);
+        exit(EXIT_FAILURE);
+    }
+    if (modifoption == highcurv && step != 0)
+    {
+        fprintf(stderr,"ERROR: the step assigned for highcurv option should be zero but applied %d\n",step);
         exit(EXIT_FAILURE);
     }
     if (modifoption == enhance && step == 0)
@@ -58,7 +66,7 @@ int main(int argc, char const *argv[])
     else{sprintf(num, "%d", step-1);}
     strcat(logname, "_");
     strcat(logname, num);
-    if (modifoption != nocorr && checkresult(logname)!=error)
+    if (modifoption != nocorr && modifoption != highcurv && checkresult(logname)!=error)
     {
         fprintf(stderr,"ERROR: the status of %s is not error\n",logname);
         exit(EXIT_FAILURE);
@@ -118,9 +126,57 @@ int main(int argc, char const *argv[])
         }
         return 0;
     }
-    // material propertices
+    // thickness
     CHECK_ERROR(calctrithick(M2, inp));
     CHECK_ERROR(appliedgfilt_ptri6(M1, M2->t, 20));
+    // material propertices
+    double *normang,*norm_mask;
+    normang=malloc((size_t)M1->nelem*sizeof(*normang));
+    norm_mask=malloc((size_t)M1->nelem*sizeof(*norm_mask));
+    for (int i=0;i<M1->nelem;i++)   normang[i]=0.0;
+    for (int i=0;i<M1->nelem;i++)   norm_mask[i]=0.0;
+    CHECK_ERROR(save_esurf(M1->nelem,M1->esure,M1->numf,&M1->esurf,M1->nredge));
+    //for (int f=0;f<10;f++) printf("f:%d\tele:%d\tele:%d\n",f,M1->esurf[2*f],M1->esurf[2*f+1]);
+    CHECK_ERROR(save_normele(M1->nelem,M1->elems,M1->ptxyz,&M1->normele));
+    // for (int ele=0;ele<10;ele++) printf("ele:%d\tpx:%lf\tpy:%lf\tpz:%lf\n",ele,
+    // M1->normele[3*ele],M1->normele[3*ele+1],M1->normele[3*ele+2]);
+    double dot_product, mag_u ,mag_v;
+    double u[3] = {0, 0, 0}; 
+    double v[3] = {0, 0, 0};
+    for(int f=0; f<M1->numf;f++)
+    {   
+        for(int i=0;i<3;i++) u[i]=M1->normele[3*M1->esurf[2*f]+i];
+        for(int i=0;i<3;i++) v[i]=M1->normele[3*M1->esurf[2*f+1]+i];
+        // Initialized memory
+        dot_product=mag_u=mag_v=0;
+        // Calculate dot product and magnitudes
+            for (int i = 0; i < 3; i++) {
+                dot_product += u[i] * v[i];
+                mag_u += u[i] * u[i];
+                mag_v += v[i] * v[i];
+            }
+        mag_u = sqrt(mag_u);
+        mag_v = sqrt(mag_v);
+
+        // Calculate the cosine of the angle
+        if (mag_u==0){
+            fprintf(stderr,"ERROR: magnitude norm ele: %d is zero.\n",M1->esurf[2*f]);
+            exit(EXIT_FAILURE);
+        }
+        if (mag_v==0){
+            fprintf(stderr,"ERROR: magnitude norm ele: %d is zero.\n",M1->esurf[2*f+1]);
+            exit(EXIT_FAILURE);
+        }
+        double anglf=acos(dot_product / (mag_u * mag_v))*(180.0 / PI);
+        if (isnan(anglf)) anglf=0;
+        normang[M1->esurf[2*f]]=MAX(normang[M1->esurf[2*f]],anglf);
+        normang[M1->esurf[2*f+1]]=MAX(normang[M1->esurf[2*f+1]],anglf);
+    }
+    for (int ele=0;ele<M1->nelem;ele++)
+    {
+        if (normang[ele]>inp->norm_ang)
+            norm_mask[ele]=1.0;
+    }
     if (step == 0)
     {
         CHECK_ERROR(calctriyoung(M2, inp));
@@ -173,13 +229,29 @@ int main(int argc, char const *argv[])
         for (int ele = 0; ele < M2->nelem; ele++)
             M2->young[ele] += inp->incyoung;
     }
+    if (modifoption == highcurv)
+    {
+        CHECK_ERROR(appliedgfilt_etri(M1, norm_mask, 10));
+        for (int ele=0;ele<M1->nelem;ele++)
+        {
+            if (norm_mask[ele]>0.0) norm_mask[ele]=1.0;
+        }
+        CHECK_ERROR(appliedgfilt_etri(M1, norm_mask, 10));
+        // modified the young modulus using highcurv mask
+        for (int ele = 0; ele < M2->nelem; ele++)
+            M2->young[ele] += inp->young_highcurv * norm_mask[ele];
+
+    }
     // check the mask after converting :
-    FunctionWithArgs prtelefield[] = {
-        {"Melems", 1, M2->nelem, M2->Melem, SCA_int_VTK},
-        {"relems", 1, M2->nelem, M2->relems, SCA_int_VTK},
-        {"Young_Modulus", 1, M2->nelem, M2->young, SCA_double_VTK},
-        {"Press_mask", 1, M2->nelem, M2->presmask, SCA_int_VTK},
-        {"fixed_mask", 1, M2->nelem, M2->fixbmask, SCA_int_VTK},
+    FunctionWithArgs prtelefield[] = 
+    {
+            {"Melems", 1, M2->nelem, M2->Melem, SCA_int_VTK},
+            {"relems", 1, M2->nelem, M2->relems, SCA_int_VTK},
+            {"Young_Modulus", 1, M2->nelem, M2->young, SCA_double_VTK},
+            {"Press_mask", 1, M2->nelem, M2->presmask, SCA_int_VTK},
+            {"fixed_mask", 1, M2->nelem, M2->fixbmask, SCA_int_VTK},
+            {"Max_normang", 1, M1->nelem, normang, SCA_double_VTK},
+            {"norm_mask", 1, M1->nelem, norm_mask, SCA_double_VTK},
     };
     size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
     FunctionWithArgs prtpntfield[] = {
@@ -189,6 +261,7 @@ int main(int argc, char const *argv[])
 
     CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
 
+    free(norm_mask);free(normang);
     free(M2->elems);
     free(M2->ptxyz);
     free(M1->relems), free(M1->rpts);

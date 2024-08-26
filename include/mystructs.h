@@ -18,6 +18,8 @@
             int numf;
             int *fsure;
             int *psurf;
+            int *esurf;
+            double *normele;
             int *open; // adjacent elements to the open region (inlet/outlet)
             // elemental and pointal mask
             int *Melem; // wall charectristics from .wall file
@@ -33,6 +35,9 @@
         // Solver 
             char nonlinear_FE[50];
             int  symetric_stiff;
+        // curvature mask    
+            double norm_ang;
+            double young_highcurv;
         // Neo-Hooken model
             char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
             double *young_r,*young_l,NJyoung,incyoung;
@@ -71,6 +76,7 @@
         enhance,
         nocorr,
         mknjmask,
+        highcurv,
     } modifyoung; 
     typedef enum {
         error,

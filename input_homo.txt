@@ -7,6 +7,9 @@ nonlinear_FE    full Newton
 // mask status 
 used_cmask	0
 used_rmask	1
+// norm_mask
+norm_ang        40
+young_highcurv  80000000
 // Neo-Hooken 	
 young_red       10000000
 young_yellow    10000000

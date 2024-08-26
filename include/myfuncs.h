@@ -35,6 +35,7 @@
     int save_fsure(int nelem, int *esure, int **efid2,int *numf,int Nredge);
     int save_psurf(int nelem, int numf, int *elems,int *esure, int **psurf2,int Nredge);
     int save_esurf(int nelem,int *esure, int numf, int **esurf2,int Nredge);
+    int save_normele(int nelem,int *elems,double *ptxyz,double **norm);
     unsigned int hash(const char *key);
     Entry *createEntry(const char *key, const char *value);
     char *my_strdup(const char *s);
