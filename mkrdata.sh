@@ -1,14 +1,15 @@
 #!/bin/sh
-datadir=./runfebio/$1/data
-msa1dir=./runfebio/$1/msa.1
-msa2dir=./runfebio/$1/msa.2
-pst1dir=./runfebio/$1/pst.1
-pst2dir=./runfebio/$1/pst.2
-if [ ! -d "./runfebio" ]; then
-   mkdir ./runfebio
+dirname="test"
+datadir=./$dirname/$1/data
+msa1dir=./$dirname/$1/msa.1
+msa2dir=./$dirname/$1/msa.2
+pst1dir=./$dirname/$1/pst.1
+pst2dir=./$dirname/$1/pst.2
+if [ ! -d "./$dirname" ]; then
+   mkdir ./$dirname
 fi
-if [ ! -d "./runfebio/$1" ]; then
-   mkdir ./runfebio/$1
+if [ ! -d "./$dirname/$1" ]; then
+   mkdir ./$dirname/$1
 fi
 if [ ! -d $datadir ]; then
    mkdir $datadir
@@ -37,9 +38,9 @@ cp $path $datadir
 # unzip files
 gzip -d -f  $datadir/*.gz
 # cp input file 
-cp /dagon1/achitsaz/FEBio/scripts/input_hemo.txt $msa1dir/input.txt
+cp /dagon1/achitsaz/FEBio/scripts/input_homo.txt $msa1dir/input.txt
 
-cp /dagon1/achitsaz/FEBio/scripts/input_hetro.txt $msa2dir/input.txt
+cp /dagon1/achitsaz/FEBio/scripts/input_hete.txt $msa2dir/input.txt
 # cp run file 
 cp /dagon1/achitsaz/FEBio/scripts/run.sh $msa1dir/
 cp /dagon1/achitsaz/FEBio/scripts/run.sh $msa2dir/

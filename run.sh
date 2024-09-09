@@ -5,7 +5,7 @@ if [ "$#" -ne 4 ]; then
     echo " # of arguments: $#"
     echo "- Required: four arguments"
     echo "- Usage: <casename> <option> <start_step> <last_step>"
-    echo "- Available options: mknjmask|nocorr|corrbynj|enhance"
+    echo "- Available options: mknjmask|highcurv|nocorr|corrbynj|enhance"
     exit 1
 fi
 
@@ -55,11 +55,12 @@ echo `env | grep OMP_NUM_THREADS` >> ${INFO}
 PID=$!
 echo "running in background ... [${PID}]"
 echo "pid=${PID}" >> ${INFO}
+echo "UniqueID=$(date +%s)-$1-$2" >>${INFO}
 #Run
 # Perform actions based on the argument
 case $2 in
-    nocorr)
-        $febmkr_EXE $1 nocorr 0 > out 2>&1 
+    nocorr|highcurv)
+        $febmkr_EXE $1 $2 0  > out 2>&1 
         $febio4_EXE -i pres_0.feb >> out 2>&1 
         checkresult=$(grep "N O R M A L" "pres_0.log")
         if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ];then

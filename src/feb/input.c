@@ -48,6 +48,7 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	inp->used_rmask = atoi(gethash(&table, "used_rmask"));
 	// curvature mask:
 	inp->norm_ang = atof(gethash(&table, "norm_ang"));
+	inp->bad_ang = atof(gethash(&table, "bad_ang"));
 	inp->young_highcurv = atof(gethash(&table, "young_highcurv"));
 	// Neo-Hooken model
 	// strcpy(inp->Mmodel,gethash(&table,"isotropic elastic")); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
@@ -130,7 +131,7 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	inp->pres = atof(gethash(&table, "pre_stress"));
 	inp->ultipres = atof(gethash(&table, "2step_pres"));
 	// logfile
-	inp->print_st = atoi(gethash(&table,"print_st"));
+	inp->print_st = atoi(gethash(&table, "print_st"));
 
 	// Free the memory allocated for the hash table
 	freeTable(&table);

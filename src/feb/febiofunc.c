@@ -249,13 +249,54 @@ runstatus checkresult(char *file)
     fclose(fptr);
     return status;
 }
+int mkdomain(int nelem, int *esure, int *relems, input *inp, int **eledomain2)
+{
+    int e = 0;
+    static int *eledomain = NULL;
+    int *eledomain_new = NULL;
+    eledomain = calloc((size_t)nelem, sizeof(*eledomain));
+    eledomain_new = calloc((size_t)nelem, sizeof(*eledomain_new));
+    for (int ele = 0; ele < nelem; ele++)
+    {
+        if (relems[ele] == inp->colorid[3])
+            eledomain[ele] = 1;
+        if (relems[ele] == inp->colorid[4])
+            eledomain[ele] = 1;
+        if (relems[ele] == inp->colorid[5])
+            eledomain[ele] = 1;
+    }
+    for (int i = 0; i < 50; i++)
+    {
+        for (int ele = 0; ele < nelem; ele++)
+            eledomain_new[ele] = 0;
+        for (int ele = 0; ele < nelem; ele++)
+        {
+            if (eledomain[ele] == 1)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    if (eledomain[esure[3 * ele + k]] != 1)
+                        eledomain_new[esure[3 * ele + k]] = 1;
+                }
+            }
+        }
+        for (int ele = 0; ele < nelem; ele++)
+        {
+            if (eledomain_new[ele] == 1)
+                eledomain[ele] = 1;
+        }
+    }
+    *eledomain2 = eledomain;
+    return e;
+}
 int calctrithick(mesh *M, input *inp)
 {
     int e = 0;
     static double *t;
     t = malloc((size_t)M->npoin * sizeof(*t));
     // applied region mask
-    if (inp->used_rmask==1){
+    if (inp->used_rmask == 1)
+    {
         for (int ele = 0; ele < M->nelem; ele++)
         {
             for (int k = 0; k < inp->colorid_num; k++)
@@ -270,7 +311,8 @@ int calctrithick(mesh *M, input *inp)
         }
     }
     // applied the label{color} mask
-    if (inp->used_cmask==1){
+    if (inp->used_cmask == 1)
+    {
         for (int ele = 0; ele < M->nelem; ele++)
         {
             for (int k = 0; k < inp->label_num; k++)
@@ -294,7 +336,8 @@ int calctriyoung(mesh *M, input *inp)
     static double *young;
     young = malloc((size_t)M->nelem * sizeof(*young));
     // applied region mask
-    if (inp->used_rmask==1){
+    if (inp->used_rmask == 1)
+    {
         for (int ele = 0; ele < M->nelem; ele++)
         {
             for (int k = 0; k < inp->colorid_num; k++)
@@ -308,7 +351,8 @@ int calctriyoung(mesh *M, input *inp)
         }
     }
     // applied the label{color} mask
-    if (inp->used_cmask==1){
+    if (inp->used_cmask == 1)
+    {
         for (int ele = 0; ele < M->nelem; ele++)
         {
             for (int k = 0; k < inp->label_num; k++)
@@ -325,7 +369,7 @@ int calctriyoung(mesh *M, input *inp)
     printf("* Young Modulus arr calculated by considering material mask\n");
     return e;
 }
-int calctripres(mesh *M,mesh *M1, input *inp)
+int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
 {
     int e = 0;
     static int *pres;
@@ -352,43 +396,60 @@ int calctripres(mesh *M,mesh *M1, input *inp)
                 }
             }
         }
+        for (int ele = 0; ele < M->nelem; ele++)
+        {
+            if (worst_ang_mask[ele] == 1)
+            {
+                pres[ele] = 0;
+                pres[M1->esure[3 * ele]] = 0;
+                pres[M1->esure[3 * ele + 1]] = 0;
+                pres[M1->esure[3 * ele + 2]] = 0;
+            }
+        }
     }
-    //check the fix and pressure mask overlap 
-        static int *pres2;int nei;
-        pres2 = calloc((size_t)M->nelem, sizeof(*pres2));
-        for (int ele=0;ele<M->nelem;ele++) pres2[ele]=pres[ele];
-        for (int ele=0;ele<M->nelem;ele++)
+    // check the fix and pressure mask overlap
+    static int *pres2;
+    int nei;
+    pres2 = calloc((size_t)M->nelem, sizeof(*pres2));
+    for (int ele = 0; ele < M->nelem; ele++)
+        pres2[ele] = pres[ele];
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (pres[ele] == 1)
         {
-            if (pres[ele]==1){
-                for (int i=0;i<M->nredge;i++)
+            for (int i = 0; i < M->nredge; i++)
+            {
+                nei = M1->esure[M->nredge * ele + i];
+                if (pres[nei] == 0)
                 {
-                    nei = M1->esure[M->nredge*ele+i];
-                    if (pres[nei]==0){
-                        pres2[ele]=0;
-                        break;
-                    }
+                    pres2[ele] = 0;
+                    break;
                 }
             }
         }
-        for (int ele=0;ele<M->nelem;ele++) pres[ele]=pres2[ele];
-        for (int ele=0;ele<M->nelem;ele++)
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+        pres[ele] = pres2[ele];
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (pres[ele] == 1)
         {
-            if (pres[ele]==1){
-                for (int i=0;i<M->nredge;i++)
+            for (int i = 0; i < M->nredge; i++)
+            {
+                nei = M1->esure[M->nredge * ele + i];
+                if (pres[nei] == 0)
                 {
-                    nei = M1->esure[M->nredge*ele+i];
-                    if (pres[nei]==0){
-                        pres2[ele]=0;
-                        break;
-                    }
+                    pres2[ele] = 0;
+                    break;
                 }
             }
         }
+    }
     M->presmask = pres2;
     printf("* A mask of elements is applied by considering both the regional mask and the input file.\n");
     return e;
 }
-int calctrifixb(mesh *M, input *inp)
+int calctrifixb(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
 {
     int e = 0;
     static int *fixb;
@@ -428,9 +489,155 @@ int calctrifixb(mesh *M, input *inp)
                 }
             }
         }
+        for (int ele = 0; ele < M->nelem; ele++)
+        {
+            if (worst_ang_mask[ele] == 1)
+            {
+                fixb[ele] = 1;
+                fixb[M1->esure[3 * ele]] = 1;
+                fixb[M1->esure[3 * ele + 1]] = 1;
+                fixb[M1->esure[3 * ele + 2]] = 1;
+            }
+        }
     }
     M->fixbmask = fixb;
     printf("* A mask of fixed elements by considering both regional mask and the input file.\n");
+    return e;
+}
+int cleanBCmasks(mesh *M, int *pres, int *fixed, int **region)
+{
+    int e = 0;
+    // cleaning notconnected pressure region in the pressure mask
+    static int *slcreg;
+    int *queue, nq;
+    slcreg = calloc((size_t)M->nelem, sizeof(*slcreg));
+    queue = calloc((size_t)M->nelem, sizeof(*queue));
+    for (int ele = 0; ele < M->nelem; ele++)
+        queue[ele] = -1;
+    // pick the first gen one point inside the dome region :
+    printf("start to find the unattached region to the pressure mask:\n");
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (M->relems[ele] == 16 && pres[ele] == 1 && pres[M->esure[3 * ele]] == 1 && pres[M->esure[3 * ele + 1]] == 1 && pres[M->esure[3 * ele + 2]] == 1)
+        {
+            printf("picked the ele : %d as first gen.\n", ele);
+            slcreg[ele] = 1;
+            queue[0] = M->esure[3 * ele];
+            queue[1] = M->esure[3 * ele + 1];
+            queue[2] = M->esure[3 * ele + 2];
+            nq = 3;
+            break;
+        }
+    }
+    while (nq != 0)
+    {
+        int ele = queue[nq - 1];
+        if (slcreg[ele] != 0)
+        {
+            queue[nq - 1] = -1;
+            nq = nq - 1;
+            continue;
+        }
+        if (pres[ele] != 1)
+        {
+            slcreg[ele] = 2;
+            queue[nq - 1] = -1;
+            nq = nq - 1;
+            continue;
+        }
+        slcreg[ele] = 1;
+        queue[nq - 1] = -1;
+        nq = nq - 1;
+        for (int i = 0; i < 3; i++)
+        {
+            int nei = M->esure[3 * ele + i];
+            if (slcreg[nei] == 0)
+            {
+                queue[nq] = nei;
+                nq++;
+            }
+        }
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (pres[ele] == 1 && slcreg[ele] != 1)
+        {
+            pres[ele] = 0;
+            fixed[ele] = 1;
+        }
+    }
+    // avoid the overlapping
+    int *pt_BC;
+    pt_BC = calloc((size_t)M->npoin, sizeof(*pt_BC));
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        for (int i = 0; i < 3; i++)
+            pt_BC[M->elems[3 * ele + i] - 1] = pres[ele];
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        int nr_zero = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            if (pt_BC[M->elems[3 * ele + i] - 1] == 0)
+                nr_zero++;
+        }
+        if (nr_zero == 3)
+        {
+            fixed[ele] = 1;
+        }
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (fixed[ele] == 1)
+        {
+            for (int i = 0; i < 3; i++)
+                pt_BC[M->elems[3 * ele + i] - 1] = 2;
+        }
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        int nr_zero = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            if (pt_BC[M->elems[3 * ele + i] - 1] == 0)
+                nr_zero++;
+        }
+        if (nr_zero == 3)
+        {
+            fixed[ele] = 1;
+            for (int i = 0; i < 3; i++)
+                pt_BC[M->elems[3 * ele + i] - 1] = 2;
+        }
+    }
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        int nr_press = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            if (pt_BC[M->elems[3 * ele + i] - 1] == 1)
+                nr_press++;
+        }
+        if (nr_press == 3)
+        {
+            pres[ele] = 1;
+            fixed[ele] = 0;
+        }
+        else if (nr_press == 0)
+        {
+            pres[ele] = 0;
+            fixed[ele] = 1;
+        }
+        else
+        {
+            pres[ele] = 0;
+            fixed[ele] = 0;
+        }
+    }
+
+    free(pt_BC);
+    free(queue);
+    *region = slcreg;
     return e;
 }
 void NeoHokfunc(FILE *fptr, input *inp)
@@ -693,8 +900,9 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t<PartList name=\"map_E\">Part1</PartList>\n");
     fprintf(fptr, "\t</Mesh>\n");
     fprintf(fptr, "\t<MeshDomains>\n");
-    fprintf(fptr, "\t\t<ShellDomain name=\"Part1\" mat=\"Material1\">\n");
+    fprintf(fptr, "\t\t<ShellDomain name=\"Part1\" mat=\"Material1\" type=\"elastic-shell\">\n");
     fprintf(fptr, "\t\t\t<shell_thickness>0</shell_thickness>\n");
+    fprintf(fptr, "\t\t\t<shell_normal_nodal>0</shell_normal_nodal>\n");
     fprintf(fptr, "\t\t</ShellDomain>\n");
     fprintf(fptr, "\t</MeshDomains>\n");
     fprintf(fptr, "\t<MeshData>\n");
@@ -758,7 +966,8 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t\t<var type=\"shell thickness\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"stress\"/>\n");
     fprintf(fptr, "\t\t</plotfile>\n");
-    if(inp->print_st==1){
+    if (inp->print_st == 1)
+    {
         fprintf(fptr, "\t\t<logfile>\n");
         fprintf(fptr, "\t\t\t<element_data data=\"sx;sy;sz;sxy;syz;sxz\" name=\"element stresses\"/>\n");
         fprintf(fptr, "\t\t</logfile>\n");
