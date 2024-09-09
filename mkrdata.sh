@@ -1,5 +1,5 @@
 #!/bin/sh
-dirname="test"
+dirname=$2
 datadir=./$dirname/$1/data
 msa1dir=./$dirname/$1/msa.1
 msa2dir=./$dirname/$1/msa.2
