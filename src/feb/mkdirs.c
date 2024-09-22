@@ -11,3 +11,23 @@ int mkdirs(void)
 
     return 0;
 }
+int datafiles(void)
+{
+    int e = 0;
+    strcpy(datafilepath[0], datadir);
+    strcat(datafilepath[0], filename);
+    strcat(datafilepath[0], dot);
+
+    strcpy(datafilepath[1], datafilepath[0]);
+
+    strcat(datafilepath[0], "flds.zfem");
+    strcat(datafilepath[1], "wall");
+
+    strcpy(datafilepath[2], datadir);
+    strcat(datafilepath[2], "labels_srf.zfem");
+
+    strcpy(datafilepath[3], datadir);
+    strcat(datafilepath[3], "BCmask.txt");
+
+    return e;
+}

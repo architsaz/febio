@@ -90,6 +90,14 @@ typedef enum
     normal,
     unknown,
 } runstatus;
+// Enum to represent different data types
+typedef enum
+{
+    INT_TYPE,
+    FLOAT_TYPE,
+    CHAR_TYPE,
+    STRING_TYPE
+} DataType;
 // Define function pointers
 typedef int (*compare_func)(void *, void *);
 

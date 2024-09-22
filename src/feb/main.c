@@ -52,12 +52,12 @@ int main(int argc, char const *argv[])
     }
     if (modifoption == enhance && step == 0)
     {
-        fprintf(stderr, "ERROR: the step assigned for enhance option can not be zero.\n", step);
+        fprintf(stderr, "ERROR: the step assigned for enhance option can not be zero.\n");
         exit(EXIT_FAILURE);
     }
     if (modifoption == corrbynj && step == 0)
     {
-        fprintf(stderr, "ERROR: the step assigned for corrbynj option can not be zero.\n", step);
+        fprintf(stderr, "ERROR: the step assigned for corrbynj option can not be zero.\n");
         exit(EXIT_FAILURE);
     }
     char logname[50], num[10];
