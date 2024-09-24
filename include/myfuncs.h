@@ -4,6 +4,7 @@
 #include <zlib.h>
 #include <string.h>
 // Define a function pointer type for comparison functions
+int check_winding_order(int nelem, int *elems, double *ptxyz);
 char *edit_endline_character(char *, int, FILE *);
 char *edit_endlinegz_character(char *line, int buffer, gzFile file);
 int checkEIDS(int *);
@@ -43,4 +44,11 @@ char *my_strdup(const char *s);
 int jacobiMethod(int nelem, double *tensor, double **eigenvalue1, double **eigenvector1);
 void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], int sizes[], DataType types[], const char *headers[]);
 int findMaxSize(int numArrays, int sizes[]);
+// Function to calculate statistuic features
+double calculate_mean(double *, int);
+double calculate_median(double *, int);
+double find_max(double *, int);
+double find_min(double *, int);
+double calculate_stddev(double *, int, double);
+void sort_array(double *, int);
 #endif // MYFUNCS_H

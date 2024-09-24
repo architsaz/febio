@@ -95,6 +95,7 @@ typedef enum
 {
     INT_TYPE,
     FLOAT_TYPE,
+    DOUBLE_TYPE,
     CHAR_TYPE,
     STRING_TYPE
 } DataType;

@@ -7,7 +7,89 @@
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
+int check_winding_order(int nelem, int *elems, double *ptxyz)
+{
+	double p1[3], p2[3], p3[3], u[3], v[3], normal[3], face_center[3], outward_check[3];
+	double bbox_center[3] = {0, 0, 0};
+	double bbox_min[3] = {1e9, 1e9, 1e9};
+	double bbox_max[3] = {-1e9, -1e9, -1e9};
 
+	// Calculate the bounding box of the entire mesh
+	for (int i = 0; i < nelem * 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			double pt = ptxyz[3 * (elems[i] - 1) + j];
+			if (pt < bbox_min[j])
+				bbox_min[j] = pt;
+			if (pt > bbox_max[j])
+				bbox_max[j] = pt;
+		}
+	}
+
+	// Calculate the center of the bounding box
+	for (int j = 0; j < 3; j++)
+		bbox_center[j] = (bbox_min[j] + bbox_max[j]) / 2.0;
+
+	// Iterate over all elements (triangles)
+	for (int ele = 0; ele < nelem; ele++)
+	{
+		// Get the three points of the triangle
+		for (int i = 0; i < 3; i++)
+			p1[i] = ptxyz[3 * (elems[3 * ele] - 1) + i];
+		for (int i = 0; i < 3; i++)
+			p2[i] = ptxyz[3 * (elems[3 * ele + 1] - 1) + i];
+		for (int i = 0; i < 3; i++)
+			p3[i] = ptxyz[3 * (elems[3 * ele + 2] - 1) + i];
+
+		// Compute vectors u and v
+		for (int i = 0; i < 3; i++)
+			u[i] = p2[i] - p1[i];
+		for (int i = 0; i < 3; i++)
+			v[i] = p3[i] - p1[i];
+
+		// Compute the normal using the cross product
+		normal[0] = u[1] * v[2] - u[2] * v[1];
+		normal[1] = u[2] * v[0] - u[0] * v[2];
+		normal[2] = u[0] * v[1] - u[1] * v[0];
+
+		// Normalize the normal vector
+		double mag = sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+		if (mag == 0)
+		{
+			fprintf(stderr, "Zero magnitude normal vector at element %d!\n", ele);
+			return -1;
+		}
+		for (int i = 0; i < 3; i++)
+			normal[i] /= mag;
+
+		// Compute the face center
+		for (int i = 0; i < 3; i++)
+			face_center[i] = (p1[i] + p2[i] + p3[i]) / 3.0;
+
+		// Vector from the bounding box center to the face center
+		for (int i = 0; i < 3; i++)
+			outward_check[i] = face_center[i] - bbox_center[i];
+
+		// Check if the normal points inward or outward
+		double dot_product = 0;
+		for (int i = 0; i < 3; i++)
+			dot_product += normal[i] * outward_check[i];
+
+		// If dot product is negative, the normal points inward, so flip the winding order
+		if (dot_product < 0)
+		{
+			// Swap p2 and p3 to flip the winding
+			int temp = elems[3 * ele + 1];
+			elems[3 * ele + 1] = elems[3 * ele + 2];
+			elems[3 * ele + 2] = temp;
+			printf("Flipped winding order for element %d.\n", ele);
+		}
+	}
+
+	printf("Winding order check complete.\n");
+	return 0;
+}
 int jacobiMethod(int nelem, double *tensor, double **eigenvalue1, double **eigenvector1)
 {
 	int MAX_ITER = 100;
@@ -565,7 +647,7 @@ int save_normele(int nelem, int *elems, double *ptxyz, double **norm)
 		for (int i = 0; i < 3; i++)
 			u[i] = p2[i] - p1[i];
 		for (int i = 0; i < 3; i++)
-			v[i] = p3[i] - p1[i];
+			v[i] = p3[i] - p2[i];
 
 		norm2[3 * ele] = u[1] * v[2] - u[2] * v[1];
 		norm2[3 * ele + 1] = u[2] * v[0] - u[0] * v[2];
@@ -588,6 +670,7 @@ int save_normele(int nelem, int *elems, double *ptxyz, double **norm)
 
 	return e;
 }
+
 // conver mesh from tri3 to other type of mesh
 void tri3_to_tri6(mesh *M1, mesh **M2)
 {
@@ -1195,7 +1278,11 @@ void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], i
 				}
 				else if (types[j] == FLOAT_TYPE)
 				{
-					fprintf(file, "%.2f\t", ((float *)arrays[j])[i]); // Print float
+					fprintf(file, "%8.2f\t", ((float *)arrays[j])[i]); // Print float
+				}
+				else if (types[j] == DOUBLE_TYPE)
+				{
+					fprintf(file, "%9.2lf\t", ((double *)arrays[j])[i]); // Print double
 				}
 				else if (types[j] == CHAR_TYPE)
 				{
@@ -1216,4 +1303,85 @@ void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], i
 
 	fclose(file);
 	printf("* Data written successfully to %s!\n", path);
+}
+// Function to calculate the mean
+double calculate_mean(double arr[], int size)
+{
+	double sum = 0.0;
+	for (int i = 0; i < size; i++)
+	{
+		sum += arr[i];
+	}
+	return sum / size;
+}
+
+// Function to calculate the median
+double calculate_median(double arr[], int size)
+{
+	sort_array(arr, size);
+
+	if (size % 2 == 0)
+	{
+		return (arr[size / 2 - 1] + arr[size / 2]) / 2.0;
+	}
+	else
+	{
+		return arr[size / 2];
+	}
+}
+
+// Function to find the maximum value
+double find_max(double arr[], int size)
+{
+	double max = arr[0];
+	for (int i = 1; i < size; i++)
+	{
+		if (arr[i] > max)
+		{
+			max = arr[i];
+		}
+	}
+	return max;
+}
+
+// Function to find the minimum value
+double find_min(double arr[], int size)
+{
+	double min = arr[0];
+	for (int i = 1; i < size; i++)
+	{
+		if (arr[i] < min)
+		{
+			min = arr[i];
+		}
+	}
+	return min;
+}
+
+// Function to calculate the standard deviation
+double calculate_stddev(double arr[], int size, double mean)
+{
+	double sum = 0.0;
+	for (int i = 0; i < size; i++)
+	{
+		sum += pow(arr[i] - mean, 2);
+	}
+	return sqrt(sum / size);
+}
+
+// Function to sort the array (used for calculating the median)
+void sort_array(double arr[], int size)
+{
+	for (int i = 0; i < size - 1; i++)
+	{
+		for (int j = i + 1; j < size; j++)
+		{
+			if (arr[i] > arr[j])
+			{
+				double temp = arr[i];
+				arr[i] = arr[j];
+				arr[j] = temp;
+			}
+		}
+	}
 }
