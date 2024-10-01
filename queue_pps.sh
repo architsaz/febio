@@ -1,7 +1,7 @@
 #!/bin/bash
-code_name=febio4
+code_name=ppa_exec
 # List of machines
-machines=("ishtar")
+machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
 # List of cases
 if [ -f cases.txt ];then 
     cases=($(cat cases.txt))
@@ -18,17 +18,14 @@ echo "Total # cases in the list: $total_cases"
 echo "Total # of available mashines: ${#machines[@]}"
 
 run_case_on_machine () {
-    local dir_name=test
+    local dir_name=runfebio
     local code_dir=/dagon1/achitsaz/FEBio
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then
-        cd $code_dir 
-        /dagon1/achitsaz/FEBio/scripts/mkrdata.sh $2 $dir_name
-        cd $code_dir/$dir_name/$2/msa.1/ 
-        nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &
+        cd $code_dir/$dir_name/$2/pst.2/ 
+        nohup $code_dir/scripts/build/ppa_exec $2 msa.2 0 > run.log 2>&1 &
     else
-        ssh $1 "cd $code_dir && /dagon1/achitsaz/FEBio/scripts/mkrdata.sh $2 $dir_name"
-        ssh $1 "cd $code_dir/$dir_name/$2/msa.1/ && nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &" &
+        ssh $1 "cd $code_dir/$dir_name/$2/pst.2/ && nohup $code_dir/scripts/build/ppa_exec $2 msa.2 0 > run.log 2>&1 &" &
     fi 
 }
 
@@ -38,9 +35,9 @@ while [ $completed_cases -lt $total_cases ]; do
     for machine in "${machines[@]}"; do
         #check if the machine run a task
         if [ $machine == "ishtar" ]; then
-            running_task=$(pgrep febio4 | wc -l)
+            running_task=$(pgrep ppa_exec | wc -l)
         else
-            running_task=$(ssh $machine "pgrep febio4 | wc -l")
+            running_task=$(ssh $machine "pgrep ppa_exec | wc -l")
         fi
         if [ "$running_task" -eq 0 ] && [ ${#cases[@]} -gt 0 ]; then
             find_machine=1
