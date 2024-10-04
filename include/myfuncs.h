@@ -45,10 +45,12 @@ int jacobiMethod(int nelem, double *tensor, double **eigenvalue1, double **eigen
 void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], int sizes[], DataType types[], const char *headers[]);
 int findMaxSize(int numArrays, int sizes[]);
 // Function to calculate statistuic features
-double calculate_mean(double *, int);
+double calculate_mean(double *arr, int size, double *weight);
 double calculate_median(double *, int);
 double find_max(double *, int);
 double find_min(double *, int);
-double calculate_stddev(double *, int, double);
+double calculate_stddev(double arr[], int size, double mean, double *weight);
 void sort_array(double *, int);
+int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2);
+double sumarr(double *arr,int size);
 #endif // MYFUNCS_H

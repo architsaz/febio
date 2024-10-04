@@ -7,6 +7,62 @@
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
+double sumarr(double *arr,int size){
+	double sum=0.0;
+	if (size==0) return sum;
+	for (int ele=0;ele<size;ele++){
+		sum+=arr[ele];
+	}
+	return sum;
+}
+int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2) {
+    double p1[3], p2[3], p3[3];
+    double u[3], v[3];
+    int np1, np2, np3;
+    double *area;
+
+    // Allocate memory for area array
+    area = (double*)calloc((size_t)nelem, sizeof(*area));
+    if (area == NULL) {
+        fprintf(stderr, "ERROR: Memory allocation failed\n");
+        return 1;
+    }
+
+    // Loop through each element (triangle)
+    for (int ele = 0; ele < nelem; ele++) {
+        // Get vertex indices (assuming elems is 1-based indexing, hence the -1)
+        np1 = elems[3 * ele] - 1;
+        np2 = elems[3 * ele + 1] - 1;
+        np3 = elems[3 * ele + 2] - 1;
+
+        // Retrieve the coordinates of the vertices
+        for (int i = 0; i < 3; i++) p1[i] = ptxyz[3 * np1 + i];
+        for (int i = 0; i < 3; i++) p2[i] = ptxyz[3 * np2 + i];
+        for (int i = 0; i < 3; i++) p3[i] = ptxyz[3 * np3 + i];
+
+        // Compute vectors u = p2 - p1 and v = p3 - p1
+        for (int i = 0; i < 3; i++) u[i] = p2[i] - p1[i];
+        for (int i = 0; i < 3; i++) v[i] = p3[i] - p1[i];
+
+        // Compute the cross product of u and v and find the magnitude
+        area[ele] = 0.5 * sqrt(
+            pow(u[1] * v[2] - u[2] * v[1], 2) +
+            pow(u[2] * v[0] - u[0] * v[2], 2) +
+            pow(u[0] * v[1] - u[1] * v[0], 2)
+        );
+
+        // Check for invalid (non-positive) area values
+        if (area[ele] <= 0) {
+            fprintf(stderr, "ERROR: the area of ele[%d] : %lf\n", ele, area[ele]);
+            free(area);  // Free allocated memory in case of error
+            return 1;
+        }
+    }
+
+    // Assign the calculated areas to the output pointer
+    *area2 = area;
+    return 0;
+}
 int check_winding_order(int nelem, int *elems, double *ptxyz)
 {
 	double p1[3], p2[3], p3[3], u[3], v[3], normal[3], face_center[3], outward_check[3];
@@ -1305,14 +1361,16 @@ void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], i
 	printf("* Data written successfully to %s!\n", path);
 }
 // Function to calculate the mean
-double calculate_mean(double arr[], int size)
+double calculate_mean(double *arr, int size, double *weight)
 {
 	double sum = 0.0;
+	double sum_weight = 0.0;
 	for (int i = 0; i < size; i++)
 	{
-		sum += arr[i];
+		sum += arr[i]*weight[i];
+		sum_weight += weight[i];
 	}
-	return sum / size;
+	return sum / sum_weight;
 }
 
 // Function to calculate the median
@@ -1359,14 +1417,16 @@ double find_min(double arr[], int size)
 }
 
 // Function to calculate the standard deviation
-double calculate_stddev(double arr[], int size, double mean)
+double calculate_stddev(double arr[], int size, double mean, double *weight)
 {
 	double sum = 0.0;
+	double sum_weight = 0.0;
 	for (int i = 0; i < size; i++)
 	{
-		sum += pow(arr[i] - mean, 2);
+		sum += weight[i]*pow(arr[i] - mean, 2);
+		sum_weight += weight[i];
 	}
-	return sqrt(sum / size);
+	return sqrt(sum / sum_weight);
 }
 
 // Function to sort the array (used for calculating the median)

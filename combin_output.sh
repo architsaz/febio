@@ -36,4 +36,15 @@ mean_meanSmax_nek=$(grep "mean" $output_file | awk '{ if ($4 != 0) { sum += $10;
 mean_meanSmax_part=$(grep "mean" $output_file | awk '{ if ($4 != 0) { sum += $11; count++ } } END { if (count > 0) print sum / count; }')
 mean_meanSmax_pres=$(grep "mean" $output_file | awk '{ if ($4 != 0) { sum += $12; count++ } } END { if (count > 0) print sum / count; }')
 
+mean_stddevSmax_aneu=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $4; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_red=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $5; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_wht=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $7; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_dom=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $8; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_bod=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $9; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_nek=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $10; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_part=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $11; count++ } } END { if (count > 0) print sum / count; }')
+mean_stddevSmax_pres=$(grep "stddev" $output_file | awk '{ if ($4 != 0) { sum += $12; count++ } } END { if (count > 0) print sum / count; }')
+
+
 echo -e "Allcases\tstudy\tmean\t$mean_meanSmax_aneu\t$mean_meanSmax_red\t0\t$mean_meanSmax_wht\t$mean_meanSmax_dom\t$mean_meanSmax_bod\t$mean_meanSmax_nek\t$mean_meanSmax_part\t$mean_meanSmax_pres" >> "$output_file"
+echo -e "Allcases\tstudy\tstddev\t$mean_stddevSmax_aneu\t$mean_stddevSmax_red\t0\t$mean_stddevSmax_wht\t$mean_stddevSmax_dom\t$mean_stddevSmax_bod\t$mean_stddevSmax_nek\t$mean_stddevSmax_part\t$mean_stddevSmax_pres" >> "$output_file"

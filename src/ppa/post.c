@@ -22,7 +22,7 @@ char iteration[50];
 
 int files(void);
 int dirs(void);
-void mystat(double *, int , double **);
+void mystat(double *arr, int n, double *area, double **output1);
 
 int main(int argc, char const **argv)
 {
@@ -155,6 +155,9 @@ int main(int argc, char const **argv)
     // reading wall charectristics [colored fields] from .wall file//
     // label : <red=1, yellow=2, white=7, cyan=0, rupture=0, remain=0>
     CHECK_ERROR(read_wallmask(past_datafilepath[2], M1, inp, &M1->Melem));
+    // calc area of ele
+    double *area;
+    CHECK_ERROR(calc_area_tri3(M1->ptxyz, M1->elems, M1->nelem, &area));
     // calc norm of ele
     CHECK_ERROR(save_normele(M1->nelem, M1->elems, M1->ptxyz, &M1->normele));
     // flip the normal vector to be outward:
@@ -168,117 +171,11 @@ int main(int argc, char const **argv)
     int countfield = sizeof(prtreadfield) / sizeof(prtreadfield[0]);
     CHECK_ERROR(ReadVTK(pst_rundir, "checkinput", 0, prtreadfield, countfield));
     M1->presmask = (int *)field1;
-
-    // find the max principale stress for all domain;
-    int ns1 = 0;
-    int ns2 = 0;
-    int ns3 = 0;
-    int n2s1 = 0;
-    int n2s2 = 0;
-    int n2s3 = 0;
-    int ndomain = 0;
-    double *smax1, *smax2;
-    smax1=calloc((size_t)M1->nelem,sizeof(*smax1));
-    smax2=calloc((size_t)M1->nelem,sizeof(*smax2));
-    for (int ele = 0; ele < M1->nelem; ele++)
-    {
-        if (M1->presmask[ele] == 0)
-            continue;
-        ndomain++;
-        double max = fabs(s1[ele]);
-        int which = 1;
-        if (max < fabs(s2[ele]))
-        {
-            max = fabs(s2[ele]);
-            which = 2;
-        }
-        if (max < fabs(s3[ele]))
-        {
-            max = fabs(s3[ele]);
-            which = 3;
-        }
-        smax1[ele]=max;
-        if (which == 1)
-        {
-            ns1++;
-            if (fabs(s2[ele]) > fabs(s3[ele]))
-            {
-                n2s2++;
-                smax2[ele]=fabs(s2[ele]);
-            }
-            else
-            {
-                n2s3++;
-                smax2[ele]=fabs(s3[ele]);
-            }
-        }
-
-        if (which == 2)
-        {
-            ns2++;
-            if (fabs(s1[ele]) > fabs(s3[ele]))
-            {
-                n2s1++;
-                smax2[ele]=fabs(s1[ele]);
-            }
-            else
-            {
-                n2s3++;
-                smax2[ele]=fabs(s3[ele]);
-            }
-        }
-        if (which == 3)
-        {
-            ns3++;
-            if (fabs(s1[ele]) > fabs(s2[ele]))
-            {
-                n2s1++;
-                smax2[ele]=fabs(s1[ele]);
-            }
-            else
-            {
-                n2s2++;
-                smax2[ele]=fabs(s2[ele]);
-            }
-        }
-    }
-    printf("* number of nelem: %d ndomain: %d \nns1: %d ns2: %d ns3: %d\n", M1->nelem, ndomain, ns1, ns2, ns3);
-    printf("n2s1: %d n2s2: %d n2s3: %d\n", n2s1, n2s2, n2s3);
-
-    // find the mean of max in press mask:
-    double meansmax = 0;
-    for (int ele = 0; ele < M1->nelem; ele++)
-    {
-        if (M1->presmask[ele] == 0)
-            continue;
-        meansmax += fabs(smax1[ele]);
-    }
-    meansmax = meansmax / ndomain;
-    printf("* mean of max-principal stress : %lf\n", meansmax);
-    int *sdir;
-    sdir = calloc((size_t)M1->nelem, sizeof(*sdir));
-    for (int ele = 0; ele < M1->nelem; ele++)
-    {
-        if (M1->presmask[ele] == 0 || fabs(smax1[ele]) < meansmax)
-            continue;
-        double hill = (1 / (1 + pow((fabs(smax2[ele]) / fabs(smax1[ele])), 2)));
-        if (hill < 0.75 && hill > 0.25)
-        {
-            sdir[ele] = 2;
-        }
-        else
-        {
-            sdir[ele] = 1;
-        }
-    }
-
-    // find the normal eigen vector to the element:
-    int nv1 = 0;
-    int nv2 = 0;
-    int nv3 = 0;
-    ndomain = 0;
-    int *wVnorm;
-    wVnorm = calloc((size_t)M1->nelem, sizeof(*wVnorm));
+    // sorted eigen vectors and eigen values:
+    double *sorted_s;
+    double *sorted_v;
+    sorted_s = calloc(3 * (size_t)M1->nelem, sizeof(*sorted_s));
+    sorted_v = calloc(9 * (size_t)M1->nelem, sizeof(*sorted_v));
     for (int ele = 0; ele < M1->nelem; ele++)
     {
         if (M1->presmask[ele] == 0)
@@ -292,37 +189,158 @@ int main(int argc, char const **argv)
             cos_teta2 += M1->normele[3 * ele + i] * v2[3 * ele + i];
         for (int i = 0; i < 3; i++)
             cos_teta3 += M1->normele[3 * ele + i] * v3[3 * ele + i];
-        int which = 1;
+
+        int normalV = 1;
         if (fabs(cos_teta1) < fabs(cos_teta2))
         {
+            normalV = 2;
             cos_teta1 = cos_teta2;
-            which = 2;
         }
         if (fabs(cos_teta1) < fabs(cos_teta3))
         {
-            which = 3;
+            normalV = 3;
         }
-        if (which == 1)
-            nv1++;
-        if (which == 2)
-            nv2++;
-        if (which == 3)
-            nv3++;
-        ndomain++;
-        wVnorm[ele] = which;
+        if (normalV == 1)
+        {
+            sorted_s[3 * ele] = s1[ele];
+            for (int i = 0; i < 3; i++)
+                sorted_v[9 * ele + i] = v1[3 * ele + i];
+            int maxshear = 2;
+            if (fabs(s2[ele]) < fabs(s3[ele]))
+                maxshear = 3;
+            if (maxshear == 2)
+            {
+                sorted_s[3 * ele + 1] = s2[ele];
+                sorted_s[3 * ele + 2] = s3[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v2[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v3[3 * ele + i];
+            }
+            if (maxshear == 3)
+            {
+                sorted_s[3 * ele + 1] = s3[ele];
+                sorted_s[3 * ele + 2] = s2[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v3[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v2[3 * ele + i];
+            }
+        }
+        if (normalV == 2)
+        {
+            sorted_s[3 * ele] = s2[ele];
+            for (int i = 0; i < 3; i++)
+                sorted_v[9 * ele + i] = v2[3 * ele + i];
+            int maxshear = 1;
+            if (fabs(s1[ele]) < fabs(s3[ele]))
+                maxshear = 3;
+            if (maxshear == 1)
+            {
+                sorted_s[3 * ele + 1] = s1[ele];
+                sorted_s[3 * ele + 2] = s3[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v1[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v3[3 * ele + i];
+            }
+            if (maxshear == 3)
+            {
+                sorted_s[3 * ele + 1] = s3[ele];
+                sorted_s[3 * ele + 2] = s1[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v3[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v1[3 * ele + i];
+            }
+        }
+        if (normalV == 3)
+        {
+            sorted_s[3 * ele] = s3[ele];
+            for (int i = 0; i < 3; i++)
+                sorted_v[9 * ele + i] = v3[3 * ele + i];
+            int maxshear = 1;
+            if (fabs(s1[ele]) < fabs(s2[ele]))
+                maxshear = 2;
+            if (maxshear == 1)
+            {
+                sorted_s[3 * ele + 1] = s1[ele];
+                sorted_s[3 * ele + 2] = s2[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v1[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v2[3 * ele + i];
+            }
+            if (maxshear == 2)
+            {
+                sorted_s[3 * ele + 1] = s2[ele];
+                sorted_s[3 * ele + 2] = s1[ele];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 3 + i] = v2[3 * ele + i];
+                for (int i = 0; i < 3; i++)
+                    sorted_v[9 * ele + 6 + i] = v1[3 * ele + i];
+            }
+        }
     }
-    printf("* number of nelem: %d ndomain: %d\nnV1: %d nV2: %d nV3: %d\n", M1->nelem, ndomain, nv1, nv2, nv3);
+    double *smax1, *smax2, *vmax1, *vmax2;
+    smax1 = calloc((size_t)M1->nelem, sizeof(*smax1));
+    smax2 = calloc((size_t)M1->nelem, sizeof(*smax2));
+    vmax1 = calloc(3 * (size_t)M1->nelem, sizeof(*vmax1));
+    vmax2 = calloc(3 * (size_t)M1->nelem, sizeof(*vmax2));
+    for (int ele = 0; ele < M1->nelem; ele++)
+    {
+        smax1[ele] = sorted_s[3 * ele + 1];
+        for (int i = 0; i < 3; i++)
+            vmax1[3 * ele + i] = sorted_v[9 * ele + 3 + i];
+    }
+
+    for (int ele = 0; ele < M1->nelem; ele++)
+    {
+        smax2[ele] = sorted_s[3 * ele + 2];
+        for (int i = 0; i < 3; i++)
+            vmax2[3 * ele + i] = sorted_v[9 * ele + 6 + i];
+    }
+
+    // find unidirectional or bidirectional stress region mask:
+    double threshold = 229756; // (mean_press-stddev_press)  ~172mmHg
+    int *sdir;
+    sdir = calloc((size_t)M1->nelem, sizeof(*sdir));
+    for (int ele = 0; ele < M1->nelem; ele++)
+    {
+        if (M1->presmask[ele] == 0)
+            continue;
+        double hill = (1 / (1 + pow((fabs(smax2[ele]) / fabs(smax1[ele])), 4)));
+        if (hill < 0.75 && hill > 0.25)
+        {
+            sdir[ele] = 4;
+        }
+        else
+        {
+            sdir[ele] = 3;
+        }
+        if (fabs(smax1[ele]) <= threshold)
+        {
+            if (sdir[ele] == 4)
+                sdir[ele] = 2;
+            if (sdir[ele] == 3)
+                sdir[ele] = 1;
+        }
+    }
+
     // write result in VTK format
     FunctionWithArgs prtelefield[] =
         {
             {"S1", 1, M1->nelem, s1, SCA_double_VTK},
             {"S2", 1, M1->nelem, s2, SCA_double_VTK},
             {"S3", 1, M1->nelem, s3, SCA_double_VTK},
+            {"smax1", 1, M1->nelem, smax1, SCA_double_VTK},
+            {"smax2", 1, M1->nelem, smax2, SCA_double_VTK},
             {"sdir", 1, M1->nelem, sdir, SCA_int_VTK},
-            {"wVnorm", 1, M1->nelem, wVnorm, SCA_int_VTK},
             {"V1", 3, M1->nelem, v1, VEC_double_VTK},
             {"V2", 3, M1->nelem, v2, VEC_double_VTK},
             {"V3", 3, M1->nelem, v3, VEC_double_VTK},
+            {"vmax1", 3, M1->nelem, vmax1, VEC_double_VTK},
+            {"vmax2", 3, M1->nelem, vmax2, VEC_double_VTK},
             {"normele", 3, M1->nelem, M1->normele, VEC_double_VTK},
         };
     size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
@@ -334,6 +352,7 @@ int main(int argc, char const **argv)
     int nele_red, nele_yel, nele_wht, nele_press, nele_dom, nele_bod, nele_nek, nele_part, nele_aneu;
     nele_red = nele_yel = nele_wht = nele_press = nele_dom = nele_bod = nele_nek = nele_part = nele_aneu = 0;
     double *smax_red, *smax_yel, *smax_wht, *smax_press, *smax_aneu, *smax_dom, *smax_bod, *smax_nek, *smax_part;
+    double *area_red, *area_yel, *area_wht, *area_press, *area_aneu, *area_dom, *area_bod, *area_nek, *area_part;
     // find the size of each domain
     for (int ele = 0; ele < M1->nelem; ele++)
     {
@@ -375,136 +394,169 @@ int main(int argc, char const **argv)
     smax_bod = calloc((size_t)nele_bod, sizeof(*smax_bod));
     smax_nek = calloc((size_t)nele_nek, sizeof(*smax_nek));
     smax_part = calloc((size_t)nele_part, sizeof(*smax_part));
+    area_red = calloc((size_t)nele_red, sizeof(*area_red));
+    area_yel = calloc((size_t)nele_yel, sizeof(*area_yel));
+    area_wht = calloc((size_t)nele_wht, sizeof(*area_wht));
+    area_aneu = calloc((size_t)nele_aneu, sizeof(*area_aneu));
+    area_press = calloc((size_t)nele_press, sizeof(*area_press));
+    area_dom = calloc((size_t)nele_dom, sizeof(*area_dom));
+    area_bod = calloc((size_t)nele_bod, sizeof(*area_bod));
+    area_nek = calloc((size_t)nele_nek, sizeof(*area_nek));
+    area_part = calloc((size_t)nele_part, sizeof(*area_part));
     nele_red = nele_yel = nele_wht = nele_press = nele_dom = nele_bod = nele_nek = nele_part = nele_aneu = 0;
     for (int ele = 0; ele < M1->nelem; ele++)
     {
         if (M1->presmask[ele] == 0)
             continue;
         smax_press[nele_press] = fabs(smax1[ele]);
+        area_press[nele_press] = area[ele];
         nele_press++;
         if (M1->Melem[ele] == 1)
         {
             smax_red[nele_red] = fabs(smax1[ele]);
+            area_red[nele_red] = area[ele];
             nele_red++;
         }
 
         if (M1->Melem[ele] == 2)
         {
             smax_yel[nele_yel] = fabs(smax1[ele]);
+            area_yel[nele_yel] = area[ele];
             nele_yel++;
         }
 
         if (M1->Melem[ele] == 7)
         {
             smax_wht[nele_wht] = fabs(smax1[ele]);
+            area_wht[nele_wht] = area[ele];
             nele_wht++;
         }
 
         if (M1->relems[ele] == 16)
         {
             smax_dom[nele_dom] = fabs(smax1[ele]);
+            area_dom[nele_dom] = area[ele];
             nele_dom++;
         }
 
         if (M1->relems[ele] == 8)
         {
             smax_bod[nele_bod] = fabs(smax1[ele]);
+            area_bod[nele_bod] = area[ele];
             nele_bod++;
         }
 
         if (M1->relems[ele] == 4)
         {
             smax_nek[nele_nek] = fabs(smax1[ele]);
+            area_nek[nele_nek] = area[ele];
             nele_nek++;
         }
 
         if (M1->relems[ele] == 1)
         {
             smax_part[nele_part] = fabs(smax1[ele]);
+            area_part[nele_part] = area[ele];
             nele_part++;
         }
 
         if (M1->relems[ele] == 4 || M1->relems[ele] == 8 || M1->relems[ele] == 16)
         {
             smax_aneu[nele_aneu] = fabs(smax1[ele]);
+            area_aneu[nele_aneu] = area[ele];
             nele_aneu++;
         }
     }
     // Calculate statistics
-    double *stat_red,*stat_yel,*stat_wht,*stat_aneu,*stat_dom,*stat_bod,*stat_nek,*stat_part,*stat_press;
-    double stat_empty[4]={0,0,0,0};
-    if(nele_red!=0){
-        mystat(smax_red,nele_red,&stat_red);
-    }else{
-        stat_red=stat_empty;
+    double *stat_red, *stat_yel, *stat_wht, *stat_aneu, *stat_dom, *stat_bod, *stat_nek, *stat_part, *stat_press;
+    double stat_empty[4] = {0, 0, 0, 0};
+    if (nele_red != 0)
+    {
+        mystat(smax_red, nele_red, area_red, &stat_red);
     }
-    if(nele_yel!=0){
-        mystat(smax_yel,nele_yel,&stat_yel);
-    }else{
-        stat_yel=stat_empty;
+    else
+    {
+        stat_red = stat_empty;
     }
-    if(nele_wht!=0){        
-        mystat(smax_wht,nele_wht,&stat_wht);
-    }else{
-        stat_wht=stat_empty;
-    }    
-    mystat(smax_aneu,nele_aneu,&stat_aneu);
-    mystat(smax_dom,nele_dom,&stat_dom);
-    mystat(smax_bod,nele_bod,&stat_bod);
-    mystat(smax_nek,nele_nek,&stat_nek);
-    mystat(smax_part,nele_part,&stat_part);
-    mystat(smax_press,nele_press,&stat_press);
-    printf("red: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_red[0],stat_red[1],stat_red[2],stat_red[3]);
-    printf("yel: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_yel[0],stat_yel[1],stat_yel[2],stat_yel[3]);
-    printf("wht: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_wht[0],stat_wht[1],stat_wht[2],stat_wht[3]);
-    printf("dom: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_dom[0],stat_dom[1],stat_dom[2],stat_dom[3]);
-    printf("bod: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_bod[0],stat_bod[1],stat_bod[2],stat_bod[3]);
-    printf("nek: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_nek[0],stat_nek[1],stat_nek[2],stat_nek[3]);
-    printf("ane: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_aneu[0],stat_aneu[1],stat_aneu[2],stat_aneu[3]);
-    printf("par: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_part[0],stat_part[1],stat_part[2],stat_part[3]);
-    printf("pre: mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n",stat_press[0],stat_press[1],stat_press[2],stat_press[3]);
+    if (nele_yel != 0)
+    {
+        mystat(smax_yel, nele_yel, area_yel, &stat_yel);
+    }
+    else
+    {
+        stat_yel = stat_empty;
+    }
+    if (nele_wht != 0)
+    {
+        mystat(smax_wht, nele_wht, area_wht, &stat_wht);
+    }
+    else
+    {
+        stat_wht = stat_empty;
+    }
+    mystat(smax_aneu, nele_aneu, area_aneu, &stat_aneu);
+    mystat(smax_dom, nele_dom, area_dom, &stat_dom);
+    mystat(smax_bod, nele_bod, area_bod, &stat_bod);
+    mystat(smax_nek, nele_nek, area_nek, &stat_nek);
+    mystat(smax_part, nele_part, area_part, &stat_part);
+    mystat(smax_press, nele_press, area_press, &stat_press);
+    printf("red: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_red, nele_red), stat_red[0], stat_red[1], stat_red[2], stat_red[3]);
+    printf("yel: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_yel, nele_yel), stat_yel[0], stat_yel[1], stat_yel[2], stat_yel[3]);
+    printf("wht: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_wht, nele_wht), stat_wht[0], stat_wht[1], stat_wht[2], stat_wht[3]);
+    printf("dom: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_dom, nele_dom), stat_dom[0], stat_dom[1], stat_dom[2], stat_dom[3]);
+    printf("bod: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_bod, nele_bod), stat_bod[0], stat_bod[1], stat_bod[2], stat_bod[3]);
+    printf("nek: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_nek, nele_nek), stat_nek[0], stat_nek[1], stat_nek[2], stat_nek[3]);
+    printf("ane: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_aneu, nele_aneu), stat_aneu[0], stat_aneu[1], stat_aneu[2], stat_aneu[3]);
+    printf("par: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_part, nele_part), stat_part[0], stat_part[1], stat_part[2], stat_part[3]);
+    printf("pre: area: %0.5lf mean: %9.2lf max: %9.2lf min: %9.2lf stddev: %9.2lf\n", sumarr(area_press, nele_press), stat_press[0], stat_press[1], stat_press[2], stat_press[3]);
 
     // save in a table txt
-    //arrays of different types and sizes
+    // arrays of different types and sizes
     char *arr1[4];
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         arr1[i] = (char *)malloc(strlen(past_filename) + 1); // +1 for the null terminator
-        if (arr1[i] != NULL) {
+        if (arr1[i] != NULL)
+        {
             strcpy(arr1[i], past_filename);
-        } else {
+        }
+        else
+        {
             // Handle memory allocation failure
-            fprintf(stderr,"ERROR: Memory allocation failed for arr1[%d]\n", i);
+            fprintf(stderr, "ERROR: Memory allocation failed for arr1[%d]\n", i);
             exit(EXIT_FAILURE);
         }
     }
     char *arr2[4];
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         arr2[i] = (char *)malloc(strlen(study) + 1); // +1 for the null terminator
-        if (arr2[i] != NULL) {
+        if (arr2[i] != NULL)
+        {
             strcpy(arr2[i], study);
-        } else {
+        }
+        else
+        {
             // Handle memory allocation failure
-            fprintf(stderr,"ERROR: Memory allocation failed for arr2[%d]\n", i);
+            fprintf(stderr, "ERROR: Memory allocation failed for arr2[%d]\n", i);
             exit(EXIT_FAILURE);
         }
-    }  
-    char *arr3[4] = {"mean","max","min","stddev"};                            
+    }
+    char *arr3[4] = {"mean", "max", "min", "stddev"};
 
     // Number of arrays and their sizes
     int numArrays = 12;
-    int sizes[] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4,4, 4}; // Sizes of the arrays
+    int sizes[] = {4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4}; // Sizes of the arrays
 
     // Array of pointers to the arrays
-    void *arrays[] = {(void *)arr1, (void *)arr2, (void *)arr3,(void *)stat_aneu, (void *)stat_red,(void *)stat_yel,(void *)stat_wht,(void *)stat_dom,
-    (void *)stat_bod,(void *)stat_nek,(void *)stat_part,(void *)stat_press};
+    void *arrays[] = {(void *)arr1, (void *)arr2, (void *)arr3, (void *)stat_aneu, (void *)stat_red, (void *)stat_yel, (void *)stat_wht, (void *)stat_dom,
+                      (void *)stat_bod, (void *)stat_nek, (void *)stat_part, (void *)stat_press};
 
     // Data types of each array (int, float, char, string)
-    DataType types[] = {STRING_TYPE, STRING_TYPE, STRING_TYPE, DOUBLE_TYPE,DOUBLE_TYPE
-    , DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE};
+    DataType types[] = {STRING_TYPE, STRING_TYPE, STRING_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE, DOUBLE_TYPE};
 
     // Array of column headers (names)
-    const char *headers[] = {"Casename", "Study", "stat_para","stat_aneu", "stat_red"
-    , "stat_yel", "stat_wht", "stat_dom", "stat_bod", "stat_nek","stat_part","stat_press"};
+    const char *headers[] = {"Casename", "Study", "stat_para", "stat_aneu", "stat_red", "stat_yel", "stat_wht", "stat_dom", "stat_bod", "stat_nek", "stat_part", "stat_press"};
 
     // Save the arrays to the file with headers
     saveMultipleArraysToFile("output.txt", numArrays, arrays, sizes, types, headers);
@@ -516,19 +568,21 @@ int main(int argc, char const **argv)
     free(v1);
     free(v2);
     free(v3);
-    free(smax1);free(smax2);
+    free(smax1);
+    free(smax2);
     free(eigenvalue);
     free(eigenvector);
     return 0;
 }
-void mystat(double *arr, int n, double **output1){
+void mystat(double *arr, int n, double *area, double **output1)
+{
     static double *output;
-    output=calloc((size_t)5,sizeof(*output));
-    output[0] = calculate_mean(arr, n);
+    output = calloc((size_t)5, sizeof(*output));
+    output[0] = calculate_mean(arr, n, area);
     output[1] = find_max(arr, n);
     output[2] = find_min(arr, n);
-    output[3] = calculate_stddev(arr, n, output[0]);
-    *output1=output;
+    output[3] = calculate_stddev(arr, n, output[0], area);
+    *output1 = output;
 }
 int files(void)
 {
