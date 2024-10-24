@@ -61,6 +61,7 @@ int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2) {
 
     // Assign the calculated areas to the output pointer
     *area2 = area;
+	printf("* area of each tri3 calculated!\n");
     return 0;
 }
 int check_winding_order(int nelem, int *elems, double *ptxyz)
@@ -252,6 +253,15 @@ int jacobiMethod(int nelem, double *tensor, double **eigenvalue1, double **eigen
 		for (int i = 0; i < 3; i++)
 		{
 			eigenvalue[3 * ele + i] = cp_tensor[9 * ele + 3 * i + i];
+		}
+	}
+	// Reversing eigenvectors according to corresponding sign of eigenvalues
+	for (int ele=0; ele<nelem; ele++){
+		for (int i=0;i<3;i++){	
+			if (eigenvalue[3*ele+i]<0){
+				eigenvalue[3*ele+i]=-1*eigenvalue[3*ele+i];
+				for (int j=0;j<3;j++) eigenvector[9*ele+3*j+i]=-1*eigenvector[9*ele+3*j+i]; 
+			}
 		}
 	}
 	free(cp_tensor);

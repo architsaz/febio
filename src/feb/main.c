@@ -4,6 +4,7 @@
 #include <math.h>
 #include "mystructs.h"
 #include "common.h"
+#include "globalparafeb.h"
 #include "febiofuncs.h"
 #include "myfuncs.h"
 

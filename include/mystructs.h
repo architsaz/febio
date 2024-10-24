@@ -99,6 +99,13 @@ typedef enum
     CHAR_TYPE,
     STRING_TYPE
 } DataType;
+// Enum to represent the time of read log file
+typedef enum
+{
+    end_first_step,
+    end_second_step,
+    time_max,
+}read_time;
 // Define function pointers
 typedef int (*compare_func)(void *, void *);
 

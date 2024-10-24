@@ -1,7 +1,7 @@
 #!/bin/bash
 code_name=ppa_exec
 # List of machines
-machines=("ishtar" "loki" "hades" "attila" "marduk")
+machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
 # List of cases
 if [ -f cases.txt ];then 
     cases=($(cat cases.txt))
@@ -23,9 +23,9 @@ run_case_on_machine () {
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then
         cd $code_dir/$dir_name/$2/pst.1/ 
-        nohup $code_dir/scripts/build/ppa_exec $2 msa.1 0 > run.log 2>&1 &
+        nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 -i 0 > run.log 2>&1 &
     else
-        ssh $1 "cd $code_dir/$dir_name/$2/pst.1/ && nohup $code_dir/scripts/build/ppa_exec $2 msa.1 0 > run.log 2>&1 &" &
+        ssh $1 "cd $code_dir/$dir_name/$2/pst.1/ && nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 -i 0 > run.log 2>&1 &" &
     fi 
 }
 

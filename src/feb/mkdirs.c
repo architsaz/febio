@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "common.h"
+#include "globalparafeb.h"
 #include "febiofuncs.h"
 
 int mkdirs(void)

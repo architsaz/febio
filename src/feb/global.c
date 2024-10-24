@@ -1,4 +1,4 @@
-#include "common.h"
+#include "globalparafeb.h"
 
 // declare global parameters 
 	// directories:

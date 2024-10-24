@@ -28,4 +28,10 @@ int readNJ(int);
 runstatus checkresult(char *);
 int appliedgfilt_ptri6(mesh *, double *, int);
 int appliedgfilt_etri(mesh *, double *, int);
+int readfebiolog(char *path, mesh *M, double **st2, read_time logtime);
+int sortedsv(mesh *M, double *eigenvalue, double *eigenvector, double **sorted_s2, double **sorted_v2);
+int unibimask(mesh *M, double *smax1, double *smax2, int **sdir2);
+void mystat(double *arr, int n, double *area, double **output1);
+int analzs(mesh *M, double *area, double *smax1, char *casename, char *study);
+int redanals_msa1(mesh *M, int *sdir, double *area, char *casename);
 #endif // FEBIO_H

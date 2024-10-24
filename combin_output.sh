@@ -1,6 +1,6 @@
 file_name="output.txt"
-study_name="pst.2"
-output_file="combin_output_pst.2.txt"
+study_name="pst.1"
+output_file="combin_output_pst.1.txt"
 if [ -f "$output_file" ]; then
     echo "ERROR: file $output_file exist."
     exit 1
