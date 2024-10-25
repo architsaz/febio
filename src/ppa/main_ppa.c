@@ -194,6 +194,28 @@ int main(int argc, char const **argv)
     CHECK_ERROR(jacobiMethod(M1->nelem, st, &eigenvalue, &eigenvector));
     if (num_study == 2)
         CHECK_ERROR(jacobiMethod(M1->nelem, st2, &eigenvalue2, &eigenvector2));
+    // check eigen value before sorted:
+    double *S1, *S2, *S3;
+    S1 = calloc((size_t)M1->nelem, sizeof(*S1));
+    S2 = calloc((size_t)M1->nelem, sizeof(*S2));
+    S3 = calloc((size_t)M1->nelem, sizeof(*S3));
+    for (int ele = 0; ele < M1->nelem; ele++)
+    {
+        S1[ele] = eigenvalue[3 * ele];
+        S2[ele] = eigenvalue[3 * ele + 1];
+        S3[ele] = eigenvalue[3 * ele + 2];
+    }
+    // // check the stress tensor and eigen value and eigenvector:
+    // int el = 25380 - 1;
+    // printf("ele: %d\n", el + 1);
+    // printf("st: \n%lf %lf %lf\n%lf %lf %lf\n%lf %lf %lf\n", st[9 * el], st[9 * el + 1], st[9 * el + 2],
+    //        st[9 * el + 3], st[9 * el + 4], st[9 * el + 5],
+    //        st[9 * el + 6], st[9 * el + 7], st[9 * el + 8]);
+    // printf("S:\n %lf\n%lf\n%lf\n", eigenvalue[3 * el], eigenvalue[3 * el + 1], eigenvalue[3 * el + 2]);
+    // printf("V1:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 0], eigenvector[9 * el + 3 * 1 + 0], eigenvector[9 * el + 3 * 2 + 0]);
+    // printf("V2:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 1], eigenvector[9 * el + 3 * 1 + 1], eigenvector[9 * el + 3 * 2 + 1]);
+    // printf("V3:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 2], eigenvector[9 * el + 3 * 1 + 2], eigenvector[9 * el + 3 * 2 + 2]);
+
     // sorted eigen vectors and eigen values:
     double *sorted_s, *sorted_s2;
     double *sorted_v, *sorted_v2;
@@ -238,6 +260,9 @@ int main(int argc, char const **argv)
         // write result in VTK format
         FunctionWithArgs prtelefield[] =
             {
+                {"S1", 1, M1->nelem, S1, SCA_double_VTK},
+                {"S2", 1, M1->nelem, S2, SCA_double_VTK},
+                {"S3", 1, M1->nelem, S3, SCA_double_VTK},
                 {"SSmax", 1, M1->nelem, smax1, SCA_double_VTK},
                 {"SSmin", 1, M1->nelem, smax2, SCA_double_VTK},
                 {"Sn", 1, M1->nelem, sn, SCA_double_VTK},
@@ -263,15 +288,18 @@ int main(int argc, char const **argv)
     }
     if (num_study == 2)
     {
-        double *smax1, *smax2, *vmax1, *vmax2;
+        double *smax1, *smax2, *smin1, *smin2, *vmax1, *vmax2;
         smax1 = calloc((size_t)M1->nelem, sizeof(*smax1));
         smax2 = calloc((size_t)M1->nelem, sizeof(*smax2));
+        smin1 = calloc((size_t)M1->nelem, sizeof(*smin1));
+        smin2 = calloc((size_t)M1->nelem, sizeof(*smin2));
         vmax1 = calloc(3 * (size_t)M1->nelem, sizeof(*vmax1));
         vmax2 = calloc(3 * (size_t)M1->nelem, sizeof(*vmax2));
         // find max eigenvalues and eigenvectors for study 1
         for (int ele = 0; ele < M1->nelem; ele++)
         {
             smax1[ele] = sorted_s[3 * ele + 1];
+            smin1[ele] = sorted_s[3 * ele + 2];
             for (int i = 0; i < 3; i++)
                 vmax1[3 * ele + i] = sorted_v[9 * ele + 3 + i];
         }
@@ -279,6 +307,7 @@ int main(int argc, char const **argv)
         for (int ele = 0; ele < M1->nelem; ele++)
         {
             smax2[ele] = sorted_s2[3 * ele + 1];
+            smin2[ele] = sorted_s2[3 * ele + 2];
             for (int i = 0; i < 3; i++)
                 vmax2[3 * ele + i] = sorted_v2[9 * ele + 3 + i];
         }
@@ -321,15 +350,22 @@ int main(int argc, char const **argv)
 
             comp_vmax[ele] = acos(teta); // Angle in radians
         }
+        // find unidirectional or bidirectional stress region mask:
+        int *sdir1, *sdir2;
+        CHECK_ERROR(unibimask(M1, smax1, smin1, &sdir1));
+        CHECK_ERROR(unibimask(M1, smax2, smin2, &sdir2));
         // write result in VTK format
         FunctionWithArgs prtelefield[] =
             {
-                {"smax1", 1, M1->nelem, smax1, SCA_double_VTK},
-                {"smax2", 1, M1->nelem, smax2, SCA_double_VTK},
-                {"comp_smax", 1, M1->nelem, comp_smax, SCA_double_VTK},
-                {"comp_vmax", 1, M1->nelem, comp_vmax, SCA_double_VTK},
-                {"vmax1", 3, M1->nelem, vmax1, VEC_double_VTK},
-                {"vmax2", 3, M1->nelem, vmax2, VEC_double_VTK},
+                {"SSmax1", 1, M1->nelem, smax1, SCA_double_VTK},
+                {"SSmax2", 1, M1->nelem, smax2, SCA_double_VTK},
+                {"Melem", 1, M1->nelem, M1->Melem, SCA_int_VTK},
+                {"Sdir1", 1, M1->nelem, sdir1, SCA_int_VTK},
+                {"Sdir2", 1, M1->nelem, sdir2, SCA_int_VTK},
+                {"comp_ssmax", 1, M1->nelem, comp_smax, SCA_double_VTK},
+                {"comp_vsmax", 1, M1->nelem, comp_vmax, SCA_double_VTK},
+                {"VSmax1", 3, M1->nelem, vmax1, VEC_double_VTK},
+                {"VSmax2", 3, M1->nelem, vmax2, VEC_double_VTK},
             };
         size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
         FunctionWithArgs prtpntfield[] = {NULL};

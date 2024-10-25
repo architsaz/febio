@@ -7,62 +7,73 @@
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
-double sumarr(double *arr,int size){
-	double sum=0.0;
-	if (size==0) return sum;
-	for (int ele=0;ele<size;ele++){
-		sum+=arr[ele];
+double sumarr(double *arr, int size)
+{
+	double sum = 0.0;
+	if (size == 0)
+		return sum;
+	for (int ele = 0; ele < size; ele++)
+	{
+		sum += arr[ele];
 	}
 	return sum;
 }
-int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2) {
-    double p1[3], p2[3], p3[3];
-    double u[3], v[3];
-    int np1, np2, np3;
-    double *area;
+int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2)
+{
+	double p1[3], p2[3], p3[3];
+	double u[3], v[3];
+	int np1, np2, np3;
+	double *area;
 
-    // Allocate memory for area array
-    area = (double*)calloc((size_t)nelem, sizeof(*area));
-    if (area == NULL) {
-        fprintf(stderr, "ERROR: Memory allocation failed\n");
-        return 1;
-    }
+	// Allocate memory for area array
+	area = (double *)calloc((size_t)nelem, sizeof(*area));
+	if (area == NULL)
+	{
+		fprintf(stderr, "ERROR: Memory allocation failed\n");
+		return 1;
+	}
 
-    // Loop through each element (triangle)
-    for (int ele = 0; ele < nelem; ele++) {
-        // Get vertex indices (assuming elems is 1-based indexing, hence the -1)
-        np1 = elems[3 * ele] - 1;
-        np2 = elems[3 * ele + 1] - 1;
-        np3 = elems[3 * ele + 2] - 1;
+	// Loop through each element (triangle)
+	for (int ele = 0; ele < nelem; ele++)
+	{
+		// Get vertex indices (assuming elems is 1-based indexing, hence the -1)
+		np1 = elems[3 * ele] - 1;
+		np2 = elems[3 * ele + 1] - 1;
+		np3 = elems[3 * ele + 2] - 1;
 
-        // Retrieve the coordinates of the vertices
-        for (int i = 0; i < 3; i++) p1[i] = ptxyz[3 * np1 + i];
-        for (int i = 0; i < 3; i++) p2[i] = ptxyz[3 * np2 + i];
-        for (int i = 0; i < 3; i++) p3[i] = ptxyz[3 * np3 + i];
+		// Retrieve the coordinates of the vertices
+		for (int i = 0; i < 3; i++)
+			p1[i] = ptxyz[3 * np1 + i];
+		for (int i = 0; i < 3; i++)
+			p2[i] = ptxyz[3 * np2 + i];
+		for (int i = 0; i < 3; i++)
+			p3[i] = ptxyz[3 * np3 + i];
 
-        // Compute vectors u = p2 - p1 and v = p3 - p1
-        for (int i = 0; i < 3; i++) u[i] = p2[i] - p1[i];
-        for (int i = 0; i < 3; i++) v[i] = p3[i] - p1[i];
+		// Compute vectors u = p2 - p1 and v = p3 - p1
+		for (int i = 0; i < 3; i++)
+			u[i] = p2[i] - p1[i];
+		for (int i = 0; i < 3; i++)
+			v[i] = p3[i] - p1[i];
 
-        // Compute the cross product of u and v and find the magnitude
-        area[ele] = 0.5 * sqrt(
-            pow(u[1] * v[2] - u[2] * v[1], 2) +
-            pow(u[2] * v[0] - u[0] * v[2], 2) +
-            pow(u[0] * v[1] - u[1] * v[0], 2)
-        );
+		// Compute the cross product of u and v and find the magnitude
+		area[ele] = 0.5 * sqrt(
+							  pow(u[1] * v[2] - u[2] * v[1], 2) +
+							  pow(u[2] * v[0] - u[0] * v[2], 2) +
+							  pow(u[0] * v[1] - u[1] * v[0], 2));
 
-        // Check for invalid (non-positive) area values
-        if (area[ele] <= 0) {
-            fprintf(stderr, "ERROR: the area of ele[%d] : %lf\n", ele, area[ele]);
-            free(area);  // Free allocated memory in case of error
-            return 1;
-        }
-    }
+		// Check for invalid (non-positive) area values
+		if (area[ele] <= 0)
+		{
+			fprintf(stderr, "ERROR: the area of ele[%d] : %lf\n", ele, area[ele]);
+			free(area); // Free allocated memory in case of error
+			return 1;
+		}
+	}
 
-    // Assign the calculated areas to the output pointer
-    *area2 = area;
+	// Assign the calculated areas to the output pointer
+	*area2 = area;
 	printf("* area of each tri3 calculated!\n");
-    return 0;
+	return 0;
 }
 int check_winding_order(int nelem, int *elems, double *ptxyz)
 {
@@ -147,127 +158,90 @@ int check_winding_order(int nelem, int *elems, double *ptxyz)
 	printf("Winding order check complete.\n");
 	return 0;
 }
-int jacobiMethod(int nelem, double *tensor, double **eigenvalue1, double **eigenvector1)
+
+// Function to perform the Jacobi method to find eigenvalues and eigenvectors
+#define EPSILON 1e-9 // Convergence criterion
+#define MAX_ITER 100 // Maximum number of iterations
+int jacobiMethod(int nelem, double *matrix, double **eigenvalues1, double **eigenvectors1)
 {
-	int MAX_ITER = 100;
-	double TOL = 1e-9;
-	int er = 0;
-	double off, c, s;
-	double *eigenvalue, *eigenvector;
-	eigenvalue = calloc(3 * (size_t)nelem, sizeof(*eigenvalue));
-	eigenvector = calloc(9 * (size_t)nelem, sizeof(*eigenvector));
-	// Initialize eigenvectors matrix to the identity matrix
+	int e = 0;
+	double *eigenvalues, *eigenvectors;
+	eigenvalues = calloc(3 * (size_t)nelem, sizeof(*eigenvalues));
+	eigenvectors = calloc(9 * (size_t)nelem, sizeof(*eigenvectors));
 	for (int ele = 0; ele < nelem; ele++)
 	{
+		// Initialize eigenvectors to the identity matrix
 		for (int i = 0; i < 3; i++)
 		{
 			for (int j = 0; j < 3; j++)
 			{
-				eigenvector[9 * ele + 3 * i + j] = (i == j) ? 1.0 : 0.0;
+				eigenvectors[9 * ele + 3 * i + j] = (i == j) ? 1.0 : 0.0;
 			}
 		}
-	}
-	// Copy tensor array in cp_tensor to avoid modifying the original matrix
-	double *cp_tensor;
-	cp_tensor = calloc(9 * (size_t)nelem, sizeof(*cp_tensor));
-	for (int ele = 0; ele < nelem; ele++)
-	{
-		for (int i = 0; i < 9; i++)
-		{
-			cp_tensor[9 * ele + i] = tensor[9 * ele + i];
-		}
-	}
-	// Perform Jacobi rotations until convergence or max iterations
-	for (int ele = 0; ele < nelem; ele++)
-	{
-		int iter = 0;
-		do
-		{
-			// tensor is diagonal or not
-			off = 0.0;
-			for (int i = 0; i < 3; i++)
-			{
-				for (int j = 0; j < 3; j++)
-				{
-					if (i != j)
-					{
-						off += fabs(cp_tensor[9 * ele + 3 * i + j]);
-					}
-				}
-			}
-			if (off < TOL)
-				break;
 
+		for (int iter = 0; iter < MAX_ITER; iter++)
+		{
 			// Find the largest off-diagonal element
-			int p = 0;
-			int q = 1;
+			int p = 0, q = 1;
+			double max = fabs(matrix[9 * ele + 1]);
 			for (int i = 0; i < 3; i++)
 			{
 				for (int j = i + 1; j < 3; j++)
 				{
-					if (fabs(cp_tensor[9 * ele + 3 * i + j]) > fabs(cp_tensor[9 * ele + 3 * p + q]))
+					if (fabs(matrix[9 * ele + 3 * i + j]) > max)
 					{
+						max = fabs(matrix[9 * ele + 3 * i + j]);
 						p = i;
 						q = j;
 					}
 				}
 			}
 
-			// Compute the rotation angle
-			if (fabs(cp_tensor[9 * ele + 3 * p + q]) > TOL)
+			// If the largest off-diagonal element is below the threshold, we consider the matrix diagonalized
+			if (max < EPSILON)
+				break;
+
+			// Calculate the Jacobi rotation
+			double theta = 0.5 * atan2(2 * matrix[9 * ele + 3 * p + q], matrix[9 * ele + 3 * q + q] - matrix[9 * ele + 3 * p + p]);
+			double cosTheta = cos(theta);
+			double sinTheta = sin(theta);
+
+			// Update the matrix elements using the rotation
+			double a_pp = cosTheta * cosTheta * matrix[9 * ele + 3 * p + p] + sinTheta * sinTheta * matrix[9 * ele + 3 * q + q] - 2 * sinTheta * cosTheta * matrix[9 * ele + 3 * p + q];
+			double a_qq = sinTheta * sinTheta * matrix[9 * ele + 3 * p + p] + cosTheta * cosTheta * matrix[9 * ele + 3 * q + q] + 2 * sinTheta * cosTheta * matrix[9 * ele + 3 * p + q];
+			matrix[9 * ele + 3 * p + p] = a_pp;
+			matrix[9 * ele + 3 * q + q] = a_qq;
+			matrix[9 * ele + 3 * p + q] = 0.0;
+			matrix[9 * ele + 3 * q + p] = 0.0;
+
+			for (int i = 0; i < 3; i++)
 			{
-				double theta = 0.5 * atan2(2.0 * cp_tensor[9 * ele + 3 * p + q], cp_tensor[9 * ele + 3 * q + q] - cp_tensor[9 * ele + 3 * p + p]);
-				c = cos(theta);
-				s = sin(theta);
-
-				// Update tensor with the Jacobi rotation
-				for (int i = 0; i < 3; i++)
+				if (i != p && i != q)
 				{
-					double Bpi = c * cp_tensor[9 * ele + 3 * i + p] - s * cp_tensor[9 * ele + 3 * i + q];
-					double Bqi = s * cp_tensor[9 * ele + 3 * i + p] + c * cp_tensor[9 * ele + 3 * i + q];
-					if (i != p && i != q)
-					{
-						cp_tensor[9 * ele + 3 * i + p] = cp_tensor[9 * ele + 3 * p + i] = Bpi;
-						cp_tensor[9 * ele + 3 * i + q] = cp_tensor[9 * ele + 3 * q + i] = Bqi;
-					}
+					double a_ip = cosTheta * matrix[9 * ele + 3 * i + p] - sinTheta * matrix[9 * ele + 3 * i + q];
+					double a_iq = sinTheta * matrix[9 * ele + 3 * i + p] + cosTheta * matrix[9 * ele + 3 * i + q];
+					matrix[9 * ele + 3 * i + p] = a_ip;
+					matrix[9 * ele + 3 * p + i] = a_ip;
+					matrix[9 * ele + 3 * i + q] = a_iq;
+					matrix[9 * ele + 3 * q + i] = a_iq;
 				}
-				cp_tensor[9 * ele + 3 * p + p] = c * c * cp_tensor[9 * ele + 3 * p + p] + s * s * cp_tensor[9 * ele + 3 * q + q] - 2.0 * c * s * cp_tensor[9 * ele + 3 * p + q];
-				cp_tensor[9 * ele + 3 * q + q] = s * s * cp_tensor[9 * ele + 3 * p + p] + c * c * cp_tensor[9 * ele + 3 * q + q] + 2.0 * c * s * cp_tensor[9 * ele + 3 * p + q];
-				cp_tensor[9 * ele + 3 * p + q] = cp_tensor[9 * ele + 3 * q + p] = 0.0;
 
-				// Update the eigenvector matrix
-				for (int i = 0; i < 3; i++)
-				{
-					double vpi = c * eigenvector[9 * ele + 3 * i + p] - s * eigenvector[9 * ele + 3 * i + q];
-					double vqi = s * eigenvector[9 * ele + 3 * i + p] + c * eigenvector[9 * ele + 3 * i + q];
-					eigenvector[9 * ele + 3 * i + p] = vpi;
-					eigenvector[9 * ele + 3 * i + q] = vqi;
-				}
+				// Update eigenvectors
+				double temp = cosTheta * eigenvectors[9 * ele + 3 * i + p] - sinTheta * eigenvectors[9 * ele + 3 * i + q];
+				eigenvectors[9 * ele + 3 * i + q] = sinTheta * eigenvectors[9 * ele + 3 * i + p] + cosTheta * eigenvectors[9 * ele + 3 * i + q];
+				eigenvectors[9 * ele + 3 * i + p] = temp;
 			}
+		}
 
-			iter++;
-
-		} while (off > TOL && iter < MAX_ITER);
-
-		// Eigenvalues are the diagonal elements of the tensor
+		// The diagonal elements are the eigenvalues
 		for (int i = 0; i < 3; i++)
 		{
-			eigenvalue[3 * ele + i] = cp_tensor[9 * ele + 3 * i + i];
+			eigenvalues[3 * ele + i] = matrix[9 * ele + 3 * i + i];
 		}
 	}
-	// Reversing eigenvectors according to corresponding sign of eigenvalues
-	for (int ele=0; ele<nelem; ele++){
-		for (int i=0;i<3;i++){	
-			if (eigenvalue[3*ele+i]<0){
-				eigenvalue[3*ele+i]=-1*eigenvalue[3*ele+i];
-				for (int j=0;j<3;j++) eigenvector[9*ele+3*j+i]=-1*eigenvector[9*ele+3*j+i]; 
-			}
-		}
-	}
-	free(cp_tensor);
-	*eigenvalue1 = eigenvalue;
-	*eigenvector1 = eigenvector;
-	return er;
+	*eigenvalues1 = eigenvalues;
+	*eigenvectors1 = eigenvectors;
+	return e;
 }
 // Comparison functions
 char *edit_endline_character(char *line, int buffer, FILE *fptr)
@@ -1377,7 +1351,7 @@ double calculate_mean(double *arr, int size, double *weight)
 	double sum_weight = 0.0;
 	for (int i = 0; i < size; i++)
 	{
-		sum += arr[i]*weight[i];
+		sum += arr[i] * weight[i];
 		sum_weight += weight[i];
 	}
 	return sum / sum_weight;
@@ -1433,7 +1407,7 @@ double calculate_stddev(double arr[], int size, double mean, double *weight)
 	double sum_weight = 0.0;
 	for (int i = 0; i < size; i++)
 	{
-		sum += weight[i]*pow(arr[i] - mean, 2);
+		sum += weight[i] * pow(arr[i] - mean, 2);
 		sum_weight += weight[i];
 	}
 	return sqrt(sum / sum_weight);
