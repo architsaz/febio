@@ -53,4 +53,5 @@ double calculate_stddev(double arr[], int size, double mean, double *weight);
 void sort_array(double *, int);
 int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2);
 double sumarr(double *arr,int size);
+int save_centri3(int nelem, int *elems, double *ptxyz, double **cen2);
 #endif // MYFUNCS_H

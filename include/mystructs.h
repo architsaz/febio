@@ -10,7 +10,9 @@ typedef struct
     int nredge;    // 3 or 4
     int nrpts;     //<3,6> or <4,8,9>
     int npoin;
+    int numExtraPoints;
     double *ptxyz;
+    double *extra_ptxyz;
     int nelem;
     int *elems;
     int *esurp;
@@ -105,7 +107,7 @@ typedef enum
     end_first_step,
     end_second_step,
     time_max,
-}read_time;
+} read_time;
 // Define function pointers
 typedef int (*compare_func)(void *, void *);
 

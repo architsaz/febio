@@ -14,7 +14,7 @@ SRC_DIR = src
 SHARED_DIR = $(SRC_DIR)/shared
 INC_DIR = include
 BUILD_DIR = build
-TEST_DIR = tests
+TEST_DIR = test
 
 # Project-specific directories and files
 FEB_SRC_FILES = $(wildcard $(SRC_DIR)/feb/*.c)
@@ -22,12 +22,16 @@ PPA_SRC_FILES = $(wildcard $(SRC_DIR)/ppa/*.c)
 SHARED_SRC_FILES = $(wildcard $(SHARED_DIR)/*.c)
 TEST_FILES = $(wildcard $(TEST_DIR)/*.c)
 
+
 # Object files for each project
 FEB_OBJ_FILES = $(FEB_SRC_FILES:$(SRC_DIR)/feb/%.c=$(BUILD_DIR)/feb_%.o) \
                 $(SHARED_SRC_FILES:$(SHARED_DIR)/%.c=$(BUILD_DIR)/shared_%.o)
+
 PPA_OBJ_FILES = $(PPA_SRC_FILES:$(SRC_DIR)/ppa/%.c=$(BUILD_DIR)/ppa_%.o) \
                 $(SHARED_SRC_FILES:$(SHARED_DIR)/%.c=$(BUILD_DIR)/shared_%.o)
-TEST_OBJ_FILES = $(TEST_FILES:$(TEST_DIR)/%.c=$(BUILD_DIR)/test_%.o)
+
+TEST_OBJ_FILES = $(TEST_FILES:$(TEST_DIR)/%.c=$(BUILD_DIR)/test_%.o) \
+                 $(SHARED_SRC_FILES:$(SHARED_DIR)/%.c=$(BUILD_DIR)/shared_%.o)
 
 # Executables for each project
 FEB_EXEC = $(BUILD_DIR)/febmkr_exec

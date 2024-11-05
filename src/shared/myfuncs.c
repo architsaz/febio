@@ -710,7 +710,45 @@ int save_normele(int nelem, int *elems, double *ptxyz, double **norm)
 
 	return e;
 }
+// calculate the center of surface element
+int save_centri3(int nelem, int *elems, double *ptxyz, double **cen2)
+{
+	// Determine if elems starts from 0 or 1
+	int min_elems = elems[0];
+	for (int i = 0; i < 3 * nelem; i++)
+	{
+		if (min_elems > elems[i])
+			min_elems = elems[i];
+	}
+	if (min_elems != 1)
+	{
+		fprintf(stderr, "Problem in elems array: it starts from %d\n", min_elems);
+		return 1;
+	}
+	// Allocate memory for center points
+	double *cen = calloc(3 * (size_t)nelem, sizeof(double));
+	if (cen == NULL)
+	{
+		fprintf(stderr, "Memory allocation failed.\n");
+		return 1;
+	}
 
+	// Calculate the center points
+	for (int ele = 0; ele < nelem; ele++)
+	{
+		int p1 = elems[3 * ele] - 1;
+		int p2 = elems[3 * ele + 1] - 1;
+		int p3 = elems[3 * ele + 2] - 1;
+
+		for (int i = 0; i < 3; i++)
+		{
+			cen[3 * ele + i] = (ptxyz[3 * p1 + i] + ptxyz[3 * p2 + i] + ptxyz[3 * p3 + i]) / 3.0;
+		}
+	}
+
+	*cen2 = cen;
+	return 0;
+}
 // conver mesh from tri3 to other type of mesh
 void tri3_to_tri6(mesh *M1, mesh **M2)
 {
@@ -1111,10 +1149,14 @@ int SaveVTK(char *dir, char *filenam, int step, mesh *M, elemVTK elemfunc, Funct
 	fprintf(fptr, "ASCII\n\n");
 	/*write the position of file : */
 	fprintf(fptr, "DATASET UNSTRUCTURED_GRID\n");
-	fprintf(fptr, "POINTS %d float\n", M->npoin);
+	fprintf(fptr, "POINTS %d float\n", M->npoin + M->numExtraPoints);
 	for (int ip = 0; ip < M->npoin; ip++)
 	{
 		fprintf(fptr, "%lf %lf %lf\n", M->ptxyz[3 * ip], M->ptxyz[3 * ip + 1], M->ptxyz[3 * ip + 2]);
+	}
+	for (int ip = 0; ip < M->numExtraPoints; ip++)
+	{
+		fprintf(fptr, "%lf %lf %lf\n", M->extra_ptxyz[3 * ip], M->extra_ptxyz[3 * ip + 1], M->extra_ptxyz[3 * ip + 2]);
 	}
 	fprintf(fptr, "\n");
 	/*write the elems and cell type : */
@@ -1122,7 +1164,7 @@ int SaveVTK(char *dir, char *filenam, int step, mesh *M, elemVTK elemfunc, Funct
 
 	// write SCALER pointal fields in the file:
 	if (nrpntfield != 0)
-		fprintf(fptr, "POINT_DATA %d\n", M->npoin);
+		fprintf(fptr, "POINT_DATA %d\n", M->npoin + M->numExtraPoints);
 	for (size_t i = 0; i < nrpntfield; ++i)
 	{
 		pntfuncs[i].function(fptr, pntfuncs[i].name, pntfuncs[i].col, pntfuncs[i].nr, pntfuncs[i].field); // Call each function with its array and size
