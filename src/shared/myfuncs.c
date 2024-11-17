@@ -4,9 +4,720 @@
 #include <stdio.h>
 #include <zlib.h>
 #include <math.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
+
+// Function to calculate the critical line/points of vector field and define type of critical points
+int find_critic_vec(mesh *M1, double *vec, int num_zero, double **zero_ptxyz2, int **type_zero_ele2, int **type_zero_p)
+{
+
+	printf("* Start to find critical line/points on given vector field....\n");
+	// find element surround a point
+	SAFE_FREE(M1->esurp_ptr);
+	SAFE_FREE(M1->esurp);
+	CHECK_ERROR(save_esurp(M1->npoin, M1->nelem, M1->elems, &M1->esurp, &M1->esurp_ptr, M1->nredge));
+	// find element surround an element
+	SAFE_FREE(M1->open);
+	SAFE_FREE(M1->esure);
+	CHECK_ERROR(save_esure(M1->nelem, M1->elems, M1->esurp_ptr, M1->esurp, &M1->esure, &M1->open, M1->nredge));
+	// find centeriod of tri3 element
+	double *cen;
+	CHECK_ERROR(save_centri3(M1->nelem, M1->elems, M1->ptxyz, &cen));
+	// find number of neighbour for each element
+	int *num_nei = calloc((size_t)M1->nelem, sizeof(int));
+	for (int ele = 0; ele < M1->nelem; ele++)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (M1->esure[3 * ele + i] >= 0)
+				num_nei[ele]++;
+		}
+	}
+	// calc gradient by least-squares method
+	double *grad = calloc((size_t)M1->nelem * 9, sizeof(double));
+
+	for (int ele = 0; ele < M1->nelem; ele++)
+	{
+		if (M1->presmask[ele] == 0)
+			continue;
+		// create A matrix:
+		double *temp_A = calloc((size_t)(num_nei[ele] + 1) * 4, sizeof(double));
+		int nn = -1;
+		for (int i = 0; i < 3; i++)
+		{
+			int nei = M1->esure[3 * ele + i];
+			if (nei < 0)
+				continue;
+			nn++;
+			// printf("nei: %d\n",nei);
+			temp_A[IDX(nn, 0, 4)] = 1;
+			for (int j = 0; j < 3; j++)
+				temp_A[IDX(nn, j + 1, 4)] = cen[3 * nei + j];
+		}
+		temp_A[IDX(num_nei[ele], 0, 4)] = 1;
+		for (int j = 0; j < 3; j++)
+			temp_A[IDX(num_nei[ele], j + 1, 4)] = cen[3 * ele + j];
+
+		// check the column of A matrix (if all element in one column same it should be remove)
+		int sing_col[4] = {0, 1, 1, 1};
+		for (int j = 1; j < 4; j++)
+		{
+			double e1 = temp_A[IDX(0, j, 4)];
+			for (int i = 0; i < (num_nei[ele] + 1); i++)
+			{
+				if (e1 != temp_A[IDX(i, j, 4)])
+				{
+					sing_col[j] = 0;
+					break;
+				}
+			}
+		}
+		int num_sing = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (sing_col[i] == 1)
+				num_sing++;
+		}
+		double *A = calloc((size_t)(num_nei[ele] + 1) * (size_t)(4 - num_sing), sizeof(double));
+		int nj = -1;
+		for (int j = 0; j < 4; j++)
+		{
+			if (sing_col[j] == 1)
+				continue;
+			nj++;
+			for (int i = 0; i < (num_nei[ele] + 1); i++)
+			{
+				A[IDX(i, nj, (4 - num_sing))] = temp_A[IDX(i, j, 4)];
+			}
+		}
+
+		free(temp_A); // Free temp_A after creating A
+
+		// Part1 : Least-squares method solution for system of linear equations
+		double *AT;
+		CHECK_ERROR(transpose(A, num_nei[ele] + 1, 4 - num_sing, &AT));
+		double *ATA;
+		CHECK_ERROR(mat_mult(AT, 4 - num_sing, num_nei[ele] + 1, A, num_nei[ele] + 1, 4 - num_sing, &ATA));
+		double *ATA_inv = calloc((size_t)(4 - num_sing) * (size_t)(4 - num_sing), sizeof(double));
+		if (inverse_classic_GEPP(ATA, ATA_inv, 4 - num_sing) != 0)
+		{
+			if (inverse_matrix_SVD(ATA, ATA_inv, 4 - num_sing) != 0)
+			{
+				printf("can not inverted matrix for ele: %d\n", ele);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		for (int cor = 0; cor < 3; cor++)
+		{
+			double *b = calloc((size_t)(num_nei[ele] + 1), sizeof(double));
+			// create b matrix:
+			int n = -1;
+			for (int i = 0; i < 3; i++)
+			{
+				int nei = M1->esure[3 * ele + i];
+				if (nei < 0)
+					continue;
+				n++;
+				// printf("nei: %d\n",nei);
+				b[n] = vec[3 * nei + cor];
+			}
+			b[num_nei[ele]] = vec[3 * ele + cor];
+
+			// Part2 : Least-squares method solution for system of linear equations
+
+			double *ATb;
+			CHECK_ERROR(mat_mult(AT, 4 - num_sing, num_nei[ele] + 1, b, num_nei[ele] + 1, 1, &ATb));
+			double *s;
+			CHECK_ERROR(mat_mult(ATA_inv, 4 - num_sing, 4 - num_sing, ATb, 4 - num_sing, 1, &s));
+			// extract gradient
+			int ni = -1;
+			for (int i = 0; i < 3; i++)
+			{
+				if (sing_col[i + 1] == 1)
+					continue;
+				ni++;
+				grad[9 * ele + 3 * cor + i] = s[ni + 1];
+			}
+			free(ATb);
+			free(s);
+			free(b);
+		}
+		free(A);
+		free(AT);
+		free(ATA);
+		free(ATA_inv);
+	}
+	// Intrapolate the nodal vector field
+	double *ssmax_p = calloc((size_t)M1->npoin * 3, sizeof(double));
+	for (int pt = 0; pt < M1->npoin; pt++)
+	{
+		int nei;
+		int count = 0;
+		for (int i = M1->esurp_ptr[pt + 1]; i < M1->esurp_ptr[pt + 2]; i++)
+		{
+			nei = M1->esurp[i];
+			if (nei < 0)
+				continue;
+			count++;
+			for (int cor = 0; cor < 3; cor++)
+			{
+				ssmax_p[3 * pt + cor] += vec[3 * nei + cor];
+				for (int j = 0; j < 3; j++)
+					ssmax_p[3 * pt + cor] += grad[9 * nei + 3 * cor + j] * (M1->ptxyz[3 * pt + j] - cen[3 * nei + j]);
+			}
+		}
+		for (int cor = 0; cor < 3; cor++)
+			ssmax_p[3 * pt + cor] /= count;
+	}
+	// Search for zero magnitude points in each triangle
+	double *vector_field_cen = calloc((size_t)M1->nelem * 3, sizeof(double));
+	double *zero_ptxyz = calloc((size_t)M1->nelem * 3, sizeof(double));
+	int *type_zero = calloc((size_t)M1->nelem, sizeof(int));
+	int *type_zero_ele = calloc((size_t)M1->nelem, sizeof(int));
+	int n_zero = 0;
+	for (int ele = 0; ele < M1->nelem; ele++)
+	{
+		if (M1->presmask[ele] == 0)
+			continue;
+
+		int v0 = M1->elems[3 * ele] - 1;
+		int v1 = M1->elems[3 * ele + 1] - 1;
+		int v2 = M1->elems[3 * ele + 2] - 1;
+
+		double a[3] = {M1->ptxyz[3 * v0], M1->ptxyz[3 * v0 + 1], M1->ptxyz[3 * v0 + 2]};
+		double b[3] = {M1->ptxyz[3 * v1], M1->ptxyz[3 * v1 + 1], M1->ptxyz[3 * v1 + 2]};
+		double c[3] = {M1->ptxyz[3 * v2], M1->ptxyz[3 * v2 + 1], M1->ptxyz[3 * v2 + 2]};
+
+		double va[3] = {ssmax_p[3 * v0], ssmax_p[3 * v0 + 1], ssmax_p[3 * v0 + 2]};
+		double vb[3] = {ssmax_p[3 * v1], ssmax_p[3 * v1 + 1], ssmax_p[3 * v1 + 2]};
+		double vc[3] = {ssmax_p[3 * v2], ssmax_p[3 * v2 + 1], ssmax_p[3 * v2 + 2]};
+
+		double p[3] = {cen[3 * ele], cen[3 * ele + 1], cen[3 * ele + 2]};
+
+		double interp_vec[3];
+		interpolate_vector(p, a, b, c, va, vb, vc, interp_vec);
+
+		for (int i = 0; i < 3; i++)
+			vector_field_cen[3 * ele + i] = interp_vec[i];
+
+		double zero_point[3];
+		if (find_zero_magnitude(a, b, c, va, vb, vc, zero_point))
+		{
+			// printf("element %d: Found zero magnitude at point (%.4f, %.4f, %.4f)\n", ele, zero_point[0], zero_point[1], zero_point[2]);
+			n_zero++;
+			for (int i = 0; i < 3; i++)
+				zero_ptxyz[3 * (n_zero - 1) + i] = zero_point[i];
+			type_zero_ele[ele] = 1;
+			// find the type of critical points:
+			double matrix[3][3];
+			for (int i = 0; i < 3; i++)
+			{
+				for (int j = 0; j < 3; j++)
+					matrix[i][j] = grad[9 * ele + 3 * i + j];
+			}
+			// printf("matrix: \n");
+			// for (int i = 0; i < 3; i++)
+			// {
+			//     printf("%lf %lf %lf\n", matrix[i][0], matrix[i][1], matrix[i][2]);
+			// }
+			// printf("\n");
+			Complex roots[3];
+			calc_comp_eigen(matrix, roots);
+
+			int posreal = 0;
+			int zeroeign = 0;
+			int negreal = 0;
+			int zeroreal = 0;
+			for (int i = 0; i < 3; i++)
+			{
+
+				// printf("eigenvalue: %lf + %lf i\n", roots[i].real, roots[i].imag);
+				if (fabs(roots[i].imag) < EPSILON)
+				{
+					if (roots[i].real > EPSILON)
+					{
+						posreal++;
+					}
+					else if (roots[i].real < -EPSILON)
+					{
+						negreal++;
+					}
+					else
+					{
+						zeroeign++;
+					}
+				}
+				else
+				{
+					if (fabs(roots[i].real) < EPSILON)
+						zeroreal++;
+				}
+			}
+			if ((posreal + negreal + zeroeign) == 3)
+			{
+				if (posreal == (3 - zeroeign))
+				{
+					type_zero[n_zero - 1] = 1; // source point
+											   // type_zero_ele[ele] = 1;
+				}
+				else if (negreal == (3 - zeroeign))
+				{
+					type_zero[n_zero - 1] = 2; // sink point
+											   // type_zero_ele[ele] = 2;
+				}
+				else
+				{
+					type_zero[n_zero - 1] = 3; // saddel point
+											   // type_zero_ele[ele] = 3;
+				}
+			}
+			else if (zeroreal == (3 - zeroeign))
+			{
+				type_zero[n_zero - 1] = 4; // center point
+										   // ype_zero_ele[ele] = 4;
+			}
+			else
+			{
+				type_zero[n_zero - 1] = 5; // spiral or focus
+										   // type_zero_ele[ele] = 5;
+			}
+			// printf("zeroreal: %d\n", zeroreal);
+			// printf("zeroeign: %d\n", zeroeign);
+		}
+	}
+
+	num_zero = n_zero;
+	*type_zero_p = type_zero;
+	*type_zero_ele2 = type_zero_ele;
+	*zero_ptxyz2 = zero_ptxyz;
+	if (num_zero > 0)
+	{
+		printf("* %d number of critical points find on given vector field.\n", num_zero);
+	}
+	else
+	{
+		printf("* Can not find any critical point on given vector field.\n");
+	}
+	free(cen);	   // Free cen after completing the element loop
+	free(num_nei); // Free num_nei after completing the element loop
+	free(grad);	   // Free grad after completing the element loop
+	free(ssmax_p); // Free ssmax_p after completing nodal field interpolation
+	free(vector_field_cen);
+	return 0; // successful
+}
+// Function to normalize a vector
+int normalize(double *v)
+{
+	double magnitude = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	if (magnitude > 0)
+	{
+		v[0] /= magnitude;
+		v[1] /= magnitude;
+		v[2] /= magnitude;
+	}
+	return 0;
+}
+// Transpose function
+int transpose(double *src, int row, int col, double **dest2)
+{
+	double *dest = calloc((size_t)row * (size_t)col, sizeof(double));
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			dest[IDX(j, i, row)] = src[IDX(i, j, col)];
+		}
+	}
+	*dest2 = dest;
+	return 0;
+}
+// Matrix multiplication: C = A * B
+int mat_mult(double *A, int Arow, int Acol, double *B, int Brow, int Bcol, double **C2)
+{
+	// Ensure matrix dimensions are compatible for multiplication
+	if (Acol != Brow)
+	{
+		fprintf(stderr, "* ERROR: The number of columns in A should match the number of rows in B\n");
+		return 1;
+	}
+
+	// Allocate memory for the resulting matrix C
+	double *C = calloc((size_t)Arow * (size_t)Bcol, sizeof(double));
+	if (!C)
+	{
+		fprintf(stderr, "* ERROR: Memory allocation failed\n");
+		return 1;
+	}
+
+	// Perform matrix multiplication
+	for (int i = 0; i < Arow; i++)
+	{
+		for (int j = 0; j < Bcol; j++)
+		{
+			double sum = 0.0; // Accumulate sum for C[i][j]
+			for (int k = 0; k < Acol; k++)
+			{
+				sum += A[IDX(i, k, Acol)] * B[IDX(k, j, Bcol)];
+			}
+			C[IDX(i, j, Bcol)] = sum;
+		}
+	}
+
+	*C2 = C; // Pass the result back to the caller
+	return 0;
+}
+// Function for calculation the ineverse matrix with SVD
+// this function use GNU Scientific Library (GSL)
+int inverse_matrix_SVD(double *mat, double *mat_inv, int n)
+{
+	int status;
+
+	gsl_matrix *A = gsl_matrix_alloc((size_t)n, (size_t)n);
+	gsl_matrix *A_inv = gsl_matrix_alloc((size_t)n, (size_t)n);
+
+	if (!A || !A_inv)
+	{
+		fprintf(stderr, "Failed to allocate memory for matrices.\n");
+		gsl_matrix_free(A);
+		gsl_matrix_free(A_inv);
+		return -1;
+	}
+	// feeding to qsl_matrix struct from double array
+	for (size_t i = 0; i < (size_t)n; i++)
+	{
+		for (size_t j = 0; j < (size_t)n; j++)
+		{
+			gsl_matrix_set(A, i, j, mat[IDX(i, j, (size_t)n)]);
+		}
+	}
+
+	gsl_matrix *U = gsl_matrix_alloc((size_t)n, (size_t)n);
+	gsl_matrix *V = gsl_matrix_alloc((size_t)n, (size_t)n);
+	gsl_vector *S = gsl_vector_alloc((size_t)n);
+	gsl_vector *work = gsl_vector_alloc((size_t)n);
+
+	gsl_matrix_memcpy(U, A);
+
+	// Perform SVD
+	status = gsl_linalg_SV_decomp(U, V, S, work);
+	if (status != 0)
+	{
+		fprintf(stderr, "SVD decomposition failed.\n");
+		return status;
+	}
+
+	// Calculate A_inv = V * inv(S) * U^T
+	gsl_matrix *S_inv = gsl_matrix_alloc((size_t)n, (size_t)n);
+	gsl_matrix_set_zero(S_inv);
+
+	for (size_t i = 0; i < (size_t)n; i++)
+	{
+		double s = gsl_vector_get(S, i);
+		if (s > 1e-10)
+		{ // Avoid division by zero for small singular values
+			gsl_matrix_set(S_inv, i, i, 1.0 / s);
+		}
+	}
+
+	gsl_matrix *temp = gsl_matrix_alloc((size_t)n, (size_t)n);
+	gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, V, S_inv, 0.0, temp);
+	gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, temp, U, 0.0, A_inv);
+
+	// Copy data from A_inv to arr
+	for (size_t i = 0; i < (size_t)n; i++)
+	{
+		for (size_t j = 0; j < (size_t)n; j++)
+		{
+			mat_inv[IDX(i, j, (size_t)n)] = gsl_matrix_get(A_inv, i, j);
+		}
+	}
+
+	// Free temporary structures
+	gsl_matrix_free(A);
+	gsl_matrix_free(A_inv);
+	gsl_matrix_free(U);
+	gsl_matrix_free(V);
+	gsl_vector_free(S);
+	gsl_vector_free(work);
+	gsl_matrix_free(S_inv);
+	gsl_matrix_free(temp);
+
+	return 0; // successful
+}
+// Function for calculating the invers of square matrix with Guassian Elimination with partial pivoting
+int inverse_classic_GEPP(double *matrix, double *inverse, int n)
+{
+	int i, j, k;
+	double temp;
+
+	// Initialize the inverse matrix as an identity matrix
+	for (i = 0; i < n; i++)
+	{
+		for (j = 0; j < n; j++)
+		{
+			inverse[IDX(i, j, n)] = (i == j) ? 1.0 : 0.0;
+		}
+	}
+
+	// Apply Gaussian elimination with partial pivoting
+	for (i = 0; i < n; i++)
+	{
+		// Find the pivot element
+		double maxElement = fabs(matrix[IDX(i, i, n)]);
+		int pivotRow = i;
+		for (j = i + 1; j < n; j++)
+		{
+			if (fabs(matrix[IDX(j, i, n)]) > maxElement)
+			{
+				maxElement = fabs(matrix[IDX(j, i, n)]);
+				pivotRow = j;
+			}
+		}
+
+		// Check for singularity
+		if (fabs(matrix[IDX(pivotRow, i, n)]) < 1e-10)
+		{
+			// printf("Matrix is singular or nearly singular\n");
+			return -1; // Singular matrix
+		}
+
+		// Swap rows in both matrix and inverse
+		if (pivotRow != i)
+		{
+			for (k = 0; k < n; k++)
+			{
+				temp = matrix[IDX(i, k, n)];
+				matrix[IDX(i, k, n)] = matrix[IDX(pivotRow, k, n)];
+				matrix[IDX(pivotRow, k, n)] = temp;
+
+				temp = inverse[IDX(i, k, n)];
+				inverse[IDX(i, k, n)] = inverse[IDX(pivotRow, k, n)];
+				inverse[IDX(pivotRow, k, n)] = temp;
+			}
+		}
+
+		// Scale the pivot row
+		temp = matrix[IDX(i, i, n)];
+		for (k = 0; k < n; k++)
+		{
+			matrix[IDX(i, k, n)] /= temp;
+			inverse[IDX(i, k, n)] /= temp;
+		}
+
+		// Eliminate the current column in other rows
+		for (j = 0; j < n; j++)
+		{
+			if (j != i)
+			{
+				temp = matrix[IDX(j, i, n)];
+				for (k = 0; k < n; k++)
+				{
+					matrix[IDX(j, k, n)] -= matrix[IDX(i, k, n)] * temp;
+					inverse[IDX(j, k, n)] -= inverse[IDX(i, k, n)] * temp;
+				}
+			}
+		}
+	}
+
+	return 0; // Successful inversion
+}
+// Function to calculate the determinant of a square matrix n by n
+double determinant(double *matrix, int n)
+{
+	if (n == 1)
+	{
+		return matrix[0];
+	}
+	if (n == 2)
+	{
+		return (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
+	}
+
+	double det = 0;
+	double *submatrix = (double *)malloc((size_t)(n - 1) * (size_t)(n - 1) * sizeof(double));
+
+	for (int x = 0; x < n; x++)
+	{
+		int subi = 0;
+		for (int i = 1; i < n; i++)
+		{
+			int subj = 0;
+			for (int j = 0; j < n; j++)
+			{
+				if (j == x)
+					continue;
+				submatrix[subi * (n - 1) + subj] = matrix[i * n + j];
+				subj++;
+			}
+			subi++;
+		}
+		det += (x % 2 == 0 ? 1 : -1) * matrix[x] * determinant(submatrix, n - 1);
+	}
+
+	free(submatrix);
+	return det;
+}
+// Compute barycentric coordinates for a point in a triangle in 3D space
+void barycentric(double *p, double *a, double *b, double *c, double *u, double *v, double *w)
+{
+	// Vectors from a to b and a to c
+	double v0[3] = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+	double v1[3] = {c[0] - a[0], c[1] - a[1], c[2] - a[2]};
+	double v2[3] = {p[0] - a[0], p[1] - a[1], p[2] - a[2]};
+
+	// Dot products
+	double d00 = v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2];
+	double d01 = v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2];
+	double d11 = v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2];
+	double d20 = v2[0] * v0[0] + v2[1] * v0[1] + v2[2] * v0[2];
+	double d21 = v2[0] * v1[0] + v2[1] * v1[1] + v2[2] * v1[2];
+
+	double denom = d00 * d11 - d01 * d01;
+	*v = (d11 * d20 - d01 * d21) / denom;
+	*w = (d00 * d21 - d01 * d20) / denom;
+	*u = 1.0 - *v - *w;
+}
+// Linear interpolation of the vector field within a 3D triangle
+void interpolate_vector(double *p, double *a, double *b, double *c, double *va, double *vb, double *vc, double *result)
+{
+	double u, v, w;
+	barycentric(p, a, b, c, &u, &v, &w);
+	result[0] = u * va[0] + v * vb[0] + w * vc[0];
+	result[1] = u * va[1] + v * vb[1] + w * vc[1];
+	result[2] = u * va[2] + v * vb[2] + w * vc[2];
+}
+// Search for zero magnitude points within the triangle
+int find_zero_magnitude(double *a, double *b, double *c, double *va, double *vb, double *vc, double *zero_point)
+{
+	int found = 0;
+	double step = 0.01; // Step size for grid search
+	for (double u = 0; u <= 1; u += step)
+	{
+		for (double v = 0; v <= 1 - u; v += step)
+		{
+			double w = 1 - u - v;
+			double p[3] = {u * a[0] + v * b[0] + w * c[0], u * a[1] + v * b[1] + w * c[1], u * a[2] + v * b[2] + w * c[2]};
+			double interp_vec[3];
+			interpolate_vector(p, a, b, c, va, vb, vc, interp_vec);
+			double mag = vector_magnitude(interp_vec);
+			if (mag < 0.1)
+			{ // Threshold for zero magnitude
+				zero_point[0] = p[0];
+				zero_point[1] = p[1];
+				zero_point[2] = p[2];
+				found = 1;
+				break;
+			}
+		}
+		if (found)
+			break;
+	}
+	return found;
+}
+double vector_magnitude(double *v)
+{
+	double mag = 0;
+	for (int i = 0; i < 3; i++)
+		mag += v[i] * v[i];
+	return sqrt(mag);
+}
+// Function to compute trace of a 3x3 matrix
+double trace(double A[3][3])
+{
+	return A[0][0] + A[1][1] + A[2][2];
+}
+// Function to compute trace of A^2
+double traceA2(double A[3][3])
+{
+	double A2[3][3] = {0};
+	// Compute A^2
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			for (int k = 0; k < 3; k++)
+			{
+				A2[i][j] += A[i][k] * A[k][j];
+			}
+		}
+	}
+	return A2[0][0] + A2[1][1] + A2[2][2];
+}
+// Function to compute determinant of a 3x3 matrix
+double determinant3by3(double A[3][3])
+{
+	return A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
+		   A[0][1] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) +
+		   A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]);
+}
+// Function to solve cubic equation using Cardano's method
+// Returns the number of real roots and fills the roots array
+int solveCubic(double a, double b, double c, Complex roots[3])
+{
+	double p = b - pow(a, 2) / 3.0;
+	double q = 2.0 * pow(a, 3) / 27.0 - a * b / 3.0 + c;
+	double discriminant = pow(q / 2.0, 2) + pow(p / 3.0, 3);
+
+	if (fabs(discriminant) < EPSILON)
+		discriminant = 0.0;
+
+	if (discriminant > 0)
+	{
+		double sqrt_disc = sqrt(discriminant);
+		double u = cbrt(-q / 2.0 + sqrt_disc);
+		double v = cbrt(-q / 2.0 - sqrt_disc);
+		roots[0].real = u + v - a / 3.0;
+		roots[0].imag = 0.0;
+		roots[1].real = -(u + v) / 2.0 - a / 3.0;
+		roots[1].imag = (u - v) * sqrt(3.0) / 2.0;
+		roots[2].real = roots[1].real;
+		roots[2].imag = -roots[1].imag;
+		return 1;
+	}
+	else if (discriminant == 0.0)
+	{
+		double u = cbrt(-q / 2.0);
+		roots[0].real = 2.0 * u - a / 3.0;
+		roots[0].imag = 0.0;
+		roots[1].real = -u - a / 3.0;
+		roots[1].imag = 0.0;
+		roots[2].real = roots[1].real;
+		roots[2].imag = 0.0;
+		return 3;
+	}
+	else
+	{
+		double r = sqrt(-pow(p / 3.0, 3));
+		double phi = acos(-q / (2.0 * r));
+		double t = 2.0 * pow(r, 1.0 / 3.0);
+		roots[0].real = t * cos(phi / 3.0) - a / 3.0;
+		roots[0].imag = 0.0;
+		roots[1].real = t * cos((phi + 2.0 * PI) / 3.0) - a / 3.0;
+		roots[1].imag = 0.0;
+		roots[2].real = t * cos((phi + 4.0 * PI) / 3.0) - a / 3.0;
+		roots[2].imag = 0.0;
+		return 3;
+	}
+}
+// Function to calculate complex eigenvalues using characteristic polynomial for 3x3 matrix
+int calc_comp_eigen(double A[3][3], Complex roots[3])
+{
+	double tr = trace(A);
+	double trA2 = traceA2(A);
+	double det = determinant3by3(A);
+
+	// Polynomial coefficients for lambda^3 - tr * lambda^2 + 0.5 * (tr^2 - trA2) * lambda - det = 0
+	double a = tr;
+	double b = 0.5 * (tr * tr - trA2);
+	double c = -det;
+
+	return solveCubic(a, b, c, roots);
+}
 double sumarr(double *arr, int size)
 {
 	double sum = 0.0;
@@ -77,7 +788,7 @@ int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2)
 }
 int check_winding_order(int nelem, int *elems, double *ptxyz)
 {
-	double p1[3], p2[3], p3[3], u[3], v[3], normal[3], face_center[3], outward_check[3];
+	double p1[3], p2[3], p3[3], u[3], v[3], normalv[3], face_center[3], outward_check[3];
 	double bbox_center[3] = {0, 0, 0};
 	double bbox_min[3] = {1e9, 1e9, 1e9};
 	double bbox_max[3] = {-1e9, -1e9, -1e9};
@@ -117,19 +828,19 @@ int check_winding_order(int nelem, int *elems, double *ptxyz)
 			v[i] = p3[i] - p1[i];
 
 		// Compute the normal using the cross product
-		normal[0] = u[1] * v[2] - u[2] * v[1];
-		normal[1] = u[2] * v[0] - u[0] * v[2];
-		normal[2] = u[0] * v[1] - u[1] * v[0];
+		normalv[0] = u[1] * v[2] - u[2] * v[1];
+		normalv[1] = u[2] * v[0] - u[0] * v[2];
+		normalv[2] = u[0] * v[1] - u[1] * v[0];
 
 		// Normalize the normal vector
-		double mag = sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+		double mag = sqrt(normalv[0] * normalv[0] + normalv[1] * normalv[1] + normalv[2] * normalv[2]);
 		if (mag == 0)
 		{
 			fprintf(stderr, "Zero magnitude normal vector at element %d!\n", ele);
 			return -1;
 		}
 		for (int i = 0; i < 3; i++)
-			normal[i] /= mag;
+			normalv[i] /= mag;
 
 		// Compute the face center
 		for (int i = 0; i < 3; i++)
@@ -142,7 +853,7 @@ int check_winding_order(int nelem, int *elems, double *ptxyz)
 		// Check if the normal points inward or outward
 		double dot_product = 0;
 		for (int i = 0; i < 3; i++)
-			dot_product += normal[i] * outward_check[i];
+			dot_product += normalv[i] * outward_check[i];
 
 		// If dot product is negative, the normal points inward, so flip the winding order
 		if (dot_product < 0)
@@ -158,10 +869,7 @@ int check_winding_order(int nelem, int *elems, double *ptxyz)
 	printf("Winding order check complete.\n");
 	return 0;
 }
-
 // Function to perform the Jacobi method to find eigenvalues and eigenvectors
-#define EPSILON 1e-9 // Convergence criterion
-#define MAX_ITER 100 // Maximum number of iterations
 int jacobiMethod(int nelem, double *matrix, double **eigenvalues1, double **eigenvectors1)
 {
 	int e = 0;
@@ -449,7 +1157,7 @@ int save_esure(int nelem, int *elems, int *esurp_pointer, int *esurp, int **esue
 		return -1;
 	}
 	// parameters
-	int *p, *order, *nei, *num_nei, *out, *open;
+	int *p, *order, *nei, *num_nei, *open;
 
 	/* Allocate space to nei pointer */
 	p = calloc((size_t)Nredge, sizeof(*p));
@@ -481,7 +1189,7 @@ int save_esure(int nelem, int *elems, int *esurp_pointer, int *esurp, int **esue
 		{
 			if (nei[Nredge * ele + j] == -1)
 			{
-				out = find_nei_elem3D(esurp_pointer, esurp, num_nei, open, elems, ele, p[order[2 * j]], p[order[2 * j + 1]], Nredge);
+				int *out = find_nei_elem3D(esurp_pointer, esurp, num_nei, open, elems, ele, p[order[2 * j]], p[order[2 * j + 1]], Nredge);
 				if (out[0] != -9999)
 				{
 					nei[Nredge * ele + j] = out[0];
@@ -493,6 +1201,7 @@ int save_esure(int nelem, int *elems, int *esurp_pointer, int *esurp, int **esue
 				{
 					nei[Nredge * ele + j] = -2;
 				}
+				free(out); // free `out` returned by `find_nei_elem3D` after each use
 			}
 		}
 		// find the element adjacent to hole
@@ -650,6 +1359,7 @@ int save_esurf(int nelem, int *esure, int numf, int **esurf2, int Nredge)
 			}
 		}
 	}
+	free(efid);
 	*esurf2 = esurf;
 	printf("* esurf is done!\n");
 	return e;
@@ -792,9 +1502,15 @@ void tri3_to_tri6(mesh *M1, mesh **M2)
 	(*M2)->ptxyz = ptxyz2;
 	(*M2)->nelem = nelem2;
 	// all other data structure same as M1
-	(*M2)->Melem = M1->Melem;	// wall charectristics from .wall file
-	(*M2)->rpts = M1->rpts;		// pointal value of regional mask     --> read labels_srf.zfem
-	(*M2)->relems = M1->relems; // elemental value of regional mask --> approximate
+	(*M2)->Melem = (int *)malloc((size_t)M1->nelem * sizeof(int));
+	memcpy((*M2)->Melem, M1->Melem, (size_t)M1->nelem * sizeof(int));
+	(*M2)->rpts = (int *)malloc((size_t)M1->npoin * sizeof(int));
+	memcpy((*M2)->rpts, M1->rpts, (size_t)M1->npoin * sizeof(int));
+	(*M2)->relems = (int *)malloc((size_t)M1->nelem * sizeof(int));
+	memcpy((*M2)->relems, M1->relems, (size_t)M1->nelem * sizeof(int));
+	//(*M2)->Melem = M1->Melem;	// wall charectristics from .wall file
+	//(*M2)->rpts = M1->rpts;		// pointal value of regional mask     --> read labels_srf.zfem
+	//(*M2)->relems = M1->relems; // elemental value of regional mask --> approximate
 	printf("* the tri3 mesh converted to the tri6 mesh.\n- new npoin: %d\n- new nelem: %d\n", npoin2, nelem2);
 }
 void tri3_to_quad4(mesh *M1, mesh **M2)
@@ -875,21 +1591,14 @@ int ConverMesh(mesh *M1, mesh *M2, ConvertorFunc Func)
 	int e = 0;
 	// find element surround a point
 	CHECK_ERROR(save_esurp(M1->npoin, M1->nelem, M1->elems, &M1->esurp, &M1->esurp_ptr, M1->nredge));
-	// for (int i=0;i<20;i++) printf("%d \n",esurp_pointer[i]);
 	// find element surround an element
 	CHECK_ERROR(save_esure(M1->nelem, M1->elems, M1->esurp_ptr, M1->esurp, &M1->esure, &M1->open, M1->nredge));
-	// for (int i=0;i<M1->nelem;i++) printf("ele : %d e1: %d e2 : %d e3: %d\n",i,M1->esure[3*i],M1->esure[3*i+1],M1->esure[3*i+2]);
 	// find Nr of eadge and given id to adges*/
 	CHECK_ERROR(save_fsure(M1->nelem, M1->esure, &M1->fsure, &M1->numf, M1->nredge));
 	printf(" the number of face : %d \n", M1->numf);
-	// for (int i=0; i<M1->nelem ; i++){
-	//     printf("ele %d l1: %d l2: %d l3: %d \n",i,M1->fsure[3*i],M1->fsure[3*i+1],M1->fsure[3*i+2]);
-	// }
 	// find point surround a face*/
 	CHECK_ERROR(save_psurf(M1->nelem, M1->numf, M1->elems, M1->esure, &M1->psurf, M1->nredge));
-	// for (int i=0; i<M1->numf ; i++){
-	//     printf("f %d p1: %d p2: %d \n",i,M1->psurf[2*i],M1->psurf[2*i+1]);
-	// }
+	// convert M1 mesh to M2
 	Func(M1, &M2);
 	return e;
 }
@@ -1246,7 +1955,6 @@ Entry *createEntry(const char *key, const char *value)
 	entry->next = NULL;
 	return entry;
 }
-
 // Function to insert a key-value pair into the hash table
 void inserthash(HashTable *table, const char *key, const char *value)
 {
@@ -1277,7 +1985,6 @@ void inserthash(HashTable *table, const char *key, const char *value)
 		}
 	}
 }
-
 // Function to retrieve a value by key
 char *gethash(HashTable *table, const char *key)
 {
@@ -1293,7 +2000,6 @@ char *gethash(HashTable *table, const char *key)
 	}
 	return NULL; // Key not found
 }
-
 // Function to free the memory allocated for the hash table
 void freeTable(HashTable *table)
 {
@@ -1310,7 +2016,6 @@ void freeTable(HashTable *table)
 		}
 	}
 }
-
 // Function to find the maximum size among arrays
 int findMaxSize(int numArrays, int sizes[])
 {
@@ -1324,7 +2029,6 @@ int findMaxSize(int numArrays, int sizes[])
 	}
 	return max;
 }
-
 // Function to write multiple arrays with headers (names) to a text file
 void saveMultipleArraysToFile(const char *path, int numArrays, void *arrays[], int sizes[], DataType types[], const char *headers[])
 {
@@ -1398,7 +2102,6 @@ double calculate_mean(double *arr, int size, double *weight)
 	}
 	return sum / sum_weight;
 }
-
 // Function to calculate the median
 double calculate_median(double arr[], int size)
 {
@@ -1413,7 +2116,6 @@ double calculate_median(double arr[], int size)
 		return arr[size / 2];
 	}
 }
-
 // Function to find the maximum value
 double find_max(double arr[], int size)
 {
@@ -1427,7 +2129,6 @@ double find_max(double arr[], int size)
 	}
 	return max;
 }
-
 // Function to find the minimum value
 double find_min(double arr[], int size)
 {
@@ -1441,7 +2142,6 @@ double find_min(double arr[], int size)
 	}
 	return min;
 }
-
 // Function to calculate the standard deviation
 double calculate_stddev(double arr[], int size, double mean, double *weight)
 {

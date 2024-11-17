@@ -3,6 +3,9 @@
 
 #include <zlib.h>
 #include <string.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 // Define a function pointer type for comparison functions
 int check_winding_order(int nelem, int *elems, double *ptxyz);
 char *edit_endline_character(char *, int, FILE *);
@@ -52,6 +55,26 @@ double find_min(double *, int);
 double calculate_stddev(double arr[], int size, double mean, double *weight);
 void sort_array(double *, int);
 int calc_area_tri3(double *ptxyz, int *elems, int nelem, double **area2);
-double sumarr(double *arr,int size);
+double sumarr(double *arr, int size);
 int save_centri3(int nelem, int *elems, double *ptxyz, double **cen2);
+int normalize(double *v);
+int transpose(double *src, int row, int col, double **dest2);
+int mat_mult(double *A, int Arow, int Acol, double *B, int Brow, int Bcol, double **C2);
+// int inverse_classic_GE(double *A, int n, double **inverse1);
+double determinant(double *matrix, int n);
+void barycentric(double *p, double *a, double *b, double *c, double *u, double *v, double *w);
+void interpolate_vector(double *p, double *a, double *b, double *c, double *va, double *vb, double *vc, double *result);
+int find_zero_magnitude(double *a, double *b, double *c, double *va, double *vb, double *vc, double *zero_point);
+double trace(double A[3][3]);
+double traceA2(double A[3][3]);
+double determinant3by3(double A[3][3]);
+int solveCubic(double a, double b, double c, Complex roots[3]);
+int calc_comp_eigen(double A[3][3], Complex roots[3]);
+double vector_magnitude(double *v);
+// int pseudo_inverse_GE(double *A, int m, int n, double **pseudo_inv);
+// int gaussian_elimination(double *A, int m, int n, double *I);
+int inverse_classic_GEPP(double *matrix, double *inverse, int n);
+int inverse_matrix_SVD(double *mat, double *mat_inv, int n);
+int find_critic_vec(mesh *M1, double *vec, int num_zero, double **zero_ptxyz2, int **type_zero_ele2, int **type_zero_p);
+
 #endif // MYFUNCS_H

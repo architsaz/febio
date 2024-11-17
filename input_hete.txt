@@ -27,8 +27,9 @@ NJyoung         50000000
 incyoung        5000000
 // Label  <red, yellow, white, cyan, rupture, remain>
 label_red       1 
-label_yellow    2
+label_yellow    4
 label_white     7
+label_rupture   9
 // Boundary condition:
 used_BCmask    0
 colorid_remain 0

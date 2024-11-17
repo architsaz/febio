@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 #include "mystructs.h"
 #include "common.h"
 #include "myfuncs.h"
@@ -10,6 +13,7 @@
 
 int files(void);
 int dirs(void);
+void freeMesh(mesh *m);
 
 int main(int argc, char const **argv)
 {
@@ -142,20 +146,28 @@ int main(int argc, char const **argv)
     // make path for files
     CHECK_ERROR(dirs());
     CHECK_ERROR(files());
-    // printf("- %s\n", past_datafilepath[0]);
-    // printf("- %s\n", past_datafilepath[1]);
-    // printf("- %s\n", past_datafilepath[2]);
-    // printf("- %s\n", past_datafilepath[3]);
-    // printf("- %s\n", past_datafilepath[4]);
 
     // reading domain parameters for unloaded geometry from .FLDS.ZFEM file //
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
+    if (M1)
+    {
+        *M1 = (mesh){0}; // Set all integer and pointer fields to 0 or NULL
+    }
+    if (M1 == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed for M1 pointer\n");
+        exit(EXIT_FAILURE);
+    }
     CHECK_ERROR(read_zfem(past_datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
     strcpy(M1->type, "tri");
     M1->nrpts = 3;
     M1->nredge = 3;
     // input variable :
     input *inp = (input *)malloc(sizeof(input));
+    if (inp)
+    {
+        *inp = (input){0}; // Set all integer and pointer fields to 0 or NULL
+    }
     if (inp == NULL)
     {
         fprintf(stderr, "Memory allocation failed for inp pointer\n");
@@ -165,8 +177,12 @@ int main(int argc, char const **argv)
     // reading Aneurysm region mask
     CHECK_ERROR(read_regionmask(past_datafilepath[3], M1, inp, &M1->relems, &M1->rpts));
     // reading wall charectristics [colored fields] from .wall file//
-    // label : <red=1, yellow=2, white=7, cyan=0, rupture=0, remain=0>
+    // label : <red=1, yellow=4, white=7, cyan=0, rupture=9, remain=0>
     CHECK_ERROR(read_wallmask(past_datafilepath[2], M1, inp, &M1->Melem));
+    // find element surround a point
+    CHECK_ERROR(save_esurp(M1->npoin, M1->nelem, M1->elems, &M1->esurp, &M1->esurp_ptr, M1->nredge));
+    // find element surround an element
+    CHECK_ERROR(save_esure(M1->nelem, M1->elems, M1->esurp_ptr, M1->esurp, &M1->esure, &M1->open, M1->nredge));
     // calc area of ele
     double *area;
     CHECK_ERROR(calc_area_tri3(M1->ptxyz, M1->elems, M1->nelem, &area));
@@ -176,13 +192,15 @@ int main(int argc, char const **argv)
     for (int ele = 0; ele < (3 * M1->nelem); ele++)
         M1->normele[ele] = -1 * M1->normele[ele];
     // read pressure mask from vtk file
-    static void *field1;
+    void *field1, *field2;
     FunctionWithArgs2 prtreadfield[] = {
         {"Press_mask", 1, M1->nelem, &field1, read_VTK_int},
+        {"Young_Modulus", 1, M1->nelem, &field2, read_VTK_double},
     };
     int countfield = sizeof(prtreadfield) / sizeof(prtreadfield[0]);
     CHECK_ERROR(ReadVTK(pst_rundir, "checkinput", 0, prtreadfield, countfield));
     M1->presmask = (int *)field1;
+    M1->young = (double *)field2;
 
     // read stress tensor on log files
     double *st, *st2;
@@ -194,28 +212,46 @@ int main(int argc, char const **argv)
     CHECK_ERROR(jacobiMethod(M1->nelem, st, &eigenvalue, &eigenvector));
     if (num_study == 2)
         CHECK_ERROR(jacobiMethod(M1->nelem, st2, &eigenvalue2, &eigenvector2));
-    // check eigen value before sorted:
-    double *S1, *S2, *S3;
-    S1 = calloc((size_t)M1->nelem, sizeof(*S1));
-    S2 = calloc((size_t)M1->nelem, sizeof(*S2));
-    S3 = calloc((size_t)M1->nelem, sizeof(*S3));
+    // checking the value of eigen values (they should be positive)
     for (int ele = 0; ele < M1->nelem; ele++)
     {
-        S1[ele] = eigenvalue[3 * ele];
-        S2[ele] = eigenvalue[3 * ele + 1];
-        S3[ele] = eigenvalue[3 * ele + 2];
+        for (int v = 0; v < 3; v++)
+        {
+            if (M1->presmask[ele] != 1)
+            {
+                for (int i = 0; i < 3; i++)
+                    eigenvector[9 * ele + 3 * i + v] = 0;
+                eigenvalue[3 * ele + v] = 0;
+            }
+            if (eigenvalue[3 * ele + v] < 0)
+            {
+                for (int i = 0; i < 3; i++)
+                    eigenvector[9 * ele + 3 * i + v] = -1 * eigenvector[9 * ele + 3 * i + v];
+                eigenvalue[3 * ele + v] = -1 * eigenvalue[3 * ele + v];
+            }
+        }
     }
-    // // check the stress tensor and eigen value and eigenvector:
-    // int el = 25380 - 1;
-    // printf("ele: %d\n", el + 1);
-    // printf("st: \n%lf %lf %lf\n%lf %lf %lf\n%lf %lf %lf\n", st[9 * el], st[9 * el + 1], st[9 * el + 2],
-    //        st[9 * el + 3], st[9 * el + 4], st[9 * el + 5],
-    //        st[9 * el + 6], st[9 * el + 7], st[9 * el + 8]);
-    // printf("S:\n %lf\n%lf\n%lf\n", eigenvalue[3 * el], eigenvalue[3 * el + 1], eigenvalue[3 * el + 2]);
-    // printf("V1:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 0], eigenvector[9 * el + 3 * 1 + 0], eigenvector[9 * el + 3 * 2 + 0]);
-    // printf("V2:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 1], eigenvector[9 * el + 3 * 1 + 1], eigenvector[9 * el + 3 * 2 + 1]);
-    // printf("V3:\n %lf \n %lf \n %lf \n", eigenvector[9 * el + 3 * 0 + 2], eigenvector[9 * el + 3 * 1 + 2], eigenvector[9 * el + 3 * 2 + 2]);
-
+    if (num_study == 2)
+    {
+        for (int ele = 0; ele < M1->nelem; ele++)
+        {
+            for (int v = 0; v < 3; v++)
+            {
+                if (M1->presmask[ele] != 1)
+                {
+                    for (int i = 0; i < 3; i++)
+                        eigenvector2[9 * ele + 3 * i + v] = 0;
+                    eigenvalue2[3 * ele + v] = 0;
+                }
+                if (eigenvalue2[3 * ele + v] < 0)
+                {
+                    for (int i = 0; i < 3; i++)
+                        eigenvector2[9 * ele + 3 * i + v] = -1 * eigenvector2[9 * ele + 3 * i + v];
+                    eigenvalue2[3 * ele + v] = -1 * eigenvalue2[3 * ele + v];
+                }
+            }
+        }
+    }
     // sorted eigen vectors and eigen values:
     double *sorted_s, *sorted_s2;
     double *sorted_v, *sorted_v2;
@@ -251,40 +287,89 @@ int main(int argc, char const **argv)
             for (int i = 0; i < 3; i++)
                 vn[3 * ele + i] = sorted_v[9 * ele + 0 + i];
         }
+        // find critical by compare the angle of neighbours
+        double *nei_ang_vmax;
+        int *critic_angl_smax;
+        CHECK_ERROR(find_crit_anglvec(M1, vmax1, &nei_ang_vmax, &critic_angl_smax));
 
         // find unidirectional or bidirectional stress region mask:
         int *sdir;
         CHECK_ERROR(unibimask(M1, smax1, smax2, &sdir));
-        // analysis the unidirectional and biodirectional according to the material mask [red region]
+
+        // find charactristics of max & min shear stress vector field
+        // create max shear stress vector field
+        int num_zero_ssmax = 0;
+        double *zero_ptxyz_ssmax;
+        int *type_zero_ele_ssmax, *type_zero_p_ssmax;
+        find_critic_vec(M1, vmax1, num_zero_ssmax, &zero_ptxyz_ssmax, &type_zero_ele_ssmax, &type_zero_p_ssmax);
+        // create min shear stress vector field
+        int num_zero_ssmin = 0;
+        double *zero_ptxyz_ssmin;
+        int *type_zero_ele_ssmin, *type_zero_p_ssmin;
+        find_critic_vec(M1, vmax2, num_zero_ssmin, &zero_ptxyz_ssmin, &type_zero_ele_ssmin, &type_zero_p_ssmin);
 
         // write result in VTK format
+        M1->numExtraPoints = num_zero_ssmax + num_zero_ssmin;
+        double *comb_zero_ptxyz = calloc((size_t)M1->numExtraPoints * 3, sizeof(double));
+        for (int i = 0; i < num_zero_ssmax * 3; i++)
+            comb_zero_ptxyz[i] = zero_ptxyz_ssmax[i];
+        for (int i = num_zero_ssmax * 3; i < (num_zero_ssmin + num_zero_ssmax) * 3; i++)
+            comb_zero_ptxyz[i] = zero_ptxyz_ssmin[i];
+        M1->extra_ptxyz = comb_zero_ptxyz;
+        int *new_type_zero_p_ssmax = calloc(((size_t)M1->npoin + (size_t)M1->numExtraPoints) * 1, sizeof(int));
+        for (int i = 0; i < num_zero_ssmax; i++)
+        {
+            new_type_zero_p_ssmax[M1->npoin + i] = type_zero_p_ssmax[i];
+        }
+        int *new_type_zero_p_ssmin = calloc(((size_t)M1->npoin + (size_t)M1->numExtraPoints) * 1, sizeof(int));
+        for (int i = 0; i < num_zero_ssmin; i++)
+        {
+            new_type_zero_p_ssmin[M1->npoin + num_zero_ssmax + i] = type_zero_p_ssmin[i];
+        }
         FunctionWithArgs prtelefield[] =
             {
-                {"S1", 1, M1->nelem, S1, SCA_double_VTK},
-                {"S2", 1, M1->nelem, S2, SCA_double_VTK},
-                {"S3", 1, M1->nelem, S3, SCA_double_VTK},
                 {"SSmax", 1, M1->nelem, smax1, SCA_double_VTK},
                 {"SSmin", 1, M1->nelem, smax2, SCA_double_VTK},
                 {"Sn", 1, M1->nelem, sn, SCA_double_VTK},
-                {"sdir", 1, M1->nelem, sdir, SCA_int_VTK},
-                {"Melem", 1, M1->nelem, M1->Melem, SCA_int_VTK},
+                {"1or2_dir", 1, M1->nelem, sdir, SCA_int_VTK},
+                {"color_mask", 1, M1->nelem, M1->Melem, SCA_int_VTK},
+                {"Press_mask", 1, M1->nelem, M1->presmask, SCA_int_VTK},
+                {"Young_Modulus", 1, M1->nelem, M1->young, SCA_double_VTK},
+                {"cri_l_ssmax", 1, M1->nelem, type_zero_ele_ssmax, SCA_int_VTK},
+                {"cri_l_ssmin", 1, M1->nelem, type_zero_ele_ssmin, SCA_int_VTK},
+                {"nei_ang_vmax", 1, M1->nelem, nei_ang_vmax, SCA_double_VTK},
+                {"critic_angl_smax", 1, M1->nelem, critic_angl_smax, SCA_int_VTK},
                 {"VSmax", 3, M1->nelem, vmax1, VEC_double_VTK},
                 {"VSmin", 3, M1->nelem, vmax2, VEC_double_VTK},
                 {"Vn", 3, M1->nelem, vn, VEC_double_VTK},
-                {"normele", 3, M1->nelem, M1->normele, VEC_double_VTK},
             };
         size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
-        FunctionWithArgs prtpntfield[] = {NULL};
-        size_t countpnt = 0;
-        CHECK_ERROR(SaveVTK(pstdir, "stress", atoi(iteration), M1, tri3funcVTK, prtelefield, countele, prtpntfield, countpnt));
+        FunctionWithArgs prtpntfield[] = {
+            {"new_type_zero", 1, (M1->npoin + M1->numExtraPoints), new_type_zero_p_ssmax, SCA_int_VTK}};
+        size_t countpnt = 1;
+        char vtk_name[50];
+        strcpy(vtk_name, "ppa_");
+        strcat(vtk_name, study);
+        CHECK_ERROR(SaveVTK(pstdir, vtk_name, atoi(iteration), M1, tri3funcVTK, prtelefield, countele, prtpntfield, countpnt));
         CHECK_ERROR(analzs(M1, area, smax1, past_filename, study));
-        if (!strcmp(study, "msa.1"))
-            CHECK_ERROR(redanals_msa1(M1, sdir, area, past_filename));
+        //     if (!strcmp(study, "msa.1"))
+        //         CHECK_ERROR(redanals_msa1(M1, sdir, area, past_filename));
         free(sdir);
         free(smax1);
         free(smax2);
         free(vmax1);
         free(vmax2);
+        free(sn);
+        free(vn);
+        free(zero_ptxyz_ssmax);
+        free(zero_ptxyz_ssmin);
+        free(type_zero_ele_ssmax);
+        free(type_zero_ele_ssmin);
+        free(type_zero_p_ssmax);
+        free(type_zero_p_ssmin);
+        free(new_type_zero_p_ssmax);
+        free(critic_angl_smax);
+        free(nei_ang_vmax);
     }
     if (num_study == 2)
     {
@@ -355,6 +440,7 @@ int main(int argc, char const **argv)
         CHECK_ERROR(unibimask(M1, smax1, smin1, &sdir1));
         CHECK_ERROR(unibimask(M1, smax2, smin2, &sdir2));
         // write result in VTK format
+        M1->numExtraPoints = 0;
         FunctionWithArgs prtelefield[] =
             {
                 {"SSmax1", 1, M1->nelem, smax1, SCA_double_VTK},
@@ -376,25 +462,62 @@ int main(int argc, char const **argv)
         free(comp_vmax);
         free(smax1);
         free(smax2);
+        free(smin1);
+        free(smin2);
         free(vmax1);
         free(vmax2);
+        free(sdir1);
+        free(sdir2);
     }
     free(st);
-    free(st2);
+    if (num_study == 2)
+    {
+        free(st2);
+        free(eigenvalue2);
+        free(eigenvector2);
+        free(sorted_v2);
+        free(sorted_s2);
+    }
     free(eigenvalue);
     free(eigenvector);
-    free(eigenvalue2);
-    free(eigenvector2);
     free(area);
     free(sorted_s);
-    free(sorted_s2);
     free(sorted_v);
-    free(sorted_v2);
+
     free(inp);
-    free(M1);
+    freeMesh(M1);
+    fflush(stdout);
     return 0;
 }
+void freeMesh(mesh *m)
+{
+    if (!m)
+        return; // Check if the struct is NULL
 
+    SAFE_FREE(m->ptxyz);
+    SAFE_FREE(m->extra_ptxyz);
+    SAFE_FREE(m->elems);
+    SAFE_FREE(m->esurp);
+    SAFE_FREE(m->esurp_ptr);
+    SAFE_FREE(m->esure);
+    SAFE_FREE(m->fsure);
+    SAFE_FREE(m->psurf);
+    SAFE_FREE(m->esurf);
+    SAFE_FREE(m->normele);
+    SAFE_FREE(m->eledomain);
+    SAFE_FREE(m->open);
+    SAFE_FREE(m->Melem);
+    SAFE_FREE(m->rpts);
+    SAFE_FREE(m->relems);
+    SAFE_FREE(m->t);
+    SAFE_FREE(m->young);
+    SAFE_FREE(m->presmask);
+    SAFE_FREE(m->fixbmask);
+    SAFE_FREE(m->BCmask);
+
+    // Free the struct itself if it was dynamically allocated
+    free(m);
+}
 int files(void)
 {
     int e = 0;

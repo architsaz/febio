@@ -276,8 +276,10 @@ int mkdomain(int nelem, int *esure, int *relems, input *inp, int **eledomain2)
             {
                 for (int k = 0; k < 3; k++)
                 {
-                    if (eledomain[esure[3 * ele + k]] != 1)
-                        eledomain_new[esure[3 * ele + k]] = 1;
+                    int nei = esure[3 * ele + k];
+                    if (nei < 0 ) continue; // checking boundary elements
+                    if (eledomain[nei] != 1)
+                        eledomain_new[nei] = 1;
                 }
             }
         }
@@ -287,6 +289,7 @@ int mkdomain(int nelem, int *esure, int *relems, input *inp, int **eledomain2)
                 eledomain[ele] = 1;
         }
     }
+    free(eledomain_new);
     *eledomain2 = eledomain;
     return e;
 }
@@ -316,7 +319,7 @@ int calctrithick(mesh *M, input *inp)
     {
         for (int ele = 0; ele < M->nelem; ele++)
         {
-            for (int k = 0; k < inp->label_num; k++)
+            for (int k = 0; k < 3; k++)
             {
                 if (M->Melem[ele] == inp->label[k])
                 {
@@ -356,7 +359,7 @@ int calctriyoung(mesh *M, input *inp)
     {
         for (int ele = 0; ele < M->nelem; ele++)
         {
-            for (int k = 0; k < inp->label_num; k++)
+            for (int k = 0; k < 3; k++)
             {
                 if (M->Melem[ele] == inp->label[k])
                 {
@@ -373,7 +376,7 @@ int calctriyoung(mesh *M, input *inp)
 int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
 {
     int e = 0;
-    static int *pres;
+    int *pres;
     pres = calloc((size_t)M->nelem, sizeof(*pres));
     if (inp->used_BCmask == 1)
     {
@@ -409,7 +412,7 @@ int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
         }
     }
     // check the fix and pressure mask overlap
-    static int *pres2;
+    int *pres2;
     int nei;
     pres2 = calloc((size_t)M->nelem, sizeof(*pres2));
     for (int ele = 0; ele < M->nelem; ele++)
@@ -421,7 +424,7 @@ int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
             for (int i = 0; i < M->nredge; i++)
             {
                 nei = M1->esure[M->nredge * ele + i];
-                if (pres[nei] == 0)
+                if (nei>=0 && pres[nei] == 0)
                 {
                     pres2[ele] = 0;
                     break;
@@ -438,7 +441,7 @@ int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
             for (int i = 0; i < M->nredge; i++)
             {
                 nei = M1->esure[M->nredge * ele + i];
-                if (pres[nei] == 0)
+                if (nei>=0 && pres[nei] == 0)
                 {
                     pres2[ele] = 0;
                     break;
@@ -447,6 +450,7 @@ int calctripres(mesh *M, mesh *M1, input *inp, int *worst_ang_mask)
         }
     }
     M->presmask = pres2;
+    free(pres);
     printf("* A mask of elements is applied by considering both the regional mask and the input file.\n");
     return e;
 }
@@ -509,7 +513,7 @@ int cleanBCmasks(mesh *M, int *pres, int *fixed, int **region)
 {
     int e = 0;
     // cleaning notconnected pressure region in the pressure mask
-    static int *slcreg;
+    int *slcreg;
     int *queue, nq;
     slcreg = calloc((size_t)M->nelem, sizeof(*slcreg));
     queue = calloc((size_t)M->nelem, sizeof(*queue));
@@ -519,13 +523,19 @@ int cleanBCmasks(mesh *M, int *pres, int *fixed, int **region)
     printf("start to find the unattached region to the pressure mask:\n");
     for (int ele = 0; ele < M->nelem; ele++)
     {
-        if (M->relems[ele] == 16 && pres[ele] == 1 && pres[M->esure[3 * ele]] == 1 && pres[M->esure[3 * ele + 1]] == 1 && pres[M->esure[3 * ele + 2]] == 1)
+        int nei1 = M->esure[3 * ele];
+        int nei2 = M->esure[3 * ele + 1];
+        int nei3 = M->esure[3 * ele + 2];
+        //printf(" nei1: %d nei2: %d nei3: %d\n",nei1,nei2,nei3);
+        if ( nei1 <0 || nei2<0 || nei3<0 ) 
+            continue;
+        if (M->relems[ele] == 16 && pres[ele] == 1 && pres[nei1] == 1 && pres[nei2] == 1 && pres[nei3] == 1)
         {
             printf("picked the ele : %d as first gen.\n", ele);
             slcreg[ele] = 1;
-            queue[0] = M->esure[3 * ele];
-            queue[1] = M->esure[3 * ele + 1];
-            queue[2] = M->esure[3 * ele + 2];
+            queue[0] = nei1;
+            queue[1] = nei2;
+            queue[2] = nei3;
             nq = 3;
             break;
         }
@@ -552,6 +562,7 @@ int cleanBCmasks(mesh *M, int *pres, int *fixed, int **region)
         for (int i = 0; i < 3; i++)
         {
             int nei = M->esure[3 * ele + i];
+            if (nei<0) continue;
             if (slcreg[nei] == 0)
             {
                 queue[nq] = nei;

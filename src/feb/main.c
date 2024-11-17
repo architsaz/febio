@@ -8,6 +8,10 @@
 #include "febiofuncs.h"
 #include "myfuncs.h"
 
+void freeMesh(mesh *);
+void freeFunctionWithArgs(FunctionWithArgs *fwa);
+void freeFunctionWithArgs2(FunctionWithArgs2 *fwa2);
+
 int main(int argc, char const *argv[])
 {
     // parameters:
@@ -80,6 +84,10 @@ int main(int argc, char const *argv[])
     }
     // allocate memory for M1 mesh struct
     mesh *M1 = (mesh *)malloc(sizeof(mesh));
+    if (M1)
+    {
+        *M1 = (mesh){0}; // Set all integer and pointer fields to 0 or NULL
+    }
     if (M1 == NULL)
     {
         fprintf(stderr, "Memory allocation failed for M1 pointer\n");
@@ -96,20 +104,20 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(datafiles());
     // input variable :
     CHECK_ERROR(rinputf(rundir, M1, inp));
-    //    printf("path1: %s\npath2: %s\npath3: %s\n",datafilepath[0],datafilepath[1],datafilepath[2]);
     // reading domain parameters for unloaded geometry from .FLDS.ZFEM file //
     CHECK_ERROR(read_zfem(datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
     // reading wall charectristics [colored fields] from .wall file//
-    // label : <red=1, yellow=2, white=7, cyan=0, rupture=0, remain=0>
+    // label : <red=1, yellow=4, white=7, cyan=0, rupture=9, remain=0>
     CHECK_ERROR(read_wallmask(datafilepath[1], M1, inp, &M1->Melem));
-    // for (int i=0;i<10;i++) printf("%d\n",M1->Melem[i]);
     // reading regional mask [domme=16 body=8 neck=4 parental=1 distal=2 another e.g. aneu2=0]
     CHECK_ERROR(read_regionmask(datafilepath[2], M1, inp, &M1->relems, &M1->rpts));
-    //   for (int i=0;i<10;i++) printf("%d\n",M1->relems[i]);
-    // for (int i=0;i<10;i++) printf("%d\n",M1->rpts[i]);
     // conver tri3 mesh other type of surface mesh (tri6; quad4; quad8; quad9)
     // allocate memory for M2 mesh struct
     mesh *M2 = (mesh *)malloc(sizeof(mesh));
+    if (M2)
+    {
+        *M2 = (mesh){0}; // Set all integer and pointer fields to 0 or NULL
+    }
     if (M2 == NULL)
     {
         fprintf(stderr, "Memory allocation failed for M2 pointer\n");
@@ -133,12 +141,11 @@ int main(int argc, char const *argv[])
         }
         return 0;
     }
-    // thickness
+    //  thickness
     CHECK_ERROR(calctrithick(M2, inp));
     CHECK_ERROR(appliedgfilt_ptri6(M1, M2->t, 20));
-    // make mask for domain:
+    // make mask for domain/norm_mask/bad_mask/worst_mask:
     CHECK_ERROR(mkdomain(M1->nelem, M1->esure, M1->relems, inp, &M1->eledomain));
-    // material propertices
     double *normang;
     int *norm_mask, *bad_mask, *worst_mask;
     normang = calloc((size_t)M1->nelem, sizeof(*normang));
@@ -146,15 +153,14 @@ int main(int argc, char const *argv[])
     bad_mask = calloc((size_t)M1->nelem, sizeof(*bad_mask));
     worst_mask = calloc((size_t)M1->nelem, sizeof(*worst_mask));
     CHECK_ERROR(save_esurf(M1->nelem, M1->esure, M1->numf, &M1->esurf, M1->nredge));
-    // for (int f=0;f<10;f++) printf("f:%d\tele:%d\tele:%d\n",f,M1->esurf[2*f],M1->esurf[2*f+1]);
     CHECK_ERROR(save_normele(M1->nelem, M1->elems, M1->ptxyz, &M1->normele));
-    // for (int ele=0;ele<10;ele++) printf("ele:%d\tpx:%lf\tpy:%lf\tpz:%lf\n",ele,
-    // M1->normele[3*ele],M1->normele[3*ele+1],M1->normele[3*ele+2]);
     double dot_product, mag_u, mag_v;
     double u[3] = {0, 0, 0};
     double v[3] = {0, 0, 0};
     for (int f = 0; f < M1->numf; f++)
     {
+        if (M1->esurf[2 * f]<0 || M1->esurf[2 * f + 1]<0) 
+            continue;
         for (int i = 0; i < 3; i++)
             u[i] = M1->normele[3 * M1->esurf[2 * f] + i];
         for (int i = 0; i < 3; i++)
@@ -204,6 +210,7 @@ int main(int argc, char const *argv[])
             worst_mask[ele] = 1;
         }
     }
+    // Calculate the Young's Modulus according to the region and color mask
     if (step == 0)
     {
         CHECK_ERROR(calctriyoung(M2, inp));
@@ -219,9 +226,9 @@ int main(int argc, char const *argv[])
         CHECK_ERROR(ReadVTK(rundir, "checkinput", step - 1, prtreadfield, countfield));
         M2->young = (double *)field1;
     }
-    // modified the Young's Modulous matrix
+    // modified the Young's Modulus matrix
     if (step != 0)
-        printf("**\n**\n* Modifying the Young Modulus with option %s  - step : %d\n**\n**\n", argv[2], step);
+        printf("**\n**\n* Modifying the Young's Modulus with option %s  - step : %d\n**\n**\n", argv[2], step);
 
     if (modifoption == corrbynj)
     {
@@ -289,28 +296,30 @@ int main(int argc, char const *argv[])
         }
     }
     int *cleanregion;
-    // cleanregion = calloc((size_t)M1->nelem, sizeof(*cleanregion));
     CHECK_ERROR(cleanBCmasks(M1, M2->presmask, M2->fixbmask, &cleanregion));
-    //  check the mask after converting :
+    //check the mask after converting :
     FunctionWithArgs prtelefield[] =
         {
             {"Melems", 1, M2->nelem, M2->Melem, SCA_int_VTK},
             {"relems", 1, M2->nelem, M2->relems, SCA_int_VTK},
-            {"Young_Modulus", 1, M2->nelem, M2->young, SCA_double_VTK},
+            {"Young_Modulus", 1, M1->nelem, M2->young, SCA_double_VTK},
             {"Press_mask", 1, M2->nelem, M2->presmask, SCA_int_VTK},
             {"fixed_mask", 1, M2->nelem, M2->fixbmask, SCA_int_VTK},
             {"Max_normang", 1, M1->nelem, normang, SCA_double_VTK},
             {"norm_mask", 1, M1->nelem, norm_mask, SCA_int_VTK},
             {"bad_mask", 1, M1->nelem, bad_mask, SCA_int_VTK},
             {"worst_mask", 1, M1->nelem, worst_mask, SCA_int_VTK},
-            {"highcurvcorr", 1, M1->nelem, highcurvcorr, SCA_double_VTK},
             {"cleaningregion", 1, M1->nelem, cleanregion, SCA_int_VTK},
             {"domain", 1, M1->nelem, M1->eledomain, SCA_int_VTK},
+            {"Vn", 3, M1->nelem, M1->normele, VEC_double_VTK},
         };
     size_t countele = sizeof(prtelefield) / sizeof(prtelefield[0]);
     FunctionWithArgs prtpntfield[] = {
-        {"thickness", 1, M2->npoin, M2->t, SCA_double_VTK}};
+        {"thickness", 1, M2->npoin, M2->t, SCA_double_VTK}
+        };
     size_t countpnt = sizeof(prtpntfield) / sizeof(prtpntfield[0]);
+    // FunctionWithArgs prtpntfield[] = {NULL};
+    // size_t countpnt = 0;
     CHECK_ERROR(SaveVTK(rundir, "checkinput", step, M2, tri6funcVTK, prtelefield, countele, prtpntfield, countpnt));
     // writing .feb file
     CHECK_ERROR(febmkr(rundir, febname, step, M2, inp));
@@ -321,22 +330,79 @@ int main(int argc, char const *argv[])
     free(highcurvcorr);
     free(cleanregion);
     free(normang);
-    free(M2->elems);
-    free(M2->ptxyz);
-    free(M1->relems), free(M1->rpts);
-    free(M1->Melem);
-    free(M1->elems);
-    free(M1->ptxyz);
-    free(M1->esure);
-    free(M1->psurf);
-    free(M1->esurp);
-    free(M2->young);
-    free(M2->t);
-    free(M2->presmask);
-    free(M2->fixbmask);
-    free(M1);
-    free(M2);
+    freeMesh(M1);
+    freeMesh(M2);
     free(inp);
     fflush(stdout);
     return 0;
+}
+void freeMesh(mesh *m)
+{
+    if (!m)
+        return; // Check if the struct is NULL
+
+    SAFE_FREE(m->ptxyz);
+    SAFE_FREE(m->extra_ptxyz);
+    SAFE_FREE(m->elems);
+    SAFE_FREE(m->esurp);
+    SAFE_FREE(m->esurp_ptr);
+    SAFE_FREE(m->esure);
+    SAFE_FREE(m->fsure);
+    SAFE_FREE(m->psurf);
+    SAFE_FREE(m->esurf);
+    SAFE_FREE(m->normele);
+    SAFE_FREE(m->eledomain);
+    SAFE_FREE(m->open);
+    SAFE_FREE(m->Melem);
+    SAFE_FREE(m->rpts);
+    SAFE_FREE(m->relems);
+    SAFE_FREE(m->t);
+    SAFE_FREE(m->young);
+    SAFE_FREE(m->presmask);
+    SAFE_FREE(m->fixbmask);
+    SAFE_FREE(m->BCmask);
+
+    // Free the struct itself if it was dynamically allocated
+    free(m);
+}
+void freeFunctionWithArgs(FunctionWithArgs *fwa)
+{
+    if (!fwa)
+        return; // Check if the struct pointer is NULL
+
+    // Free dynamically allocated name
+    free(fwa->name);
+    fwa->name = NULL;
+
+    // Free field if it was dynamically allocated
+    free(fwa->field);
+    fwa->field = NULL;
+
+    // Free the struct itself if it was dynamically allocated
+    free(fwa);
+}
+void freeFunctionWithArgs2(FunctionWithArgs2 *fwa2)
+{
+    if (!fwa2)
+        return; // Check if the struct pointer is NULL
+
+    // Free dynamically allocated name
+    free(fwa2->name);
+    fwa2->name = NULL;
+
+    // Free each item in arr if it was allocated dynamically
+    if (fwa2->arr)
+    {
+        for (int i = 0; i < fwa2->nr; ++i)
+        {
+            free(fwa2->arr[i]);
+            fwa2->arr[i] = NULL;
+        }
+        // Free the array itself
+        free(fwa2->arr);
+        fwa2->arr = NULL;
+    }
+
+    // Free the struct itself if it was dynamically allocated
+    free(fwa2);
 }

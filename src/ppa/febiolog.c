@@ -6,6 +6,53 @@
 #include "common.h"
 #include "febiofuncs.h"
 #include "myfuncs.h"
+// find critical point by angles
+int find_crit_anglvec(mesh *M, double *vec, double **nei_ang2, int **mask2)
+{
+    // calc the max angle of normal vector of each element with its neighbours
+    double *nei_ang = calloc((size_t)M->nelem, sizeof(double));
+    int *mask = calloc((size_t)M->nelem, sizeof(int));
+    double v1[3], v2[3], mag1, mag2, angl;
+    for (int ele = 0; ele < M->nelem; ele++)
+    {
+        if (M->presmask[ele] == 0)
+            continue;
+        mag1 = angl = 0;
+        for (int i = 0; i < 3; i++)
+            v1[i] = vec[3 * ele + i];
+        for (int i = 0; i < 3; i++)
+            mag1 += v1[i] * v1[i];
+        mag1 = sqrt(mag1);
+        if (mag1 == 0)
+            continue;
+        for (int i = 0; i < 3; i++)
+            v1[i] /= mag1;
+        for (int nei = 0; nei < 3; nei++)
+        {
+            int nei_ele = M->esure[3 * ele + nei];
+            for (int i = 0; i < 3; i++)
+                v2[i] = vec[3 * nei_ele + i];
+            mag2 = 0;
+            for (int i = 0; i < 3; i++)
+                mag2 += v2[i] * v2[i];
+            mag2 = sqrt(mag2);
+            if (mag2 == 0)
+                continue;
+            for (int i = 0; i < 3; i++)
+                v2[i] /= mag2;
+            double dot = 0;
+            for (int i = 0; i < 3; i++)
+                dot += v1[i] * v2[i];
+            angl = MAX(angl, acos(dot / (mag2 * mag1)) * (180.0 / PI)); // unit of angle converted to the degree
+        }
+        nei_ang[ele] = angl;
+        if (angl > 90)
+            mask[ele] = 1;
+    }
+    *nei_ang2 = nei_ang;
+    *mask2 = mask;
+    return 0; // Successful signal
+}
 // analysis the red region and color mask for msa.1
 int redanals_msa1(mesh *M, int *sdir, double *area, char *casename)
 {
@@ -128,7 +175,7 @@ int analzs(mesh *M, double *area, double *smax1, char *casename, char *study)
         nele_press++;
         if (M->Melem[ele] == 1)
             nele_red++;
-        if (M->Melem[ele] == 2)
+        if (M->Melem[ele] == 4)
             nele_yel++;
         if (M->Melem[ele] == 7)
             nele_wht++;
@@ -185,7 +232,7 @@ int analzs(mesh *M, double *area, double *smax1, char *casename, char *study)
             nele_red++;
         }
 
-        if (M->Melem[ele] == 2)
+        if (M->Melem[ele] == 4)
         {
             smax_yel[nele_yel] = fabs(smax1[ele]);
             area_yel[nele_yel] = area[ele];

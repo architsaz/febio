@@ -18,7 +18,8 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	fprt = fopen(path, "r");
 	if (fprt == NULL)
 	{
-		fprintf(stderr, "ERROR: the %s dose not open.\n ", path);
+		fprintf(stderr, "ERROR: the %s does not open.\n ", path);
+		return -1;
 	}
 	char line[100], *str, key[50], value[50];
 	int i = 0;
@@ -71,12 +72,13 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	inp->NJyoung = atof(gethash(&table, "NJyoung"));
 	inp->incyoung = atof(gethash(&table, "incyoung"));
 
-	// label : <red, yellow, white, cyan, rupture, remain>
-	static int label2[3] = {0, 0, 0};
+	// label : <red, yellow, white, rupture>
+	static int label2[4] = {0, 0, 0, 0};
 	label2[0] = atoi(gethash(&table, "label_red"));
 	label2[1] = atoi(gethash(&table, "label_yellow"));
 	label2[2] = atoi(gethash(&table, "label_white"));
-	inp->label_num = 3;
+	label2[3] = atoi(gethash(&table, "label_rupture"));
+	inp->label_num = 4;
 	inp->label = label2;
 	// printf("label : %d %d %d \n",inp->label[0],inp->label[1],inp->label[2]);
 

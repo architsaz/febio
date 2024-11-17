@@ -1,10 +1,10 @@
 #!/bin/bash
 code_name=febio4
 # List of machines
-machines=("ishtar")
+machines=("ishtar" "loki" "hades" "attila" "heise")
 # List of cases
-if [ -f cases.txt ];then 
-    cases=($(cat cases.txt))
+if [ -f deleted_cases.txt ];then 
+    cases=($(cat deleted_cases.txt))
 else
     dir_root=$(pwd)
     echo "ERROR: the cases.txt does not exist in this path: $dir_root"  
@@ -18,7 +18,7 @@ echo "Total # cases in the list: $total_cases"
 echo "Total # of available mashines: ${#machines[@]}"
 
 run_case_on_machine () {
-    local dir_name=test
+    local dir_name=runfebio
     local code_dir=/dagon1/achitsaz/FEBio
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then

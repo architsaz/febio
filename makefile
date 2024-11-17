@@ -7,7 +7,7 @@ CFLAGS = -Wall -Wextra -pedantic -std=c99 -O -g -fsanitize=address \
          -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wconversion \
          -Wformat=2 -I/usr/include -Iinclude
 
-LDFLAGS = -L/usr/lib -lz -lm -fsanitize=address -fsanitize=undefined
+LDFLAGS = -L/usr/lib -lz -lm -lgsl -lgslcblas -lm -fsanitize=address -fsanitize=undefined
 
 # Directories
 SRC_DIR = src

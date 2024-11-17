@@ -64,6 +64,13 @@ typedef struct
     // logfile
     int print_st;
 } input;
+// Complex number 
+// Structure to hold complex numbers
+typedef struct
+{
+    double real;
+    double imag;
+} Complex;
 // Define the structure for a hash table entry
 typedef struct Entry
 {
