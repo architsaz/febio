@@ -1,0 +1,25 @@
+agh137.1            yes     diff                                      red region helpful to rupture
+agh148.1            yes     diff + compact     compact + flow pulse   red region is the next worse nominated   
+cta3_le.1           yes     diff    
+cta4                yes     delta                                     THERE IS ANOTHER CRITICAL DIFF LINE BUT NOTHING HAPPEN      
+cta5                yes     sliding + swrilling                                     
+micro13             yes     small surface + high Smax                 The rupture site is not on bleb 
+mri8                yes     diff + swrilling                          
+newCTA23            yes     2 diff region + high Smax
+uic005.1            yes?     small region + swrilling + high Smax      Aneurysm growth on the critical line :-)
+                            or maight be flow pulse on critical lines + high Smax                   
+uic020.1            yes     there is 5 regions ( diff + swrilling + high Smax) on the Smax vector field but the fatty region moderate stress but rupture happen         
+uic021.1            yes     can find 2 diff in the rupture site
+uic023.1            yes     diff                                        I could not find any notion to justify the thinner region 
+uic024.1            yes     small surface + diff 
+uic036.1            yes     close to the High Smax
+uic037.1            yes     diff                                            but the without mask shows better the diff area 
+uic038.1            yes     small surface 
+uic054.1            yes     diff 
+uic055.1            yes?    diff close to the rupture site 
+uic058.1            yes     diff    
+uic067.1
+uic071.1
+uic072.1
+visa27
+visa32.1

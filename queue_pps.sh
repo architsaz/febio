@@ -1,8 +1,8 @@
 #!/bin/bash
 code_name=ppa_exec
 # List of machines
-# machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
-machines=("ishtar")
+machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
+#machines=("ishtar")
 # List of cases
 if [ -f cases.txt ];then 
     cases=($(cat cases.txt))
@@ -24,11 +24,15 @@ run_case_on_machine () {
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then
         #mkdir $code_dir/$dir_name/$2/comp.1.2
-        cd $code_dir/$dir_name/$2/pst.1/ 
-        nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 -i 0 > run.log 2>&1 &
+        # cd $code_dir/$dir_name/$2/msa.2/ 
+        # cp /dagon1/achitsaz/FEBio/scripts/input_homo.txt  input.txt
+        # cd $code_dir/$dir_name/$2/msa.2/ 
+        # cp /dagon1/achitsaz/FEBio/scripts/input_hete.txt  input.txt
+       cd $code_dir/$dir_name/$2/comp.1.2/
+       nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 msa.2 -i 0 0 > run.log 2>&1 &
     else
         #ssh $1 "mkdir $code_dir/$dir_name/$2/comp.1.2 && cd $code_dir/$dir_name/$2/comp.1.2/ && nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 msa.2 -i 0 0 > run.log 2>&1 &" &
-        ssh $1 "cd $code_dir/$dir_name/$2/pst.1/ && nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 -i 0 > run.log 2>&1 &" &
+        ssh $1 "cd $code_dir/$dir_name/$2/comp.1.2/ && nohup $code_dir/scripts/build/ppa_exec -c $2 -s msa.1 msa.2 -i 0 0 > run.log 2>&1 &" &
     fi 
 }
 
