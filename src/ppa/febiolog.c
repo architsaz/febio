@@ -661,12 +661,15 @@ int readfebiolog(char *path, mesh *M, double **st2, read_time logtime)
     // st [9] = [sxx,sxy,sxz;syx,syy,syz;szx,szy,szz]
     fptr = fopen(path, "r");
     int junk, nscan = 0;
+    int find_time = 0;
     while (fgets(str, 256, fptr) != NULL)
     {
         if (sscanf(str, "Time = %lf", &time_value) == 1)
         {
             if (time_value == logtime_value)
             {
+                printf("* start to read stress tensor at time: %lf",time_value);
+                find_time++;
                 fgets(str, 256, fptr);
                 for (int ele = 0; ele < nelem; ele++)
                 {
@@ -686,6 +689,10 @@ int readfebiolog(char *path, mesh *M, double **st2, read_time logtime)
                 }
             }
         }
+    }
+    if (find_time == 0){
+        fprintf(stderr, "ERROR: can not find time %lf in the log file!\n", max_time);
+        exit(EXIT_FAILURE);
     }
     // for(int ele=0;ele<10;ele++){
     //     printf("ele: %d ",ele);

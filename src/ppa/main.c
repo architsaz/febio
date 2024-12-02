@@ -67,7 +67,7 @@ int main(int argc, char const **argv)
 
             if (i + 1 < argc && argv[i + 1][0] != '-')
             {
-                // printf("Argument for time option: %s\n", argv[i + 1]);
+                printf("Argument for time option: %s\n", argv[i + 1]);
                 strcpy(readingtime1, argv[i + 1]);
                 num_time++;
                 i++; // Skip the next argument
@@ -124,7 +124,7 @@ int main(int argc, char const **argv)
     rt1 = end_first_step;
     rt2 = end_first_step;
 
-    if (num_time == 1 && num_time == 2)
+    if (num_time == 1 || num_time == 2)
     {
         if (!strcmp(readingtime1, "1"))
             rt1 = end_first_step;
@@ -142,7 +142,6 @@ int main(int argc, char const **argv)
         if (!strcmp(readingtime2, "max"))
             rt2 = time_max;
     }
-
     // make path for files
     CHECK_ERROR(dirs());
     CHECK_ERROR(files());
