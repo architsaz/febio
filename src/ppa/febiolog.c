@@ -442,8 +442,9 @@ int unibimask(mesh *M, double *smax1, double *smax2, int **sdir2)
     {
         if (M->presmask[ele] == 0)
             continue;
-        double hill = (1 / (1 + pow((fabs(smax2[ele]) / fabs(smax1[ele])), 2)));
-        if (hill < 0.65 && hill > 0.5)
+        //double hill = (1 / (1 + pow((fabs(smax2[ele]) / fabs(smax1[ele])), 2)));
+        double hill = (fabs(smax2[ele])/fabs(smax1[ele]));
+        if (hill < 0.5 )
         {
             sdir[ele] = 4;
         }
@@ -668,7 +669,7 @@ int readfebiolog(char *path, mesh *M, double **st2, read_time logtime)
         {
             if (time_value == logtime_value)
             {
-                printf("* start to read stress tensor at time: %lf",time_value);
+                printf("* start to read stress tensor at time: %lf\n",time_value);
                 find_time++;
                 fgets(str, 256, fptr);
                 for (int ele = 0; ele < nelem; ele++)

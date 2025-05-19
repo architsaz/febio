@@ -1,99 +1,144 @@
-#!/bin/sh
-#sed -i 's/\r//' run.sh
-# Checking provided argument
+#!/bin/bash
+#
+# Description:
+#   This script prepares and runs a simulation based on provided arguments.
+#   It sets OpenMP environment variables, checks for required executables,
+#   logs run information, and executes actions based on the chosen option.
+#
+# Usage:
+#   ./run_simulation.sh <casename> <option> <start_step> <last_step>
+#
+# Arguments:
+#   <casename>   : Identifier for the simulation case.
+#   <option>     : One of the available options: mknjmask | highcurv | nocorr | corrbynj | enhance.
+#   <start_step> : The starting step (numerical).
+#   <last_step>  : The ending step (numerical).
+#
+# Example:
+#   ./run_simulation.sh Case01 highcurv 0 10
+#
+# Notes:
+#   - Make sure that the required executables and files exist in the specified paths.
+#   - The script uses different executables based on the hostname.
+#
+# Help:
+#   ./run_simulation.sh --help
+#
+
+# Function to display the help message
+show_help() {
+    grep '^#' "$0" | cut -c 3-
+    exit 0
+}
+
+# Display help if requested
+if [ "$1" = "--help" ]; then
+    show_help
+fi
+
+# Argument validation: ensure exactly four arguments are provided
 if [ "$#" -ne 4 ]; then
-    echo " # of arguments: $#"
-    echo "- Required: four arguments"
-    echo "- Usage: <casename> <option> <start_step> <last_step>"
-    echo "- Available options: mknjmask|highcurv|nocorr|corrbynj|enhance"
+    echo "Error: Provided $# arguments; four arguments are required."
+    echo "Usage: <casename> <option> <start_step> <last_step>"
     exit 1
 fi
 
-# Get option
-option=$2
+# Assigning arguments to variables
+casename="$1"
+option="$2"
+start_step="$3"
+last_step="$4"
 
-#OpenMP
+# Set OpenMP environment variables
 ncpu=12
-export OMP_NUM_THREADS=$ncpu
-export KMP_STACKSIZE=1g
-export OMP_DYNAMIC=FALSE
+export OMP_NUM_THREADS="$ncpu"
+export KMP_STACKSIZE="1g"
+export OMP_DYNAMIC="FALSE"
 
-#Limits
+# Set resource limits to unlimited for stack and virtual memory
 ulimit -s unlimited
 ulimit -v unlimited
 
-#
+# Determine executable paths based on hostname
 if [ "$(hostname)" = "L-P4000-N05218" ]; then
     febmkr_EXE="../../../build/febmkr_exec"
     febio4_EXE="/opt/FEBioStudio/bin/febio4"
 else
-    febmkr_EXE="/dagon1/achitsaz/FEBio/scripts/build/febmkr_exec"
+    febmkr_EXE="/dagon1/achitsaz/mylib/EXECs/febmkr_exec"
     febio4_EXE="/dagon1/achitsaz/app/FEBioStudio/bin/febio4"
 fi
-if [ ! -e ${febmkr_EXE} ]; then
-  echo "Could not find ${febmkr_EXE}"
+
+# Check if the executables exist
+if [ ! -e "$febmkr_EXE" ]; then
+  echo "Error: Could not find executable: $febmkr_EXE"
   exit 1
 fi
-if [ ! -e ${febio4_EXE} ]; then
-  echo "Could not find ${febio4_EXE}"
+
+if [ ! -e "$febio4_EXE" ]; then
+  echo "Error: Could not find executable: $febio4_EXE"
   exit 1
 fi
-#Echo
-echo "using ${febio4_EXE}"
-echo "using ${febmkr_EXE}"
+
+# Display the executables being used and OpenMP settings
+echo "Using febio4 executable: $febio4_EXE"
+echo "Using febmkr executable: $febmkr_EXE"
 env | grep OMP_NUM_THREADS
 
-#Info
-INFO=run.info
-if [ -e ${INFO} -o -e ${INFO}.gz ]; then
-  echo "Error: ${INFO} already exists!"
+# Log information file (run.info)
+INFO="run.info"
+if [ -e "$INFO" ] || [ -e "${INFO}.gz" ]; then
+  echo "Error: $INFO (or ${INFO}.gz) already exists!"
   exit 1
 fi
-echo "host=`hostname`" > ${INFO}
-echo "wdir=`pwd`" >> ${INFO}
-echo `env | grep OMP_NUM_THREADS` >> ${INFO}
-PID=$!
-echo "running in background ... [${PID}]"
-echo "pid=${PID}" >> ${INFO}
-echo "UniqueID=$(date +%s)-$1-$2" >>${INFO}
-#Run
-# Perform actions based on the argument
-case $2 in
+
+# Write environment and run information to the info file
+{
+    echo "host=$(hostname)"
+    echo "working_directory=$(pwd)"
+    env | grep OMP_NUM_THREADS
+    echo "pid=$$"
+    echo "UniqueID=$(date +%s)-${casename}-${option}"
+} > "$INFO"
+
+echo "Running in background ... [pid: $$]"
+
+# Run simulation based on provided option
+case "$option" in
     nocorr|highcurv)
-        $febmkr_EXE $1 $2 0  > out 2>&1 
-        $febio4_EXE -i pres_0.feb >> out 2>&1 
+        # Option: nocorr or highcurv with fixed start step 0
+        "$febmkr_EXE" "$casename" "$option" 0 > out 2>&1 
+        "$febio4_EXE" -i pres_0.feb >> out 2>&1
+        # Check for the termination message in pres_0.log
         checkresult=$(grep "N O R M A L" "pres_0.log")
-        if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ];then
+        if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ]; then
             echo "$checkresult without Young's Modulus modification."
-            break
         fi
         ;;
     mknjmask)
-        $febmkr_EXE $1 $2 $3 > out 2>&1 
+        # Option: mknjmask with provided start_step parameter
+        "$febmkr_EXE" "$casename" "$option" "$start_step" > out 2>&1
         ;;    
     corrbynj|enhance)
-        for i in $(seq $3 $4); do
-	    echo "-starting $i loop of $2 option..."
-            if [ $i -eq 0 ]; then
-                $febmkr_EXE $1 nocorr 0 > out 2>&1 
-                $febio4_EXE -i pres_0.feb >> out 2>&1 
+        # Option: corrbynj or enhance loops from start_step to last_step
+        for i in $(seq "$start_step" "$last_step"); do
+            echo "Starting loop iteration $i for option $option..."
+            if [ "$i" -eq 0 ]; then
+                "$febmkr_EXE" "$casename" nocorr 0 > out 2>&1
+                "$febio4_EXE" -i pres_0.feb >> out 2>&1
             else
-                $febmkr_EXE $1 $2 $i >> out 2>&1 
-                $febio4_EXE -i pres_$i.feb >> out 2>&1 
+                "$febmkr_EXE" "$casename" "$option" "$i" >> out 2>&1
+                "$febio4_EXE" -i pres_"$i".feb >> out 2>&1
             fi
-            checkresult=$(grep "N O R M A L" "pres_$i.log")
-            if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ];then
-                echo "$checkresult at $i loop with ($2) Young's Modulus modification."
+            checkresult=$(grep "N O R M A L" "pres_${i}.log")
+            if [ "$checkresult" = " N O R M A L   T E R M I N A T I O N" ]; then
+                echo "$checkresult at iteration $i with option ($option) Young's Modulus modification."
                 break
             fi
         done
         ;;
     *)
-        echo "Invalid argument: $2"
-        echo "Usage: $0 {mknjmask|nocorr|corrbynj|enhance}"
+        echo "Invalid option: $option"
+        echo "Usage: $0 {mknjmask|nocorr|corrbynj|highcurv|enhance} <start_step> <last_step>"
         exit 1
         ;;
 esac
-
-
-

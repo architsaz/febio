@@ -143,7 +143,7 @@ int main(int argc, char const *argv[])
     }
     //  thickness
     CHECK_ERROR(calctrithick(M2, inp));
-    CHECK_ERROR(appliedgfilt_ptri6(M1, M2->t, 20));
+    CHECK_ERROR(appliedgfilt_ptri6(M1, M2->t, 5));
     // make mask for domain/norm_mask/bad_mask/worst_mask:
     CHECK_ERROR(mkdomain(M1->nelem, M1->esure, M1->relems, inp, &M1->eledomain));
     double *normang;
@@ -214,7 +214,7 @@ int main(int argc, char const *argv[])
     if (step == 0)
     {
         CHECK_ERROR(calctriyoung(M2, inp));
-        CHECK_ERROR(appliedgfilt_etri(M1, M2->young, 10));
+        CHECK_ERROR(appliedgfilt_etri(M1, M2->young, 5));
     }
     else
     {

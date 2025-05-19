@@ -596,6 +596,10 @@ int find_zero_magnitude(double *a, double *b, double *c, double *va, double *vb,
 {
 	int found = 0;
 	double step = 0.01; // Step size for grid search
+	double min = 10000000000;
+	if (min>vector_magnitude(va)) min = vector_magnitude(va); 
+	if (min>vector_magnitude(vb)) min = vector_magnitude(vb); 
+	if (min>vector_magnitude(vc)) min = vector_magnitude(vc); 
 	for (double u = 0; u <= 1; u += step)
 	{
 		for (double v = 0; v <= 1 - u; v += step)
@@ -605,7 +609,7 @@ int find_zero_magnitude(double *a, double *b, double *c, double *va, double *vb,
 			double interp_vec[3];
 			interpolate_vector(p, a, b, c, va, vb, vc, interp_vec);
 			double mag = vector_magnitude(interp_vec);
-			if (mag < 0.1)
+			if (mag < (min/100))
 			{ // Threshold for zero magnitude
 				zero_point[0] = p[0];
 				zero_point[1] = p[1];

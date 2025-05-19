@@ -207,49 +207,17 @@ int main(int argc, char const **argv)
     if (num_study == 2)
         CHECK_ERROR(readfebiolog(past_datafilepath[4], M1, &st2, rt2));
     // find the eigenvectors and eigenvalues of stress tensor
+    double *st_cpy = (double *)malloc(9 * (size_t)M1->nelem * sizeof(double));
+    double *st2_cpy = (double *)malloc(9 * (size_t)M1->nelem * sizeof(double));
+    for (int i = 0; i < M1->nelem; i++)
+        st_cpy[i] = st[i];
     double *eigenvalue, *eigenvector, *eigenvalue2, *eigenvector2;
-    CHECK_ERROR(jacobiMethod(M1->nelem, st, &eigenvalue, &eigenvector));
-    if (num_study == 2)
-        CHECK_ERROR(jacobiMethod(M1->nelem, st2, &eigenvalue2, &eigenvector2));
-    // checking the value of eigen values (they should be positive)
-    for (int ele = 0; ele < M1->nelem; ele++)
-    {
-        for (int v = 0; v < 3; v++)
-        {
-            if (M1->presmask[ele] != 1)
-            {
-                for (int i = 0; i < 3; i++)
-                    eigenvector[9 * ele + 3 * i + v] = 0;
-                eigenvalue[3 * ele + v] = 0;
-            }
-            if (eigenvalue[3 * ele + v] < 0)
-            {
-                for (int i = 0; i < 3; i++)
-                    eigenvector[9 * ele + 3 * i + v] = -1 * eigenvector[9 * ele + 3 * i + v];
-                eigenvalue[3 * ele + v] = -1 * eigenvalue[3 * ele + v];
-            }
-        }
-    }
+    CHECK_ERROR(jacobiMethod(M1->nelem, st_cpy, &eigenvalue, &eigenvector));
     if (num_study == 2)
     {
-        for (int ele = 0; ele < M1->nelem; ele++)
-        {
-            for (int v = 0; v < 3; v++)
-            {
-                if (M1->presmask[ele] != 1)
-                {
-                    for (int i = 0; i < 3; i++)
-                        eigenvector2[9 * ele + 3 * i + v] = 0;
-                    eigenvalue2[3 * ele + v] = 0;
-                }
-                if (eigenvalue2[3 * ele + v] < 0)
-                {
-                    for (int i = 0; i < 3; i++)
-                        eigenvector2[9 * ele + 3 * i + v] = -1 * eigenvector2[9 * ele + 3 * i + v];
-                    eigenvalue2[3 * ele + v] = -1 * eigenvalue2[3 * ele + v];
-                }
-            }
-        }
+        for (int i = 0; i < M1->nelem; i++)
+            st2_cpy[i] = st2[i];
+        CHECK_ERROR(jacobiMethod(M1->nelem, st2_cpy, &eigenvalue2, &eigenvector2));
     }
     // sorted eigen vectors and eigen values:
     double *sorted_s, *sorted_s2;
@@ -259,6 +227,32 @@ int main(int argc, char const **argv)
         CHECK_ERROR(sortedsv(M1, eigenvalue2, eigenvector2, &sorted_s2, &sorted_v2));
     if (num_study == 1)
     {
+        int num_s = 0;
+        for (int i = 0; i < M1->nelem; i++)
+        {
+            if (M1->relems[i] == 16)
+            {
+                printf("ele: %d\n", i);
+                printf("%lf %lf %lf\n", st[9 * i], st[9 * i + 1], st[9 * i + 2]);
+                printf("%lf %lf %lf\n", st[9 * i + 3], st[9 * i + 3 + 1], st[9 * i + 3 + 2]);
+                printf("%lf %lf %lf\n", st[9 * i + 6], st[9 * i + 6 + 1], st[9 * i + 6 + 2]);
+                printf("\n");
+                printf("normal:\n%lf %lf %lf\n", M1->normele[3 * i], M1->normele[3 * i + 1], M1->normele[3 * i + 2]);
+                printf("\n");
+                printf("eigen_values:\n%lf %lf %lf\n", eigenvalue[3 * i], eigenvalue[3 * i + 1], eigenvalue[3 * i + 2]);
+                printf("\n");
+                printf("eigen_vect 1:\n%lf %lf %lf\n", eigenvector[9 * i], eigenvector[9 * i + 1], eigenvector[9 * i + 2]);
+                printf("\n");
+                printf("eigen_vect 2:\n%lf %lf %lf\n", eigenvector[9 * i + 3], eigenvector[9 * i + 4], eigenvector[9 * i + 5]);
+                printf("\n");
+                printf("eigen_vect 3:\n%lf %lf %lf\n", eigenvector[9 * i + 6], eigenvector[9 * i + 7], eigenvector[9 * i + 8]);
+                printf("\n");
+                num_s++;
+            }
+            if (num_s == 1)
+                break;
+        }
+
         double *smax1, *smax2, *sn, *vmax1, *vmax2, *vn;
         smax1 = calloc((size_t)M1->nelem, sizeof(*smax1));
         smax2 = calloc((size_t)M1->nelem, sizeof(*smax2));
@@ -300,12 +294,24 @@ int main(int argc, char const **argv)
         int num_zero_ssmax = 0;
         double *zero_ptxyz_ssmax;
         int *type_zero_ele_ssmax, *type_zero_p_ssmax;
-        find_critic_vec(M1, vmax1, num_zero_ssmax, &zero_ptxyz_ssmax, &type_zero_ele_ssmax, &type_zero_p_ssmax);
+        double *vec1 = (double *)malloc(3 * (size_t)(M1->nelem) * sizeof(double));
+        for (int ele = 0; ele < M1->nelem; ele++)
+        {
+            for (int i = 0; i < 3; i++)
+                vec1[3 * ele + i] = vmax1[3 * ele + i] * smax1[ele];
+        }
+        find_critic_vec(M1, vec1, num_zero_ssmax, &zero_ptxyz_ssmax, &type_zero_ele_ssmax, &type_zero_p_ssmax);
         // create min shear stress vector field
         int num_zero_ssmin = 0;
         double *zero_ptxyz_ssmin;
         int *type_zero_ele_ssmin, *type_zero_p_ssmin;
-        find_critic_vec(M1, vmax2, num_zero_ssmin, &zero_ptxyz_ssmin, &type_zero_ele_ssmin, &type_zero_p_ssmin);
+        double *vec2 = (double *)malloc(3 * (size_t)(M1->nelem) * sizeof(double));
+        for (int ele = 0; ele < M1->nelem; ele++)
+        {
+            for (int i = 0; i < 3; i++)
+                vec2[3 * ele + i] = vmax2[3 * ele + i] * smax2[ele];
+        }
+        find_critic_vec(M1, vec2, num_zero_ssmin, &zero_ptxyz_ssmin, &type_zero_ele_ssmin, &type_zero_p_ssmin);
 
         // write result in VTK format
         M1->numExtraPoints = num_zero_ssmax + num_zero_ssmin;
@@ -369,6 +375,8 @@ int main(int argc, char const **argv)
         free(new_type_zero_p_ssmax);
         free(critic_angl_smax);
         free(nei_ang_vmax);
+        free(vec1);
+        free(vec2);
     }
     if (num_study == 2)
     {
@@ -469,6 +477,8 @@ int main(int argc, char const **argv)
         free(sdir2);
     }
     free(st);
+    free(st_cpy);
+    free(st2_cpy);
     if (num_study == 2)
     {
         free(st2);

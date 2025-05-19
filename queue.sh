@@ -3,12 +3,13 @@ code_name=febio4
 # List of machines
 machines=("ishtar" "loki" "hades" "attila" "heise")
 # List of cases
-if [ -f deleted_cases.txt ];then 
-    cases=($(cat deleted_cases.txt))
+lists_cases_dir=/dagon1/achitsaz/runfebio/all_labeled_cases.txt
+
+if [ -f "$lists_cases_dir" ]; then 
+    cases=($(cat "$lists_cases_dir"))
 else
-    dir_root=$(pwd)
-    echo "ERROR: the cases.txt does not exist in this path: $dir_root"  
-    exit
+    echo "ERROR: File does not exist at: $lists_cases_dir"
+    exit 1
 fi
  
 completed_cases=0
@@ -18,17 +19,16 @@ echo "Total # cases in the list: $total_cases"
 echo "Total # of available mashines: ${#machines[@]}"
 
 run_case_on_machine () {
-    local dir_name=runfebio
-    local code_dir=/dagon1/achitsaz/FEBio
+    local dir_name=/dagon1/achitsaz/runfebio
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then
         cd $code_dir 
-        /dagon1/achitsaz/FEBio/scripts/mkrdata.sh $2 $dir_name
-        cd $code_dir/$dir_name/$2/msa.1/ 
+        /dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name
+        cd $dir_name/$2/msa.1/ 
         nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &
     else
-        ssh $1 "cd $code_dir && /dagon1/achitsaz/FEBio/scripts/mkrdata.sh $2 $dir_name"
-        ssh $1 "cd $code_dir/$dir_name/$2/msa.1/ && nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &" &
+        ssh $1 "/dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name"
+        ssh $1 "cd $dir_name/$2/msa.1/ && nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &" &
     fi 
 }
 
