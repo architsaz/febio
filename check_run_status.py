@@ -24,7 +24,7 @@ for case in list_labeled_cases:
     case_names.append(case)
 
     # Check if BCmask.txt exists
-    BCmask_path = os.path.join(dir_runfebio, case, "data", "BCmask.txt")
+    BCmask_path = os.path.join(dir_runfebio, case, "data", "BCmask.zfem.labels")
     corrected_bc.append(1 if os.path.exists(BCmask_path) else 0)
 
     # Check msa.1 status

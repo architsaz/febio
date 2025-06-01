@@ -27,7 +27,7 @@ int datafiles(void)
     strcat(datafilepath[2], "labels_srf.zfem");
 
     strcpy(datafilepath[3], datadir);
-    strcat(datafilepath[3], "BCmask.txt");
+    strcat(datafilepath[3], "BCmask.zfem.labels");
 
     return e;
 }

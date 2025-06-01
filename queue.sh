@@ -22,13 +22,13 @@ run_case_on_machine () {
     local dir_name=/dagon1/achitsaz/runfebio
     echo "-> Running $2 on machine $1"
     if [ $1 == "ishtar" ]; then
-        cd $code_dir 
-        /dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name
-        cd $dir_name/$2/msa.1/ 
+        # cd $code_dir 
+        # /dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name
+        cd $dir_name/$2/msa.2/ 
         nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &
     else
-        ssh $1 "/dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name"
-        ssh $1 "cd $dir_name/$2/msa.1/ && nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &" &
+        # ssh $1 "/dagon1/achitsaz/FEBio/scripts.feb/mkrdata.sh $2 $dir_name"
+        ssh $1 "cd $dir_name/$2/msa.2/ && nohup ./run.sh $2 nocorr 0 0 > run.log 2>&1 &" &
     fi 
 }
 
