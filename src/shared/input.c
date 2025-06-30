@@ -47,6 +47,7 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	// mask status:
 	inp->used_cmask = atoi(gethash(&table, "used_cmask"));
 	inp->used_rmask = atoi(gethash(&table, "used_rmask"));
+	inp->used_lc = atoi(gethash(&table, "used_lc"));
 	// curvature mask:
 	inp->norm_ang = atof(gethash(&table, "norm_ang"));
 	inp->bad_ang = atof(gethash(&table, "bad_ang"));

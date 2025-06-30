@@ -48,7 +48,7 @@ typedef struct
     double *young_r, *young_l, NJyoung, incyoung;
     double pois, ro;
     // mask status
-    int used_cmask, used_rmask;
+    int used_cmask, used_rmask, used_lc;
     // label : <red, yellow, white, cyan, rupture, remain>
     int *label, label_num;
     // boundary condition:

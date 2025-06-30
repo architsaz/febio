@@ -76,5 +76,6 @@ double vector_magnitude(double *v);
 int inverse_classic_GEPP(double *matrix, double *inverse, int n);
 int inverse_matrix_SVD(double *mat, double *mat_inv, int n);
 int find_critic_vec(mesh *M1, double *vec, int num_zero, double **zero_ptxyz2, int **type_zero_ele2, int **type_zero_p);
+int read_loadcrve(char *path);
 
 #endif // MYFUNCS_H

@@ -5,7 +5,7 @@ machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
 # machines=("ishtar")
 
 list_dir=/dagon1/achitsaz/runfebio/problematic_run_cases.txt
-use_test_case=true  # Set to false to read from file
+use_test_case=false  # Set to false to read from file
 
 if [ "$use_test_case" = true ]; then
     raw_cases=("agh111.1")

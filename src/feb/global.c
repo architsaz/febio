@@ -12,4 +12,7 @@
         char filename[50];  
 	//solver para
 		int NrNj=0;	
-		double *NJmask;     
+		double *NJmask; 
+	// loading curve 
+		double *time_lc,*load_lc;
+    	int np_lc=0;    

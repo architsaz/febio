@@ -943,7 +943,11 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t</Boundary>\n");
     fprintf(fptr, "\t<Loads>\n");
     fprintf(fptr, "\t\t<surface_load name=\"Pressure1\" surface=\"PressureLoad1\" type=\"pressure\">\n");
-    fprintf(fptr, "\t\t\t<pressure lc=\"1\">%lf</pressure>\n", inp->pres);
+    if (inp->used_lc == 1){
+        fprintf(fptr, "\t\t\t<pressure lc=\"1\">%lf</pressure>\n", load_lc[0]*1333.22); // conver mmHg to the dyn/cm^2
+    }else{
+        fprintf(fptr, "\t\t\t<pressure lc=\"1\">%lf</pressure>\n", inp->pres);
+    }
     fprintf(fptr, "\t\t\t<symmetric_stiffness>0</symmetric_stiffness>\n");
     fprintf(fptr, "\t\t\t<linear>0</linear>\n");
     fprintf(fptr, "\t\t\t<shell_bottom>0</shell_bottom>\n");
@@ -964,9 +968,18 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t\t<interpolate>LINEAR</interpolate>\n");
     fprintf(fptr, "\t\t\t<extend>CONSTANT</extend>\n");
     fprintf(fptr, "\t\t\t<points>\n");
-    fprintf(fptr, "\t\t\t\t<pt>0,0</pt>\n");
-    fprintf(fptr, "\t\t\t\t<pt>1,1</pt>\n");
-    fprintf(fptr, "\t\t\t\t<pt>2,%lf</pt>\n", inp->ultipres / inp->pres);
+    if (inp->used_lc==1){
+        fprintf(fptr, "\t\t\t\t<pt>0.00,0.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>1.00,1.00</pt>\n");
+        for (int i=1;i<np_lc;i++){
+          fprintf(fptr, "\t\t\t\t<pt>%.2lf,%.2lf</pt>\n",time_lc[i]+1.00,load_lc[i]/load_lc[0]);  
+        }
+        fprintf(fptr, "\t\t\t\t<pt>2.00,%.2lf</pt>\n",load_lc[np_lc-1]/load_lc[0]);
+    }else{
+        fprintf(fptr, "\t\t\t\t<pt>0.00,0.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>1.00,1.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>2.00,%.2lf</pt>\n", inp->ultipres / inp->pres);
+    }
     fprintf(fptr, "\t\t\t</points>\n");
     fprintf(fptr, "\t\t</load_controller>\n");
     fprintf(fptr, "\t</LoadData>\n");
@@ -994,4 +1007,90 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     }
     printf("* wrote %s in the feb format!\n", path);
     return e;
+}
+int read_loadcrve(char *path){
+/* define File pointer:*/
+    FILE *fptr;
+    fptr = calloc(1, sizeof(*fptr));
+/* Opening File */
+    fptr = fopen(path, "r");
+    if (fptr == NULL)
+    {
+        fprintf(stderr, "ERROR: Cannot open file - %s.\n", path);
+        return -1;
+    }  
+/* Read all lines of the file */
+    int buffer = 100;
+    char *str;
+    char line[buffer];
+    int endcount = 0, nscan, iline;
+    char test[20];
+
+    while (1)
+    {
+        // Start reading points
+        str = edit_endline_character(line, buffer, fptr);
+        nscan = sscanf(str, "%s", test);
+
+        if (!strcmp(test, "POINTS"))
+        {
+            printf("Reading POINTS.\n");
+
+            /* Read Number of Points */
+            str = edit_endline_character(line, buffer, fptr);
+            nscan = sscanf(str, "%d", &np_lc);
+            printf("Number of Points = %d.\n", np_lc);
+            if (nscan != 1)
+            {
+                fprintf(stderr, "ERROR: Incorrect number of entries on POINTS line.\n");
+                fclose(fptr);
+                return -1;
+            }
+
+            /* Allocate Memory for time and load*/
+            time_lc = malloc((size_t)np_lc * sizeof(*time_lc));
+            load_lc = malloc((size_t)np_lc * sizeof(*load_lc));
+            if (!time_lc)
+            {
+                fprintf(stderr, "ERROR: Memory allocation failed for time_lc array.\n");
+                fclose(fptr);
+                return -1;
+            }
+            if (!load_lc)
+            {
+                fprintf(stderr, "ERROR: Memory allocation failed for load_lc array.\n");
+                fclose(fptr);
+                return -1;
+            }
+            for (iline = 0; iline < np_lc; iline++)
+            {
+                str = edit_endline_character(line, buffer, fptr);
+                nscan = sscanf(str, "%lf, %lf", &time_lc[iline],&load_lc[iline]);
+                if (nscan != 2)
+                {
+                    fprintf(stderr, "ERROR: Incorrect data on line %d on %s.\n", iline, path);
+                    free(load_lc);
+                    free(time_lc);
+                    fclose(fptr);
+                    return -1;
+                }
+            }
+            endcount += 1;
+        }
+        // Break loop if both POINTS and ELEMENTS sections are read
+        if (endcount == 1)
+            break;
+    }
+
+    /* Close the file */
+    if (fclose(fptr) == EOF)
+    {
+        fprintf(stderr, "ERROR: Failed to close file %s.\n", path);
+        free(load_lc);
+        free(time_lc);
+        return -1;
+    }
+
+    printf("* Exiting function for reading %s file.\n",path);
+    return 0;
 }

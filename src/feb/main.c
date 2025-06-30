@@ -111,6 +111,14 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(read_wallmask(datafilepath[1], M1, inp, &M1->Melem));
     // reading regional mask [domme=16 body=8 neck=4 parental=1 distal=2 another e.g. aneu2=0]
     CHECK_ERROR(read_regionmask(datafilepath[2], M1, inp, &M1->relems, &M1->rpts));
+    // reading loading curve 
+    if (inp->used_lc == 1){
+        CHECK_ERROR(read_loadcrve(datafilepath[4]));
+        printf("- Number of POINTS in LC.csv: %d\n",np_lc);
+        printf("- Data:\n");
+        for (int i=0;i<np_lc;i++)
+            printf("%.2lf\t%.2lf\n",time_lc[i],load_lc[i]);
+    }
     // conver tri3 mesh other type of surface mesh (tri6; quad4; quad8; quad9)
     // allocate memory for M2 mesh struct
     mesh *M2 = (mesh *)malloc(sizeof(mesh));
@@ -330,6 +338,10 @@ int main(int argc, char const *argv[])
     free(highcurvcorr);
     free(cleanregion);
     free(normang);
+    if (inp->used_lc == 1){
+        free(time_lc);
+        free(load_lc);
+    }
     freeMesh(M1);
     freeMesh(M2);
     free(inp);

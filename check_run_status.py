@@ -4,8 +4,8 @@ import os
 import re
 
 dir_runfebio = "/dagon1/achitsaz/runfebio/"
-dir_approved_case = "/dagon1/achitsaz/runfebio/all_labeled_cases.txt"
-report_file = os.path.join(dir_runfebio, "run_report.csv")
+dir_approved_case = "/dagon1/achitsaz/runfebio/problematic_run_cases.txt"
+report_file = os.path.join(dir_runfebio, "run_report_problematic_cases.csv")
 studies = ["pst.1","pst.2"]
 # Read approved cases
 with open(dir_approved_case, "r") as f:

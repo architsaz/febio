@@ -7,6 +7,7 @@ nonlinear_FE    full Newton
 // mask status 
 used_cmask	1
 used_rmask	1
+used_lc     1
 // norm_mask
 norm_ang        30
 bad_ang         40
@@ -31,7 +32,7 @@ label_yellow    4
 label_white     7
 label_rupture   9
 // Boundary condition:
-used_BCmask    0
+used_BCmask    1
 colorid_remain 0
 colorid_distal 2
 colorid_parent 1

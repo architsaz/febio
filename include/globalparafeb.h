@@ -21,5 +21,8 @@
 
 	extern int NrNj;
 	extern double *NJmask;
+// loading curve 
+	extern int np_lc;
+	extern double *time_lc,*load_lc;	
 
 #endif // GLOBALPARAFEB
