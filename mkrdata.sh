@@ -42,13 +42,14 @@ base_dir="$2"
 # Define directories
 datadir="$base_dir/$case_id/data"
 msa1dir="$base_dir/$case_id/msa.1"
-msa2dir="$base_dir/$case_id/msa.2"
+# msa2dir="$base_dir/$case_id/msa.2"
 pst1dir="$base_dir/$case_id/pst.1"
-pst2dir="$base_dir/$case_id/pst.2"
-compdir="$base_dir/$case_id/comp.1.2"
+# pst2dir="$base_dir/$case_id/pst.2"
+# compdir="$base_dir/$case_id/comp.1.2"
 
 # Create directories if they don't exist
-for dir in "$base_dir" "$base_dir/$case_id" "$datadir" "$msa1dir" "$msa2dir" "$pst1dir" "$pst2dir" "$compdir"; do
+# for dir in "$base_dir" "$base_dir/$case_id" "$datadir" "$msa1dir" "$msa2dir" "$pst1dir" "$pst2dir" "$compdir"; do
+for dir in "$base_dir" "$base_dir/$case_id" "$datadir" "$msa1dir" "$pst1dir"; do
     mkdir -p "$dir"
 done
 
@@ -63,11 +64,12 @@ else
 fi
 
 # Copy .flds.zfem file --- used this for geometric data (points, elems)
-flds_file=$(find "/dagon1/ykarnam/wall/marks/master_wall" -maxdepth 2 -name "$case_id.wssm.zfem")
-if [ -n "$flds_file" ]; then
-    cp "$flds_file" "$datadir/$case_id.flds.zfem"
+ykarnam_flds_file=$(find "/dagon1/ykarnam/wall/marks/master_wall" -maxdepth 2 -name "$case_id.wssm.zfem")
+if [ -n "$ykarnam_flds_file" ]; then
+    cp "$ykarnam_flds_file" "$datadir/$case_id.flds.zfem"
 else
-    echo "Warning: $case_id.flds.zfem not found."
+    cp "$label_path/pst/wssm/nwtn.hr060/wssm.zfem.gz" "$datadir/$case_id.flds.zfem.gz" 2>/dev/null || echo "Warning: wssm.zfem.gz not found in pst directory."
+    cp "$label_path/pst/wssm/nwtn.hr060/wssm.zfem.gz" "$datadir/$case_id.flds.zfem" 2>/dev/null || echo "Warning: wssm.zfem not found in pst directory."
 fi
 
 # Copy wall mask ----- colored mask
@@ -75,7 +77,7 @@ wall_file=$(find "/dagon1/ykarnam/wall/marks/master_wall" -maxdepth 2 -name "$ca
 if [ -n "$wall_file" ]; then
     cp "$wall_file" "$datadir/$case_id.wall"
 else
-    echo "Warning: $case_id.wall not found."
+    echo "Warning: $case_id.wall not found in $wall_file"
 fi
 
 # Unzip any .gz files in the data directory
@@ -83,8 +85,8 @@ gzip -d -f "$datadir"/*.gz 2>/dev/null
 
 # Copy input files -- input parameters that need to run febio
 cp /dagon1/achitsaz/FEBio/scripts.feb/input_homo.txt "$msa1dir/input.txt"
-cp /dagon1/achitsaz/FEBio/scripts.feb/input_hete.txt "$msa2dir/input.txt"
+# cp /dagon1/achitsaz/FEBio/scripts.feb/input_hete.txt "$msa2dir/input.txt"
 
 # Copy run.sh to both msa directories --- run bash script
 cp /dagon1/achitsaz/FEBio/scripts.feb/run.sh "$msa1dir/"
-cp /dagon1/achitsaz/FEBio/scripts.feb/run.sh "$msa2dir/"
+# cp /dagon1/achitsaz/FEBio/scripts.feb/run.sh "$msa2dir/"

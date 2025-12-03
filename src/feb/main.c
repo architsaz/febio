@@ -19,10 +19,16 @@ int main(int argc, char const *argv[])
     // reading the argument of main function
     if (argc != 4)
     {
-        fprintf(stderr, "argc is %d\n", argc);
-        fprintf(stderr, "ERROR: need more argument\n");
-        fprintf(stderr, "<casename> <option> <step> \n\n");
-        fprintf(stderr, "available option:\n\nmknjmask\nnocorr\ncorrbynj\nenhance\nhighcurv\n");
+        fprintf(stderr, "* ERROR: need more argument\n");
+        fprintf(stderr, "Required inputs for this script:\n<casename> <option> <step> \n\n");
+        fprintf(stderr, "* Example: a06161.1 nocorr 0 \n\n");
+        fprintf(stderr, "Modification Stiffness (Young's Modulus) option:\n"
+            "\n- mknjmask:    No modification just creating mask file for Negative Jacobian (NJ) points."
+            "\n- nocorr:      No Modification make feb file based on input file assumption."
+            "\n- corrbynj:    Modification (Enhanced) of Young's Modulus @ NJ points."
+            "\n- enhance:     Enhanced Young's Modulus of all elements by value defined in input file."
+            "\n- highcurv:    Find high curvature area and enhanced Young's modulus by the value defined in input file."
+            "\n");
         exit(EXIT_FAILURE);
     }
     strcpy(filename, argv[1]);
@@ -40,7 +46,7 @@ int main(int argc, char const *argv[])
     else
     {
         fprintf(stderr, "ERROR: the option %s used for modifying Young modulus does not match with what supposed for program\n", argv[2]);
-        fprintf(stderr, "choose from the this option : nocorr/corrbynj/enhance or mknjmask\n");
+        fprintf(stderr, "Choose from the this option : nocorr/corrbynj/enhance or mknjmask\n");
         exit(EXIT_FAILURE);
     }
     int step = atoi(argv[3]);
@@ -108,12 +114,19 @@ int main(int argc, char const *argv[])
     CHECK_ERROR(read_zfem(datafilepath[0], &M1->npoin, &M1->nelem, &M1->ptxyz, &M1->elems));
     // reading wall charectristics [colored fields] from .wall file//
     // label : <red=1, yellow=4, white=7, cyan=0, rupture=9, remain=0>
-    CHECK_ERROR(read_wallmask(datafilepath[1], M1, inp, &M1->Melem));
+    if (inp->used_cmask == 1)
+        CHECK_ERROR(read_wallmask(datafilepath[1], M1, inp, &M1->Melem));
+    else
+        M1->Melem = (int *) calloc((size_t)M1->nelem, sizeof(int));
     // reading regional mask [domme=16 body=8 neck=4 parental=1 distal=2 another e.g. aneu2=0]
     CHECK_ERROR(read_regionmask(datafilepath[2], M1, inp, &M1->relems, &M1->rpts));
     // reading loading curve 
+    printf("- Load curve file name: %s\n",inp->lc_file);
     if (inp->used_lc == 1){
-        CHECK_ERROR(read_loadcrve(datafilepath[4]));
+        char path_lc[512];
+        strcpy(path_lc,datadir);
+        strcat(path_lc,inp->lc_file);
+        CHECK_ERROR(read_loadcrve(path_lc));
         printf("- Number of POINTS in LC.csv: %d\n",np_lc);
         printf("- Data:\n");
         for (int i=0;i<np_lc;i++)

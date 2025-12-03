@@ -652,15 +652,99 @@ int cleanBCmasks(mesh *M, int *pres, int *fixed, int **region)
     *region = slcreg;
     return e;
 }
-void NeoHokfunc(FILE *fptr, input *inp)
+
+void CoupNeoHokfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"neo-Hookean\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t\t<E type=\"map\">map_E</E>\n");
+    fprintf(fptr, "\t\t\t\t<v>%lf</v>\n", inp->pois);
+    fprintf(fptr, "\t\t</material>\n");
+}
+void UnCoupNeoHokfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t\t<k>%lf</k>\n",inp->k);
+    fprintf(fptr, "\t\t\t\t<pressure_model>default</pressure_model>\n");
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2>0</c2>\n");
+    fprintf(fptr, "\t\t</material>\n");
+}
+void UnCoupMooRivfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t\t<k>%lf</k>\n",inp->k);
+    fprintf(fptr, "\t\t\t\t<pressure_model>default</pressure_model>\n");
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2 type=\"map\">map_c2</c2>\n");
+    fprintf(fptr, "\t\t</material>\n");
+}
+void CoupMooRivfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"coupled Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2 type=\"map\">map_c2</c2>\n");
+    fprintf(fptr, "\t\t\t\t<k>%lf</k>\n",inp->k);
+    fprintf(fptr, "\t\t</material>\n");
+}
+
+void PstCoupNeoHokfunc(FILE *fptr, input *inp)
 {
     fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
     fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
     fprintf(fptr, "\t\t\t<elastic type=\"neo-Hookean\">\n");
-    fprintf(fptr, "\t\t\t\t<density>%lf</density>\n", inp->ro);
     fprintf(fptr, "\t\t\t\t<E type=\"map\">map_E</E>\n");
-    // fprintf(fptr,"\t\t\t\t<E>2e+07</E>\n");
     fprintf(fptr, "\t\t\t\t<v>%lf</v>\n", inp->pois);
+    fprintf(fptr, "\t\t\t</elastic>\n");
+    fprintf(fptr, "\t\t\t<prestrain type=\"prestrain gradient\">\n");
+    fprintf(fptr, "\t\t\t\t<ramp>1</ramp>\n");
+    fprintf(fptr, "\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+    fprintf(fptr, "\t\t\t</prestrain>\n");
+    fprintf(fptr, "\t\t</material>\n");
+}
+void PstUnCoupNeoHokfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"uncoupled prestrain elastic\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t<k>%lf</k>\n",inp->k);
+    fprintf(fptr, "\t\t\t<pressure_model>default</pressure_model>\n");
+    fprintf(fptr, "\t\t\t<elastic type=\"Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2>0</c2>\n");
+    fprintf(fptr, "\t\t\t</elastic>\n");
+    fprintf(fptr, "\t\t\t<prestrain type=\"prestrain gradient\">\n");
+    fprintf(fptr, "\t\t\t\t<ramp>1</ramp>\n");
+    fprintf(fptr, "\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+    fprintf(fptr, "\t\t\t</prestrain>\n");
+    fprintf(fptr, "\t\t</material>\n");
+}
+void PstUnCoupMooRivfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"uncoupled prestrain elastic\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t<k>%lf</k>\n",inp->k);
+    fprintf(fptr, "\t\t\t<pressure_model>default</pressure_model>\n");
+    fprintf(fptr, "\t\t\t<elastic type=\"Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2 type=\"map\">map_c2</c2>\n");
+    fprintf(fptr, "\t\t\t</elastic>\n");
+    fprintf(fptr, "\t\t\t<prestrain type=\"prestrain gradient\">\n");
+    fprintf(fptr, "\t\t\t\t<ramp>1</ramp>\n");
+    fprintf(fptr, "\t\t\t\t<F0>1,0,0,0,1,0,0,0,1</F0>\n");
+    fprintf(fptr, "\t\t\t</prestrain>\n");
+    fprintf(fptr, "\t\t</material>\n");
+}
+void PstCoupMooRivfunc(FILE *fptr, input *inp)
+{
+    fprintf(fptr, "\t\t<material id=\"1\" name=\"Material1\" type=\"prestrain elastic\">\n");
+    fprintf(fptr, "\t\t\t<density>%lf</density>\n", inp->ro);
+    fprintf(fptr, "\t\t\t<elastic type=\"coupled Mooney-Rivlin\">\n");
+    fprintf(fptr, "\t\t\t\t<c1 type=\"map\">map_c1</c1>\n");
+    fprintf(fptr, "\t\t\t\t<c2 type=\"map\">map_c2</c2>\n");
+    fprintf(fptr, "\t\t\t\t<k>%lf</k>\n",inp->k);
     fprintf(fptr, "\t\t\t</elastic>\n");
     fprintf(fptr, "\t\t\t<prestrain type=\"prestrain gradient\">\n");
     fprintf(fptr, "\t\t\t\t<ramp>1</ramp>\n");
@@ -875,9 +959,190 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     strcat(path, "_");
     strcat(path, num);
     strcat(path, ".feb");
-    char command[500];
-    strcpy(command, "rm ");
-    strcat(command, path);
+    /* define File pointer:*/
+    FILE *fptr;
+    fptr = calloc(1, sizeof(*fptr));
+    /* Opening File */
+    fptr = fopen(path, "w");
+    if (fptr == NULL)
+    {
+        fprintf(stderr, "ERROR: Cannot open file - %s.\n", path);
+        return -1;
+    }
+    /*write feb file : */
+    fprintf(fptr, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+    fprintf(fptr, "<febio_spec version=\"4.0\">\n");
+    fprintf(fptr, "\t<Module type=\"solid\"/>\n");
+    if (!strcmp(inp->Mmodel,"CouNeoHoo") || !strcmp(inp->Mmodel,"UnCouNeoHoo"))
+    {
+        norm_stepfunc(fptr);
+    }
+    fprintf(fptr, "\t<Globals>\n");
+    fprintf(fptr, "\t\t<Constants>\n");
+    fprintf(fptr, "\t\t\t<T>0</T>\n\t\t\t<P>0</P>\n\t\t\t<R>0</R>\n\t\t\t<Fc>0</Fc>\n");
+    fprintf(fptr, "\t\t</Constants>\n");
+    fprintf(fptr, "\t</Globals>\n");
+    fprintf(fptr, "\t<Material>\n");
+    if (!strcmp(inp->Mmodel,"PreCouNeoHoo"))
+    {
+        PstCoupNeoHokfunc(fptr, inp);
+    }
+    if (!strcmp(inp->Mmodel,"PreUnCouNeoHoo"))
+    {
+        PstUnCoupNeoHokfunc(fptr, inp);
+    }
+        if (!strcmp(inp->Mmodel,"CouNeoHoo"))
+    {
+        CoupNeoHokfunc(fptr, inp);
+    }
+        if (!strcmp(inp->Mmodel,"UnCouNeoHoo"))
+    {
+        UnCoupNeoHokfunc(fptr, inp);
+    }    
+    fprintf(fptr, "\t</Material>\n");
+    fprintf(fptr, "\t<Mesh>\n");
+    fprintf(fptr, "\t\t<Nodes name=\"Object1\">\n");
+    for (int i = 0; i < M->npoin; i++)
+    {
+        fprintf(fptr, "\t\t\t<node id=\"%d\">%lf,%lf,%lf</node>\n", i + 1, M->ptxyz[3 * i],
+                M->ptxyz[3 * i + 1], M->ptxyz[3 * i + 2]);
+    }
+    fprintf(fptr, "\t\t</Nodes>\n");
+    Elementfunc(fptr, M);
+    fprintf(fptr, "\t</Mesh>\n");
+    fprintf(fptr, "\t<MeshDomains>\n");
+    fprintf(fptr, "\t\t<ShellDomain name=\"Part1\" mat=\"Material1\" type=\"elastic-shell\">\n");
+    fprintf(fptr, "\t\t\t<shell_thickness>0</shell_thickness>\n");
+    fprintf(fptr, "\t\t\t<shell_normal_nodal>0</shell_normal_nodal>\n");
+    fprintf(fptr, "\t\t</ShellDomain>\n");
+    fprintf(fptr, "\t</MeshDomains>\n");
+    fprintf(fptr, "\t<MeshData>\n");
+    shellthickfunc(fptr, M);
+    if (!strcmp(inp->Mmodel,"PreCouNeoHoo") || !strcmp(inp->Mmodel,"CouNeoHoo"))
+    {    
+        fprintf(fptr, "\t\t<ElementData name=\"map_E\" elem_set=\"Part1\">\n");
+        for (int ele = 0; ele < M->nelem; ele++)
+            fprintf(fptr, "\t\t\t<e lid=\"%d\">%lf</e>\n", ele + 1, M->young[ele]);
+        fprintf(fptr, "\t\t</ElementData>\n");
+    }
+    if (!strcmp(inp->Mmodel,"PreUnCouNeoHoo") || !strcmp(inp->Mmodel,"UnCouNeoHoo"))
+    {
+        double *map_c1;
+        map_c1 = calloc((size_t)M->nelem,sizeof(double));
+        for (int ele = 0; ele<M->nelem;ele++){
+            map_c1[ele] = M->young[ele]/(4*(1+inp->pois));
+        }
+        fprintf(fptr, "\t\t<ElementData name=\"map_c1\" elem_set=\"Part1\">\n");
+        for (int ele = 0; ele < M->nelem; ele++)
+            fprintf(fptr, "\t\t\t<e lid=\"%d\">%lf</e>\n", ele + 1, map_c1[ele]);
+        fprintf(fptr, "\t\t</ElementData>\n");
+        free(map_c1);
+    } 
+    fprintf(fptr, "\t</MeshData>\n");
+    fprintf(fptr, "\t<Boundary>\n");
+    fprintf(fptr, "\t\t<bc name=\"FixedDisplacement1\" node_set=\"@surface:FixedShellDisplacement1\" type=\"zero displacement\">\n");
+    fprintf(fptr, "\t\t\t<x_dof>1</x_dof>\n");
+    fprintf(fptr, "\t\t\t<y_dof>1</y_dof>\n");
+    fprintf(fptr, "\t\t\t<z_dof>1</z_dof>\n");
+    fprintf(fptr, "\t\t</bc>\n");
+    fprintf(fptr, "\t\t<bc name=\"FixedShellDisplacement1\" node_set=\"@surface:FixedShellDisplacement1\" type=\"zero shell displacement\">\n");
+    fprintf(fptr, "\t\t\t<sx_dof>1</sx_dof>\n");
+    fprintf(fptr, "\t\t\t<sy_dof>1</sy_dof>\n");
+    fprintf(fptr, "\t\t\t<sz_dof>1</sz_dof>\n");
+    fprintf(fptr, "\t\t</bc>\n");
+    fprintf(fptr, "\t\t<bc name=\"ZeroRotation3\" node_set=\"@surface:FixedShellDisplacement1\" type=\"zero rotation\">\n");
+    fprintf(fptr, "\t\t\t<u_dof>1</u_dof>\n");
+    fprintf(fptr, "\t\t\t<v_dof>1</v_dof>\n");
+    fprintf(fptr, "\t\t\t<w_dof>1</w_dof>\n");
+    fprintf(fptr, "\t\t</bc>\n");
+    fprintf(fptr, "\t</Boundary>\n");
+    fprintf(fptr, "\t<Loads>\n");
+    fprintf(fptr, "\t\t<surface_load name=\"Pressure1\" surface=\"PressureLoad1\" type=\"pressure\">\n");
+    if (inp->used_lc == 1){
+        fprintf(fptr, "\t\t\t<pressure lc=\"1\">%lf</pressure>\n", load_lc[0]*1333.22); // conver mmHg to the dyn/cm^2
+    }else{
+        fprintf(fptr, "\t\t\t<pressure lc=\"1\">%lf</pressure>\n", inp->pres);
+    }
+    fprintf(fptr, "\t\t\t<symmetric_stiffness>0</symmetric_stiffness>\n");
+    fprintf(fptr, "\t\t\t<linear>0</linear>\n");
+    fprintf(fptr, "\t\t\t<shell_bottom>0</shell_bottom>\n");
+    fprintf(fptr, "\t\t</surface_load>\n");
+    fprintf(fptr, "\t</Loads>\n");
+    fprintf(fptr, "\t<Constraints>\n");
+    fprintf(fptr, "\t</Constraints>\n");
+    if (!strcmp(inp->Mmodel,"PreCouNeoHoo") || !strcmp(inp->Mmodel,"PreUnCouNeoHoo"))
+    {
+        fprintf(fptr, "\t<Step>\n");
+        fprintf(fptr, "\t\t<step id=\"1\" name=\"Step01\">\n");
+        pres_stepfunc(fptr);
+        fprintf(fptr, "\t\t</step>\n");
+        fprintf(fptr, "\t\t<step id=\"2\" name=\"Step02\">\n");
+        norm_stepfunc(fptr);
+        fprintf(fptr, "\t\t</step>\n");
+        fprintf(fptr, "\t</Step>\n");
+    }
+    fprintf(fptr, "\t<LoadData>\n");
+    fprintf(fptr, "\t\t<load_controller id=\"1\" name=\"LC1\" type=\"loadcurve\">\n");
+    fprintf(fptr, "\t\t\t<interpolate>LINEAR</interpolate>\n");
+    fprintf(fptr, "\t\t\t<extend>CONSTANT</extend>\n");
+    fprintf(fptr, "\t\t\t<points>\n");
+    if (inp->used_lc==1){
+        fprintf(fptr, "\t\t\t\t<pt>0.00,0.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>1.00,1.00</pt>\n");
+        for (int i=1;i<np_lc;i++){
+          fprintf(fptr, "\t\t\t\t<pt>%.2lf,%.2lf</pt>\n",time_lc[i]+1.00,load_lc[i]/load_lc[0]);  
+        }
+        fprintf(fptr, "\t\t\t\t<pt>2.00,%.2lf</pt>\n",load_lc[np_lc-1]/load_lc[0]);
+    }else{
+        fprintf(fptr, "\t\t\t\t<pt>0.00,0.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>1.00,1.00</pt>\n");
+        fprintf(fptr, "\t\t\t\t<pt>2.00,%.2lf</pt>\n", inp->ultipres / inp->pres);
+    }
+    fprintf(fptr, "\t\t\t</points>\n");
+    fprintf(fptr, "\t\t</load_controller>\n");
+    fprintf(fptr, "\t</LoadData>\n");
+    fprintf(fptr, "\t<Output>\n");
+    fprintf(fptr, "\t\t<plotfile type=\"vtk\">\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell displacement\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"relative volume\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell top strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell bottom strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell thickness\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell director\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell top stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell bottom stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"PK2 stress\"/>\n");
+    fprintf(fptr, "\t\t</plotfile>\n");
+    fprintf(fptr, "\t</Output>\n");
+    fprintf(fptr, "</febio_spec>\n");
+    if (fclose(fptr) == EOF)
+    {
+        // If fclose returns EOF, it means there was an error closing the file
+        printf("Error closing %s\n", path);
+        return -1;
+    }
+    printf("* wrote %s in the feb format!\n", path);
+    return e;
+}
+int oldfebmkr(char *dir, char *name, int step, mesh *M, input *inp)
+{
+    int e = 0;
+    // check the start ID element
+    if (checkEIDS(M->elems) != 1)
+    {
+        fprintf(stderr, "ERROR: The element ID should start from 1 for febmkr function!\n");
+        return -1;
+    }
+    char num[10];
+    sprintf(num, "%d", step);
+    char path[500];
+    strcpy(path, dir);
+    strcat(path, name);
+    strcat(path, "_");
+    strcat(path, num);
+    strcat(path, ".feb");
     /* define File pointer:*/
     FILE *fptr;
     fptr = calloc(1, sizeof(*fptr));
@@ -898,7 +1163,7 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t</Constants>\n");
     fprintf(fptr, "\t</Globals>\n");
     fprintf(fptr, "\t<Material>\n");
-    NeoHokfunc(fptr, inp);
+    PstCoupNeoHokfunc(fptr, inp);
     fprintf(fptr, "\t</Material>\n");
     fprintf(fptr, "\t<Mesh>\n");
     fprintf(fptr, "\t\t<Nodes name=\"Object1\">\n");

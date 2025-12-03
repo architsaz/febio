@@ -29,8 +29,5 @@ int datafiles(void)
     strcpy(datafilepath[3], datadir);
     strcat(datafilepath[3], "BCmask.zfem.labels");
 
-    strcpy(datafilepath[4], datadir);
-    strcat(datafilepath[4], "lc.csv");
-
     return e;
 }

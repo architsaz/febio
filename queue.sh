@@ -4,11 +4,11 @@ code_name=febio4
 machines=("ishtar" "loki" "hades" "attila" "marduk" "heise")
 # machines=("ishtar")
 
-list_dir=/dagon1/achitsaz/runfebio/problematic_run_cases.txt
-use_test_case=false  # Set to false to read from file
+list_dir=/dagon1/achitsaz/runfebio/new_unlabaled_cases.txt
+use_test_case=true  # Set to false to read from file
 
 if [ "$use_test_case" = true ]; then
-    raw_cases=("agh111.1")
+    raw_cases=("agh039.1")
 else
     if [ -f "$list_dir" ]; then 
         mapfile -t raw_cases < "$list_dir"
@@ -20,8 +20,8 @@ fi
 # Generate 4 jobs per case
 jobs=()
 for case in "${raw_cases[@]}"; do
-    jobs+=("$case 1 ")
-    jobs+=("$case 2 ")
+    jobs+=("$case 11 ")
+    jobs+=("$case 22 ")
 
 done
 
@@ -38,8 +38,9 @@ run_case_on_machine () {
     local case_dir=/dagon1/achitsaz/runfebio
     local code_dir=/dagon1/achitsaz/mylib/EXECs/
 
-    local command="$mkdata_dir $case_id $case_dir && cd $case_dir/$case_id/msa.$msa/ && nohup ./run.sh $case_id nocorr 0 0 > run.log 2>&1 &"
+    # local command="$mkdata_dir $case_id $case_dir && cd $case_dir/$case_id/msa.$msa/ && nohup ./run.sh $case_id nocorr 0 0 > run.log 2>&1 &"
     # local command="$mkdata_dir $case_id $case_dir"
+    local command="cd $case_dir/$case_id/msa.$msa/ && nohup ./run.sh $case_id nocorr 0 0 > run.log 2>&1 &"
 
     echo "-> Dispatching: $case_id with pst.$msa and $colormap on $machine"
 

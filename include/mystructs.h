@@ -44,11 +44,14 @@ typedef struct
     double norm_ang, bad_ang;
     double young_highcurv;
     // Neo-Hooken model
-    char Mmodel[50]; // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
+    char Mmodel[50]; // PreCouNeoHoo PreUnCouNeoHoo CouNeoHoo UnCouNeoHoo 
     double *young_r, *young_l, NJyoung, incyoung;
-    double pois, ro;
+    double pois, ro, k;
     // mask status
-    int used_cmask, used_rmask, used_lc;
+    int used_cmask, used_rmask;
+    // pressure waveform
+    int  used_lc;
+    char lc_file[100];
     // label : <red, yellow, white, cyan, rupture, remain>
     int *label, label_num;
     // boundary condition:

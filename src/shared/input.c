@@ -47,13 +47,15 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	// mask status:
 	inp->used_cmask = atoi(gethash(&table, "used_cmask"));
 	inp->used_rmask = atoi(gethash(&table, "used_rmask"));
+	// load curve
 	inp->used_lc = atoi(gethash(&table, "used_lc"));
+	strcpy(inp->lc_file, gethash(&table, "lc_file"));
 	// curvature mask:
 	inp->norm_ang = atof(gethash(&table, "norm_ang"));
 	inp->bad_ang = atof(gethash(&table, "bad_ang"));
 	inp->young_highcurv = atof(gethash(&table, "young_highcurv"));
-	// Neo-Hooken model
-	// strcpy(inp->Mmodel,gethash(&table,"isotropic elastic")); // isotropic elastic  or  neo-Hookean or coupled Mooney-Rivlin
+	// type of Neo-Hooken model
+	strcpy(inp->Mmodel,gethash(&table,"material_model")); // PreCouNeoHoo PreUnCouNeoHoo CouNeoHoo UnCouNeoHoo 
 	static double young_l2[3] = {0, 0, 0}; //{red, yellow, white} [dyne/cm^2]
 	young_l2[0] = atof(gethash(&table, "young_red"));
 	young_l2[1] = atof(gethash(&table, "young_yellow"));
@@ -70,6 +72,7 @@ int rinputf(char *dir, mesh *M1, input *inp)
 	// printf("%lf %lf %lf %lf %lf %lf\n",inp->young_r[0],inp->young_r[1],inp->young_r[2],inp->young_r[3],inp->young_r[4],inp->young_r[5]);
 	inp->pois = atof(gethash(&table, "pois"));
 	inp->ro = atof(gethash(&table, "ro")); //[gr/cm^3]
+	inp->k = atof(gethash(&table, "k")); //[dyn/cm^2]
 	inp->NJyoung = atof(gethash(&table, "NJyoung"));
 	inp->incyoung = atof(gethash(&table, "incyoung"));
 

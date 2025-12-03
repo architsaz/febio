@@ -7,12 +7,15 @@ nonlinear_FE    full Newton
 // mask status 
 used_cmask	0
 used_rmask	1
-used_lc     1
+// pressure waveform
+used_lc     0
+lc_file     old_curve.csv
 // norm_mask
 norm_ang        30
 bad_ang         40
 young_highcurv  10000000000
-// Neo-Hooken 	
+// material     PreCouNeoHoo PreUnCouNeoHoo CouNeoHoo UnCouNeoHoo  
+material_model  PreCouNeoHoo 	
 young_red       10000000
 young_yellow    10000000
 young_white     10000000
@@ -24,6 +27,7 @@ young_body      20000000
 young_dome      20000000
 pois            0.49 
 ro              1.101	
+k               16.66e7
 NJyoung         50000000
 incyoung        5000000
 // Label  <red, yellow, white, cyan, rupture, remain>
@@ -32,7 +36,7 @@ label_yellow    4
 label_white     7
 label_rupture   9
 // Boundary condition:
-used_BCmask    1
+used_BCmask    0
 colorid_remain 0
 colorid_distal 2
 colorid_parent 1
