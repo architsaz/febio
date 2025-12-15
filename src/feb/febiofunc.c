@@ -1108,11 +1108,18 @@ int febmkr(char *dir, char *name, int step, mesh *M, input *inp)
     fprintf(fptr, "\t\t\t<var type=\"shell strain\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell top strain\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell bottom strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"nodal strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell top nodal strain\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell bottom nodal strain\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell thickness\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell director\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"nodal shell director\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell top stress\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"shell bottom stress\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell top nodal stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"shell bottom nodal stress\"/>\n");
+    fprintf(fptr, "\t\t\t<var type=\"nodal stress\"/>\n");
     fprintf(fptr, "\t\t\t<var type=\"PK2 stress\"/>\n");
     fprintf(fptr, "\t\t</plotfile>\n");
     fprintf(fptr, "\t</Output>\n");
